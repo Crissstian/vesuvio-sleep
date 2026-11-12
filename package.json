@@ -1,0 +1,15 @@
+{
+  "name": "vesuvio-sleep-concept",
+  "private": true,
+  "type": "module",
+  "description": "Vesuvio Sleep — concept indipendente: preview statica, logica condivisa TypeScript, migrazioni Supabase",
+  "scripts": {
+    "build:core": "tsc -p tsconfig.json",
+    "build:seed": "python3 -I scripts/build_seed.py input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json",
+    "build:assets": "python3 -I scripts/build_assets.py input-vesuvio/asset preview/img",
+    "serve": "python3 -m http.server 8765 --directory preview",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:sql": "bash tests/sql/run.sh",
+    "test:e2e": "node tests/e2e/flows.mjs http://localhost:8765/"
+  }
+}

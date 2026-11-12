@@ -104,7 +104,7 @@ function renderChrome() {
   ];
   $('#topbar').innerHTML = `<div class="wrap">
       <span class="topbar__msg">Spedizione ${esc(store.db.settings.shipping_note || '')}</span>
-      <span class="topbar__preview">Anteprima concept${!wa.check.ok ? ' <span class="topbar__flag">· WhatsApp da configurare</span>' : ''}${previewDrafts() ? ' <span class="topbar__flag">· bozze visibili</span>' : ''}<a href="#admin">Admin</a></span>
+      <span class="topbar__preview"><span class="topbar__label">Anteprima concept</span>${!wa.check.ok ? ' <span class="topbar__flag">WhatsApp da configurare</span>' : ''}${previewDrafts() ? ' <span class="topbar__flag">Bozze visibili</span>' : ''}<a href="#admin">Admin</a></span>
     </div>`;
   $('#nav').innerHTML = nav.map((n) => `<a href="${n.href}" ${n.on ? 'aria-current="page"' : ''}>${esc(n.label)}</a>`).join('');
   $('#drawer-links').innerHTML = `<a href="#">Home</a>` + nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('') + `<a href="#confronto">Confronta i materassi</a><a href="#guida-misure">Guida alle misure</a><a href="#fuori-misura">Fuori misura</a><a href="#carrello">Carrello (${cart.count()})</a>`;
@@ -158,7 +158,8 @@ async function route() {
     }
   }
   state.lastRoute = r;
-  if (!isAdmin && state.compare.size && r !== 'confronto') showCompareBar();
+  // la barra di confronto compare solo dove si selezionano i modelli
+  if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
 }
 
 // ---------------------------------------------------------------- HOME
@@ -432,17 +433,22 @@ function viewProduct(slug) {
   renderBuy(idx, p);
   if (purchasable) {
     document.body.classList.add('has-sticky');
-    const target = $('#add-btn');
-    if (target && 'IntersectionObserver' in window) {
-      const sb = $('#sticky-buy');
-      const io = new IntersectionObserver(([e]) => {
-        const show = !e.isIntersecting && e.boundingClientRect.top < 0;
-        sb.classList.toggle('is-visible', show);
-        sb.setAttribute('aria-hidden', String(!show));
-        $$('button,a', sb).forEach((b) => (b.tabIndex = show ? 0 : -1));
-      });
-      io.observe(target);
-    }
+    // controllo sulla posizione (non IntersectionObserver: uno scroll veloce può saltare l'incrocio)
+    const sb = $('#sticky-buy');
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const btn = $('#add-btn');
+      if (!btn || !sb.isConnected) return window.removeEventListener('scroll', onScroll);
+      const show = btn.getBoundingClientRect().bottom < 0;
+      if (sb.classList.contains('is-visible') === show) return;
+      sb.classList.toggle('is-visible', show);
+      sb.setAttribute('aria-hidden', String(!show));
+      $$('button,a', sb).forEach((b) => (b.tabIndex = show ? 0 : -1));
+    };
+    const onScroll = () => (raf ||= requestAnimationFrame(update));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
   }
 }
 

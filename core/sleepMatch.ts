@@ -101,6 +101,9 @@ export function sleepMatch(idx: CatalogIndex, a: SleepMatchAnswers): SleepMatchR
       height = heights.includes(25) ? 25 : heights[0];
       heightReason = heights.length > 1 ? `H${height} è un buon punto di partenza; nella scheda puoi scegliere le altre altezze.` : null;
     }
+    if (heights.length === 1) {
+      heightReason = `Online è disponibile in H${height}; per altre altezze puoi chiedere un preventivo.`;
+    }
   }
   return { product: best.p, height, reasons: uniq.slice(0, 3), heightReason };
 }
