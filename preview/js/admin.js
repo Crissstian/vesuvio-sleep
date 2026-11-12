@@ -4,6 +4,7 @@
 
 import { formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex } from './core/index.js';
 import { store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api } from './store.js';
+import { SITE_SLOTS } from './slots.js';
 import { esc, $, $$, toast, copyText, confirmDialog, openDialog, icon, slugify, fmtDate } from './ui.js';
 
 const CRED = 'vs-admin-cred';
@@ -62,6 +63,7 @@ const SECTIONS = [
   ['admin', 'Panoramica'],
   ['admin-catalogo', 'Prodotti'],
   ['admin-categorie', 'Categorie'],
+  ['admin-immagini', 'Immagini del sito'],
   ['admin-richieste', 'Richieste'],
   ['admin-impostazioni', 'Impostazioni'],
   ['admin-storico', 'Storico'],
@@ -335,6 +337,27 @@ function saveProduct(form, { silent = false } = {}) {
   return true;
 }
 
+// ------------------------------------------------------------- immagini del sito
+function viewSiteImages() {
+  const list = db().site_media;
+  shell('admin-immagini', 'Immagini del sito', `
+    <p class="small muted">Ogni spazio mostra un segnaposto finché non carichi e pubblichi una foto. Le foto restano in bozza fino alla pubblicazione; il testo alternativo è obbligatorio.</p>
+    <div class="adm-slots">${SITE_SLOTS.map((def) => {
+      const m = list.find((x) => x.slot === def.key);
+      const src = m && media.resolve(m);
+      return `<section class="adm-card adm-slot" data-slot="${def.key}">
+        <h2 class="adm-h2" style="margin:0">${esc(def.label)}</h2>
+        <figure class="ph ${src ? 'ph--photo' : ''}" style="--ratio:${def.ratio}">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph__inner">${icon('image', 26)}<span>${esc(def.hint)}</span></div>`}</figure>
+        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : '<span class="st st--archived">Segnaposto</span>'}</p>
+        ${m ? `<label class="field"><span class="lbl small">Testo alternativo</span><input class="input" data-sf="alt" value="${esc(m.alt)}" placeholder="Descrivi cosa si vede"></label>` : ''}
+        <div class="btn-row">
+          <label class="btn btn--ghost btn--sm">${m ? 'Sostituisci' : 'Carica foto'}<input type="file" accept="image/jpeg,image/png,image/webp" data-adm-sitefile="${def.key}" hidden></label>
+          ${m ? `<button class="btn btn--sm ${m.published ? 'btn--ghost' : 'btn--primary'}" data-adm="s-pub" data-slot="${def.key}">${m.published ? 'Nascondi' : 'Pubblica'}</button><button class="btn btn--danger btn--sm" data-adm="s-del" data-slot="${def.key}">Rimuovi</button>` : ''}
+        </div>
+      </section>`;
+    }).join('')}</div>`);
+}
+
 // ------------------------------------------------------------- categorie
 function viewCategories() {
   const d = db();
@@ -476,6 +499,7 @@ export async function render(app) {
   else if (r === 'admin-catalogo') viewCatalog();
   else if ((m = /^admin-prodotto-(.+)$/.exec(r))) viewProductEdit(m[1]);
   else if (r === 'admin-categorie') viewCategories();
+  else if (r === 'admin-immagini') viewSiteImages();
   else if (r === 'admin-richieste') viewRequests();
   else if ((m = /^admin-richiesta-(.+)$/.exec(r))) viewRequest(m[1]);
   else if (r === 'admin-impostazioni') viewSettings();
@@ -629,6 +653,33 @@ function bind() {
         rerender();
         scrollTo(0, y);
       }
+    }
+    if (t.dataset.sf === 'alt') {
+      const key = t.closest('[data-slot]').dataset.slot;
+      const m = db().site_media.find((x) => x.slot === key);
+      m.alt = t.value.trim();
+      if (!m.alt && m.published) m.published = false;
+      store.commit('catalog');
+      return;
+    }
+    const siteKey = t.dataset.admSitefile;
+    if (siteKey && t.files?.length) {
+      try {
+        const { blob, width, height } = await processUpload(t.files[0]);
+        const src = await media.putBlob(blob);
+        const list = db().site_media;
+        const old = list.find((x) => x.slot === siteKey);
+        if (old) {
+          await media.deleteBlob(old.src);
+          Object.assign(old, { src, width, height, published: false });
+        } else list.push({ id: store.rid(), slot: siteKey, src, alt: '', published: false, focal_x: 50, focal_y: 50, width, height });
+        store.audit('immagine del sito', siteKey, 'Foto caricata in bozza');
+        store.commit('catalog');
+        toast('Foto caricata in bozza: aggiungi il testo alternativo e pubblicala');
+      } catch (err) {
+        toast(err.message || 'Caricamento non riuscito');
+      }
+      return rerender();
     }
     const fileMode = t.dataset.admFile;
     if (fileMode && t.files?.length) {
@@ -840,6 +891,28 @@ function bind() {
           if (first) first.is_cover = true;
         }
         store.audit('foto', m.id.slice(0, 8), 'Eliminata');
+        store.commit('catalog');
+        rerender();
+        break;
+      }
+      case 's-pub': {
+        const m = d.site_media.find((x) => x.slot === t.dataset.slot);
+        if (!m.published && !m.alt.trim()) {
+          toast('Scrivi il testo alternativo prima di pubblicare');
+          return $(`[data-slot="${t.dataset.slot}"] [data-sf="alt"]`)?.focus();
+        }
+        m.published = !m.published;
+        store.audit('immagine del sito', m.slot, m.published ? 'Pubblicata' : 'Nascosta');
+        store.commit('catalog');
+        toast(m.published ? 'Pubblicata: il sito è già aggiornato' : 'Nascosta: torna il segnaposto');
+        rerender();
+        break;
+      }
+      case 's-del': {
+        if (!(await confirmDialog('Rimuovere la foto?', 'Nello spazio tornerà il segnaposto.', 'Rimuovi', true))) return;
+        const m = d.site_media.find((x) => x.slot === t.dataset.slot);
+        await media.deleteBlob(m.src);
+        d.site_media = d.site_media.filter((x) => x !== m);
         store.commit('catalog');
         rerender();
         break;

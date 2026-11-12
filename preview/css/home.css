@@ -1633,3 +1633,370 @@ body.on-dark:not(.is-scrolled) .menu-btn {
     display: none;
   }
 }
+
+/* =================== Apertura: Golfo di Napoli =================== */
+.hero--naples {
+  background: var(--deep);
+  color: var(--ivory);
+}
+.hero__scene {
+  position: absolute;
+  inset: 0;
+}
+.hero__scene > svg,
+.hero__scene > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.hero--naples .hero__scrim {
+  background:
+    linear-gradient(90deg, rgba(14, 52, 68, 0.72) 0%, rgba(14, 52, 68, 0.38) 34%, rgba(14, 52, 68, 0) 58%),
+    linear-gradient(0deg, rgba(14, 52, 68, 0.55) 0%, rgba(14, 52, 68, 0) 30%);
+}
+.hero--naples .hero__content {
+  justify-content: center;
+  padding-bottom: 150px;
+}
+.hero--naples .hero__kicker {
+  color: #ffd2bf;
+}
+.hero--naples h1 {
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(14, 52, 68, 0.35);
+}
+.hero--naples h1 em {
+  color: #ffcfae;
+}
+.hero--naples .lead {
+  color: rgba(247, 241, 232, 0.9);
+}
+.hero--naples .btn--primary {
+  background: var(--ivory);
+  color: var(--deep);
+  outline-color: rgba(14, 52, 68, 0.45);
+}
+.hero--naples .btn--primary:hover {
+  background: #fff;
+}
+.hero--naples .btn--glass {
+  background: rgba(247, 241, 232, 0.14);
+  color: var(--ivory);
+  border-color: rgba(247, 241, 232, 0.5);
+}
+.hero--naples .btn--glass:hover {
+  background: rgba(247, 241, 232, 0.26);
+}
+.hero--naples .hero__badge {
+  background: rgba(14, 52, 68, 0.55);
+  color: var(--ivory);
+  border: 1px dashed rgba(247, 241, 232, 0.4);
+}
+.hero--naples .hero__strip {
+  background: rgba(247, 241, 232, 0.12);
+  border: 1px solid rgba(247, 241, 232, 0.18);
+}
+.hero--naples .stitch-svg .thread {
+  stroke: #ffb48f;
+  stroke-width: 3;
+}
+.hero--naples .stitch-svg .needle {
+  fill: #ffcfae;
+}
+body.on-hero:not(.is-scrolled) .nav {
+  background: rgba(247, 241, 232, 0.12);
+  border-color: rgba(247, 241, 232, 0.22);
+}
+body.on-hero:not(.is-scrolled) .nav a {
+  color: var(--ivory);
+}
+body.on-hero:not(.is-scrolled) .nav a:hover {
+  background: rgba(247, 241, 232, 0.16);
+}
+body.on-hero:not(.is-scrolled) .brand {
+  background: var(--ivory);
+  border-radius: 14px;
+  padding: 2px 8px;
+}
+body.on-hero:not(.is-scrolled) .menu-btn {
+  color: var(--ivory);
+}
+
+/* vita nel panorama: solo trasformazioni e tratteggi, sempre leggere */
+@media (prefers-reduced-motion: no-preference) {
+  .naples .np-glint {
+    animation: glint 3.2s linear infinite;
+    animation-delay: calc(var(--k) * -0.8s);
+  }
+  .naples .np-boat {
+    animation: bob 5s ease-in-out infinite;
+    transform-box: fill-box;
+  }
+  .naples .np-boat.b2 {
+    animation-duration: 6.5s;
+    animation-delay: -2s;
+  }
+  .naples .np-boat.b3 {
+    animation-duration: 4.4s;
+    animation-delay: -1s;
+  }
+  .naples .np-cloud {
+    animation: drift 46s linear infinite alternate;
+  }
+  .naples .np-cloud.b {
+    animation-duration: 60s;
+    animation-direction: alternate-reverse;
+  }
+  .naples .np-stars circle {
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  .naples .np-stars circle:nth-child(3n) {
+    animation-delay: -1.5s;
+  }
+  .naples .np-stars circle:nth-child(4n) {
+    animation-delay: -2.7s;
+  }
+  .naples .np-sunglow {
+    animation: glow 7s ease-in-out infinite alternate;
+    transform-origin: 1150px 590px;
+  }
+}
+@keyframes glint {
+  to {
+    stroke-dashoffset: -60;
+  }
+}
+@keyframes bob {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: -1.5deg;
+  }
+  50% {
+    translate: 6px -5px;
+    rotate: 1.5deg;
+  }
+}
+@keyframes drift {
+  to {
+    translate: 90px 0;
+  }
+}
+@keyframes twinkle {
+  50% {
+    opacity: 0.15;
+  }
+}
+@keyframes glow {
+  to {
+    transform: scale(1.08);
+    opacity: 0.8;
+  }
+}
+
+/* =================== Segnaposto foto =================== */
+.ph {
+  position: relative;
+  margin: 0;
+  aspect-ratio: var(--ratio, 4 / 3);
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(135deg, rgba(32, 103, 134, 0.07) 0 14px, transparent 14px 28px),
+    radial-gradient(120% 90% at 30% 20%, #f8fbfc 0%, var(--ice) 60%, #d6e8ef 100%);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--deep);
+}
+.ph::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1.5px dashed rgba(32, 103, 134, 0.35);
+  border-radius: 14px;
+  pointer-events: none;
+}
+.ph__inner {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 18px 22px;
+  max-width: 32ch;
+}
+.ph__inner .ico {
+  color: var(--vesuvio);
+  margin-bottom: 4px;
+}
+.ph__inner strong {
+  font: 700 1rem var(--f-display);
+}
+.ph__inner span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.ph__inner em {
+  font-style: normal;
+  font: 700 0.72rem var(--f-display);
+  color: var(--lava-ink);
+  background: rgba(255, 252, 247, 0.85);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-top: 6px;
+}
+.ph--photo {
+  background: var(--ice);
+}
+.ph--photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ph--photo::after {
+  display: none;
+}
+.ph--fill {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  border-radius: inherit;
+}
+.gallery__main--ph {
+  position: relative;
+}
+.ph-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 22px);
+}
+.thumb {
+  display: grid;
+  place-items: center;
+}
+.thumb .mx {
+  width: 90%;
+  height: auto;
+}
+.thumb--ph {
+  background: repeating-linear-gradient(135deg, rgba(32, 103, 134, 0.08) 0 6px, transparent 6px 12px), var(--ice);
+  border: 1.5px dashed rgba(32, 103, 134, 0.4);
+  color: var(--vesuvio);
+}
+.card__note--ph {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--lava-ink);
+}
+.showroom__media {
+  display: grid;
+  gap: 16px;
+}
+.showroom__media .map-card {
+  min-height: 220px;
+}
+
+/* =================== Il Vesuvio di fronte =================== */
+.statement {
+  padding-block: clamp(56px, 8vw, 110px);
+}
+.statement__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: center;
+}
+.statement__img {
+  margin: 0;
+  position: relative;
+}
+.statement__art {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(14, 52, 68, 0.18);
+}
+.statement__art > img,
+.statement__art > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.statement__img figcaption {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  font-size: 0.72rem;
+  background: rgba(255, 252, 247, 0.85);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.statement h2 {
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  max-width: 15ch;
+}
+.statement p {
+  color: var(--muted);
+  max-width: 46ch;
+  margin-bottom: 26px;
+}
+.stitch-svg--inview .reveal {
+  stroke: #fff;
+  stroke-width: 14;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.statement__img.in .stitch-svg--inview .reveal {
+  animation: sew-path 2.4s 0.3s cubic-bezier(0.6, 0.05, 0.25, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stitch-svg--inview .reveal {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .hero--naples .hero__scrim {
+    background: linear-gradient(0deg, var(--deep) 0%, rgba(14, 52, 68, 0.6) 20%, transparent 50%);
+  }
+  .hero--naples {
+    background: var(--deep);
+  }
+  .hero--naples .hero__content {
+    padding-bottom: 26px;
+  }
+  .statement__grid,
+  .ph-row {
+    grid-template-columns: 1fr;
+  }
+  .ph-row {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 6px;
+  }
+  .ph-row > * {
+    scroll-snap-align: start;
+  }
+}
+.statement__img:not(.in) .stitch-svg--inview .reveal {
+  animation: none;
+}
+.adm-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 18px;
+}
+.adm-slot {
+  display: grid;
+  gap: 10px;
+}
+.adm-slot .ph {
+  border-radius: 16px;
+}

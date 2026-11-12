@@ -16,9 +16,11 @@ import {
   breadcrumbJsonLd,
   MAX_QTY,
 } from './core/index.js';
-import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus } from './store.js';
+import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage } from './store.js';
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
 import { productIllustration, layersFor } from './illustrations.js';
+import { heroHtml } from './hero.js';
+import { SITE_SLOTS, PRODUCT_SLOTS } from './slots.js';
 import { enhance, bump, explode } from './motion.js';
 
 const CFG = window.VS_CONFIG ?? {};
@@ -197,7 +199,7 @@ function productCard(idx, p, { compare = false, d = 0 } = {}) {
   ].slice(0, 3);
   const cover = coverFor(idx, p);
   return `<article class="card rv" style="--d:${d}" data-pid="${esc(p.id)}">
-    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}<span class="card__note">${cover?.illustrative ? 'Render illustrativo' : cover ? '' : 'Schema illustrativo'}</span></div>
+    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}${cover?.illustrative ? '<span class="card__note">Render illustrativo</span>' : cover ? '' : '<span class="card__note card__note--ph">' + icon('image', 14) + ' Foto in arrivo</span>'}</div>
     <div class="card__body">
       <span class="card__tech">${esc(p.technical_name)}</span>
       <h3><a href="${href.product(p)}" data-act="to-product">${esc(p.name)}</a></h3>
@@ -214,39 +216,35 @@ function productCard(idx, p, { compare = false, d = 0 } = {}) {
 // Profilo dell'ombra del Vesuvio nella foto della hero (coordinate dell'immagine 1536×1024)
 const RIDGE = 'M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390';
 
-function heroHtml() {
-  return `<section class="hero" aria-labelledby="hero-title">
-    <div class="hero__visual">
-      <div class="hero__par">
-        <div class="hero__art">
-          <img src="img/hero-vesuvio-1536.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 180vw, 100vw" width="1536" height="1024" alt="Materasso trapuntato su una base blu, in una stanza luminosa dove il sole proietta sul muro l'ombra del Vesuvio" fetchpriority="high">
-          <svg class="stitch-svg" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <defs><mask id="sew"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
-            <path class="thread" d="${RIDGE}" mask="url(#sew)"/>
-            <circle class="needle" r="7" style="offset-path: path('${RIDGE}')"/>
-          </svg>
-        </div>
+/** Segnaposto dichiarato per una foto ancora da fornire. */
+function placeholderHtml(def, { cls = '' } = {}) {
+  return `<figure class="ph ${cls}" style="--ratio:${def.ratio ?? '4 / 3'}" role="img" aria-label="Spazio per foto: ${esc(def.label)}">
+    <div class="ph__inner">${icon('image', 30)}<strong>${esc(def.label)}</strong><span>${esc(def.hint ?? '')}</span><em>Foto in arrivo</em></div></figure>`;
+}
+function slotHtml(key, opts = {}) {
+  const def = SITE_SLOTS.find((x) => x.key === key);
+  const img = siteImage(key);
+  if (img) return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${def.ratio}"><img src="${esc(img.src)}" alt="${esc(img.alt)}" loading="lazy" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%"></figure>`;
+  return placeholderHtml(def, opts);
+}
+
+function statementHtml() {
+  return `<section class="statement" aria-labelledby="st-title"><div class="wrap statement__grid">
+    <figure class="statement__img rv">
+      <div class="statement__art">
+        <img src="img/hero-vesuvio-1024.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 94vw, 60vw" width="1536" height="1024" loading="lazy" alt="Materasso trapuntato su una base blu, con l'ombra del Vesuvio proiettata sul muro">
+        <svg class="stitch-svg stitch-svg--inview" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs><mask id="sew2"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
+          <path class="thread" d="${RIDGE}" mask="url(#sew2)"/></svg>
       </div>
-      <div class="hero__scrim"></div>
-      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <span class="hero__badge">Ambientazione illustrativa</span>
+      <figcaption>Ambientazione illustrativa</figcaption>
+    </figure>
+    <div class="statement__text rv" style="--d:1">
+      <h2 id="st-title">Il Vesuvio ce l'abbiamo davanti ogni mattina.</h2>
+      <p>Per questo il nostro marchio ha il suo profilo, e per questo cuciamo ogni materasso come si faceva in bottega: a mano dove serve, con materiali scelti e controllati in fabbrica.</p>
+      <a class="btn btn--primary" href="#materassi">Scegli il tuo materasso</a>
     </div>
-    <div class="hero__content">
-      <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
-      <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
-      <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
-      <div class="btn-row">
-        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
-        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
-      </div>
-    </div>
-    <ul class="hero__strip" aria-label="In breve">
-      <li><strong>Dal 1986</strong>Produzione a Casoria</li>
-      <li><strong>Prezzo di fabbrica</strong>Senza intermediari</li>
-      <li><strong>Su misura</strong>Misure e altezze a richiesta</li>
-      <li><strong>Spedizione gratuita</strong>In Italia, isole comprese</li>
-    </ul>
-  </section>`;
+  </div></section>`;
 }
 
 function layersHtml(idx, p) {
@@ -318,7 +316,7 @@ function showroomHtml(compact = false) {
         <a class="btn btn--ghost" href="https://maps.apple.com/?daddr=${dest}" target="_blank" rel="noopener">Apri in Mappe</a>
       </div>
     </div>
-    <div class="map-card rv" style="--d:1">
+    <div class="showroom__media rv" style="--d:1">${slotHtml('showroom')}<div class="map-card">
       <svg class="mapbg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="400" height="300" fill="#e3eef3"/>
         <g fill="none" stroke="#fffcf7" stroke-width="12" stroke-linecap="round"><path d="M-10 210 C80 190 160 200 240 160 S360 90 420 80"/><path d="M120 -10 C130 80 150 160 140 320"/></g>
@@ -328,7 +326,7 @@ function showroomHtml(compact = false) {
       <span class="pin-dot" aria-hidden="true"></span>
       <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 4px"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
         <p class="small muted" style="margin:0">${CFG.mapEmbed ? '' : 'La mappa interattiva si attiva sul sito pubblicato, dopo il consenso ai cookie.'}</p></div>
-    </div>
+    </div></div>
   </div>`;
 }
 
@@ -338,8 +336,9 @@ function viewHome() {
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
   setMeta('', '', [localBusinessJsonLd()]);
-  const staticHero = state.lastRoute === undefined ? $('#app > .hero') : null;
-  app.innerHTML = `${staticHero ? '' : heroHtml()}
+  const heroPhoto = siteImage('hero_napoli');
+  const staticHero = state.lastRoute === undefined && !heroPhoto ? $('#app > .hero') : null;
+  app.innerHTML = `${staticHero ? '' : heroHtml(heroPhoto)}
 
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
@@ -347,6 +346,8 @@ function viewHome() {
     <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
     <div class="num rv" style="--d:3"><b data-count="8" data-from="0">8</b><span>misure standard, più il su misura</span></div>
   </div></section>
+
+  ${statementHtml()}
 
   <section class="section" aria-labelledby="cat-title">
     <div class="wrap">
@@ -375,6 +376,9 @@ function viewHome() {
       </dl>
     </div>
   </section>
+  <section class="section--tight" aria-label="Foto della fabbrica"><div class="wrap">
+    <div class="ph-row">${['fabbrica_cucito', 'fabbrica_taglio', 'fabbrica_materiali'].map((k, i) => `<div class="rv" style="--d:${i}">${slotHtml(k)}</div>`).join('')}</div>
+  </div></section>
 
   ${pocket ? `<section class="section" aria-labelledby="inside-title"><div class="wrap">
       <div class="sec-head rv"><div><h2 id="inside-title">Dentro il ${esc(pocket.name.replace('Vesuvio ', ''))}</h2><p>Il nostro Hybrid: tocca i numeri per vedere i componenti.</p></div>
@@ -559,23 +563,41 @@ function viewProduct(slug) {
   }
 }
 
+function galleryItems(idx, p, gallery) {
+  const kind = idx.kind(p);
+  const items = gallery.map((m) => ({ type: 'media', m }));
+  if (!items.length) items.push({ type: 'illus' });
+  const have = new Set(gallery.map((m) => m.slot));
+  const slots = kind === 'guanciale' || kind === 'rete' ? PRODUCT_SLOTS.filter((x) => x.slot !== 'exploded') : PRODUCT_SLOTS;
+  for (const def of slots) if (!have.has(def.slot)) items.push({ type: 'ph', def });
+  return items;
+}
 function galleryHtml(idx, p, gallery, i) {
-  if (!gallery.length) {
-    const kind = idx.kind(p);
+  const kind = idx.kind(p);
+  const items = galleryItems(idx, p, gallery);
+  const it = items[i] ?? items[0];
+  let main;
+  if (it.type === 'illus') {
     const layered = kind === 'materasso' || kind === 'topper';
-    return `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
+    main = `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
       <span class="gallery__label" style="top:14px;bottom:auto">Schema illustrativo, non in scala</span>
-      ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>
-      <p class="small muted" style="margin-top:10px">Le foto del prodotto saranno pubblicate appena disponibili.</p>`;
+      ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>`;
+  } else if (it.type === 'ph') {
+    main = `<div class="gallery__main gallery__main--ph">${placeholderHtml({ ...it.def, ratio: '3 / 2' }, { cls: 'ph--fill' })}</div>`;
+  } else {
+    const m = it.m;
+    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
+    main = `<div class="gallery__main">${tag || fallbackHtml(kind)}
+      ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${gallery.indexOf(m)}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
+      ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>`;
   }
-  const m = gallery[i] ?? gallery[0];
-  const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
-  return `<div class="gallery__main">${tag || fallbackHtml(idx.kind(p))}
-      ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${i}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
-      ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>
-    ${gallery.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${gallery
-      .map((g, j) => `<button class="thumb" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="Mostra immagine ${j + 1}: ${esc(g.alt)}">${imgTag(g, { sizes: '80px' }) || ''}</button>`)
-      .join('')}</div>` : ''}`;
+  const thumb = (t, j) => {
+    const inner = t.type === 'media' ? imgTag(t.m, { sizes: '80px' }) || '' : t.type === 'illus' ? productIllustration(p, kind) : `<span class="thumb__ph">${icon('image', 18)}</span>`;
+    const label = t.type === 'media' ? t.m.alt : t.type === 'illus' ? 'Schema illustrativo' : `Spazio per foto: ${t.def.label}`;
+    return `<button class="thumb ${t.type === 'ph' ? 'thumb--ph' : ''}" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="${esc(label)}">${inner}</button>`;
+  };
+  return `${main}<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>
+    ${gallery.length ? '' : '<p class="small muted" style="margin-top:8px">Le foto del prodotto saranno pubblicate appena disponibili.</p>'}`;
 }
 
 function renderBuy(idx, p) {
@@ -1106,6 +1128,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const g = mediaFor(cp.idx, cp.p);
       $('[data-gallery]').innerHTML = galleryHtml(cp.idx, cp.p, g, Number(t.dataset.i));
+      if ($('#gal-stage')) explode($('#gal-stage'), 0.6, 700);
       $(`[data-act="thumb"][data-i="${t.dataset.i}"]`)?.focus();
       break;
     }

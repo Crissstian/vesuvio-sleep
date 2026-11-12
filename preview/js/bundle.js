@@ -2316,11 +2316,12 @@ function writeLS(key, val) {
 }
 
 function freshDb() {
-  return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [] };
+  return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [], site_media: [] };
 }
 
 let db = readLS(DB_KEY) ?? freshDb();
 if (!db.seed_version) db = freshDb();
+db.site_media ??= [];
 const listeners = new Set();
 
 const store = {
@@ -2389,7 +2390,7 @@ function idbReq(mode, fn) {
 const media = {
   async init() {
     idb = await openIdb();
-    const keys = db.media.filter((m) => m.src.startsWith('idb:')).map((m) => m.src.slice(4));
+    const keys = [...db.media, ...(db.site_media ?? [])].filter((m) => m.src.startsWith('idb:')).map((m) => m.src.slice(4));
     for (const k of keys) {
       try {
         const b = await idbReq('readonly', (s) => s.get(k));
@@ -2439,6 +2440,14 @@ async function processUpload(file) {
   c.getContext('2d').drawImage(bmp, 0, 0, w, h);
   const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.85));
   return { blob: blob ?? file, width: w, height: h };
+}
+
+/** Foto pubblicata in uno spazio del sito, oppure null (si mostra il segnaposto). */
+function siteImage(key, { drafts = false } = {}) {
+  const m = (db.site_media ?? []).find((x) => x.slot === key && (drafts || x.published));
+  if (!m) return null;
+  const src = media.resolve(m);
+  return src ? { ...m, src } : null;
 }
 
 // ---------- Catalogo ----------
@@ -2569,6 +2578,7 @@ __exp.whatsappNumber = whatsappNumber;
 __exp.whatsappStatus = whatsappStatus;
 __exp.media = media;
 __exp.processUpload = processUpload;
+__exp.siteImage = siteImage;
 __exp.catalog = catalog;
 __exp.mediaFor = mediaFor;
 __exp.coverFor = coverFor;
@@ -2974,6 +2984,188 @@ __exp.baseSvg = baseSvg;
 __exp.pillowSvg = pillowSvg;
 __exp.productIllustration = productIllustration;
 });
+__def("naples.js", function (__exp) {
+// Panorama ILLUSTRATO del Golfo di Napoli: segnaposto dell'apertura finché non
+// viene caricata una foto reale dall'admin (slot "hero_napoli"). Nessun elemento
+// esterno: tutto SVG, animazioni solo CSS e rispettose di prefers-reduced-motion.
+
+// Profilo Somma–Vesuvio (coordinate del viewBox 1600×1000), usato anche dalla cucitura
+const NAPLES_RIDGE = 'M 610 640 C 700 600, 760 560, 840 520 C 880 500, 905 470, 930 462 C 960 452, 990 458, 1010 470 C 1030 452, 1052 418, 1078 414 C 1104 410, 1126 440, 1150 470 C 1210 520, 1300 572, 1420 620 C 1480 640, 1540 648, 1600 650';
+
+function windows(x, y, w, h, seed) {
+  let s = '';
+  const cols = Math.max(1, Math.floor(w / 9));
+  const rows = Math.max(1, Math.floor(h / 12));
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++) {
+      if ((i * 7 + j * 13 + seed) % 5 === 0) continue;
+      s += `<rect x="${x + 3 + i * 9}" y="${y + 4 + j * 12}" width="3.4" height="5" fill="${(i + j + seed) % 4 === 0 ? '#ffe2a8' : 'rgba(14,52,68,.3)'}"/>`;
+    }
+  return s;
+}
+
+function city() {
+  // case affacciate sul lungomare, colori dei palazzi napoletani
+  const palette = ['#e8c49a', '#d99d7c', '#f1dfc4', '#e3b28f', '#cfa58a', '#efd2a9', '#d7b8a0', '#e9cbb2'];
+  let s = '';
+  let x = 0;
+  let k = 0;
+  while (x < 640) {
+    const w = 26 + ((k * 37) % 30);
+    const h = 26 + ((k * 53) % 46) + (x < 260 ? 18 : 0);
+    const y = 664 - h;
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${h + 8}" fill="${palette[k % palette.length]}"/>`;
+    s += `<rect x="${x}" y="${y}" width="${w}" height="3" fill="rgba(255,255,255,.35)"/>`;
+    s += windows(x, y, w, h, k);
+    x += w - 2;
+    k++;
+  }
+  // collina del Vomero con Castel Sant'Elmo stilizzato
+  s = `<path d="M0 600 C 80 560, 170 548, 250 566 C 300 576, 330 590, 380 612 L 380 664 L 0 664 Z" fill="#7d8f7a" opacity=".55"/>
+    <path d="M150 556 h60 v-14 h-10 v-8 h-40 v8 h-10 Z" fill="#c9b79b"/>` + s;
+  // Castel dell'Ovo sul suo isolotto
+  s += `<g transform="translate(560 640)">
+      <path d="M-40 26 C -20 14, 60 12, 120 26 Z" fill="#6f7f72"/>
+      <path d="M0 22 V-6 h16 v-8 h10 v8 h22 v-12 h12 v12 h26 v28 Z" fill="#d6c3a2"/>
+      <path d="M0 -6 h86 v4 H0 Z" fill="#b9a585"/>
+      ${[6, 30, 54, 74].map((xx) => `<rect x="${xx}" y="4" width="4" height="7" fill="rgba(14,52,68,.35)"/>`).join('')}
+    </g>`;
+  return s;
+}
+
+function pine() {
+  // pino marittimo in controluce, primo piano a sinistra (Posillipo)
+  return `<g class="np-pine" fill="#0b2a37">
+    <path d="M118 1000 C 126 880, 150 790, 214 700 C 236 670, 262 650, 290 640 L 298 650 C 270 664, 248 684, 230 712 C 176 794, 152 884, 150 1000 Z"/>
+    <path d="M214 700 C 200 680, 186 668, 170 662 L 174 654 C 194 660, 212 674, 226 692 Z"/>
+    <ellipse cx="300" cy="610" rx="190" ry="54"/>
+    <ellipse cx="200" cy="636" rx="120" ry="40"/>
+    <ellipse cx="410" cy="628" rx="110" ry="34"/>
+    <ellipse cx="300" cy="580" rx="120" ry="34"/>
+    <ellipse cx="120" cy="660" rx="80" ry="26"/>
+  </g>`;
+}
+
+function boat(x, y, s, cls) {
+  return `<g class="np-boat ${cls}" transform="translate(${x} ${y}) scale(${s})">
+    <path d="M-20 0 H22 L16 8 H-14 Z" fill="#f7f1e8"/>
+    <path d="M0 -2 V-44 L22 -4 Z" fill="#fffcf7"/><path d="M-2 -4 V-36 L-18 -4 Z" fill="#f2e6d6"/>
+  </g>`;
+}
+
+function naplesSvg({ id = 'np', stitch = true } = {}) {
+  const shimmer = Array.from({ length: 16 }, (_, i) => {
+    const y = 672 + i * 18 + (i * i) / 2;
+    const w = 40 + i * 14;
+    return `<line class="np-glint" style="--k:${i % 4}" x1="${1150 - w}" x2="${1150 + w}" y1="${y}" y2="${y}" stroke="#ffd9a8" stroke-width="${2 + i * 0.25}" stroke-linecap="round" stroke-dasharray="${8 + i} ${14 + i * 2}" opacity="${0.95 - i * 0.03}"/>`;
+  }).join('');
+  return `<svg class="naples" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustrazione del Golfo di Napoli al tramonto, con il Vesuvio, il lungomare e Castel dell'Ovo">
+  <defs>
+    <linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e3444"/><stop offset=".38" stop-color="#2b6a85"/>
+      <stop offset=".62" stop-color="#d9a98a"/><stop offset=".8" stop-color="#f4cfa4"/><stop offset="1" stop-color="#f7e2c4"/>
+    </linearGradient>
+    <radialGradient id="${id}-sun" cx="1150" cy="590" r="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff2d6" stop-opacity=".95"/><stop offset=".18" stop-color="#ffd59c" stop-opacity=".55"/><stop offset="1" stop-color="#ffd59c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="${id}-sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c8ea3"/><stop offset=".25" stop-color="#2e6f8b"/><stop offset="1" stop-color="#0e3444"/>
+    </linearGradient>
+    <linearGradient id="${id}-vol" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a5c70"/><stop offset=".7" stop-color="#6d8796"/><stop offset="1" stop-color="#8ea3ab"/>
+    </linearGradient>
+    <linearGradient id="${id}-haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7e2c4" stop-opacity="0"/><stop offset="1" stop-color="#f7e2c4" stop-opacity=".55"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#${id}-sky)"/>
+  <g class="np-stars" fill="#f7f1e8">${Array.from({ length: 26 }, (_, i) => `<circle cx="${(i * 233) % 1600}" cy="${30 + ((i * 97) % 240)}" r="${i % 3 === 0 ? 1.6 : 1}" opacity="${0.35 + (i % 4) * 0.12}"/>`).join('')}</g>
+  <circle cx="1150" cy="590" r="420" fill="url(#${id}-sun)" class="np-sunglow"/>
+  <g class="np-clouds" fill="#f7e2c4" opacity=".45">
+    <path class="np-cloud a" d="M120 300 q40 -26 90 -8 q30 -24 70 -4 q40 -6 52 18 H120 Z"/>
+    <path class="np-cloud b" d="M980 230 q50 -30 110 -10 q40 -22 84 2 q36 0 46 22 H980 Z"/>
+    <path class="np-cloud c" d="M560 360 q30 -18 70 -6 q30 -16 60 2 H560 Z"/>
+  </g>
+  <path d="M1360 640 C 1420 626, 1500 612, 1600 618 L1600 650 L1340 650 Z" fill="#7f97a3" opacity=".6"/>
+  <path d="M0 640 C 40 632, 90 630, 130 640 Z" fill="#7f97a3" opacity=".5"/>
+  <path class="np-vesuvio" d="${NAPLES_RIDGE} L1600 660 L600 660 Z" fill="url(#${id}-vol)"/>
+  <path d="${NAPLES_RIDGE}" fill="none" stroke="#ffd9b0" stroke-width="2" opacity=".55"/>
+  <path d="${NAPLES_RIDGE} L1600 660 L600 660 Z" fill="url(#${id}-haze)"/>
+  <rect x="0" y="652" width="1600" height="348" fill="url(#${id}-sea)"/>
+  <g class="np-glints">${shimmer}</g>
+  <g transform="translate(250 0)">${city()}</g>
+  ${boat(860, 760, 1.1, 'b1')}${boat(1320, 720, 0.75, 'b2')}${boat(420, 820, 1.4, 'b3')}
+  <g transform="translate(-150 40) scale(.92)">${pine()}</g>
+  <path d="M0 930 C 300 905, 700 912, 1000 930 C 1240 944, 1450 936, 1600 924 L1600 1000 L0 1000 Z" fill="#0b2a37" opacity=".9"/>
+  ${stitch ? `<g class="stitch-svg" transform="translate(0 -10)"><mask id="${id}-sew"><path class="reveal" pathLength="1" d="${NAPLES_RIDGE}" fill="none"/></mask>
+    <path class="thread" d="${NAPLES_RIDGE}" mask="url(#${id}-sew)"/>
+    <circle class="needle" r="7" style="offset-path: path('${NAPLES_RIDGE}')"/></g>` : ''}
+  </svg>`;
+}
+
+__exp.NAPLES_RIDGE = NAPLES_RIDGE;
+__exp.naplesSvg = naplesSvg;
+});
+__def("hero.js", function (__exp) {
+// Markup della hero, senza dipendenze dal DOM: usato dall'app e da
+// scripts/static_hero.mjs per scriverlo direttamente in index.html.
+const {naplesSvg} = __req("naples.js");
+
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+/** photo: { src, alt } caricata dall'admin nello spazio "hero_napoli"; senza, illustrazione. */
+function heroHtml(photo = null) {
+  const art = photo
+    ? `<img class="hero__photo" src="${esc(photo.src)}" alt="${esc(photo.alt)}" fetchpriority="high">`
+    : naplesSvg({ id: 'hn' });
+  return `<section class="hero hero--naples" aria-labelledby="hero-title">
+    <div class="hero__visual">
+      <div class="hero__par"><div class="hero__scene">${art}</div></div>
+      <div class="hero__scrim"></div>
+      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <span class="hero__badge">${photo ? 'Napoli' : 'Illustrazione provvisoria: qui andrà la foto di Napoli'}</span>
+    </div>
+    <div class="hero__content">
+      <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
+      <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
+      <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+      </div>
+    </div>
+    <ul class="hero__strip" aria-label="In breve">
+      <li><strong>Dal 1986</strong>Produzione a Casoria</li>
+      <li><strong>Prezzo di fabbrica</strong>Senza intermediari</li>
+      <li><strong>Su misura</strong>Misure e altezze a richiesta</li>
+      <li><strong>Spedizione gratuita</strong>In Italia, isole comprese</li>
+    </ul>
+  </section>`;
+}
+
+__exp.heroHtml = heroHtml;
+});
+__def("slots.js", function (__exp) {
+// Spazi immagine del sito (non legati a un prodotto). Finché non c'è una foto
+// approvata e pubblicata dall'admin, ogni spazio mostra un segnaposto dichiarato.
+const SITE_SLOTS = [
+  { key: 'hero_napoli', label: 'Apertura: Napoli', hint: 'Foto orizzontale del Golfo di Napoli con il Vesuvio, almeno 2400 px di larghezza', ratio: '16 / 9' },
+  { key: 'fabbrica_cucito', label: 'Fabbrica: reparto cucito', hint: 'Foto reale del reparto di Casoria, persone solo con consenso', ratio: '4 / 5' },
+  { key: 'fabbrica_taglio', label: 'Fabbrica: taglio delle lastre', hint: 'Foto reale di lavorazione', ratio: '4 / 5' },
+  { key: 'fabbrica_materiali', label: 'Fabbrica: materiali', hint: 'Dettaglio di Memory Foam, molle o tessuti', ratio: '4 / 5' },
+  { key: 'showroom', label: 'Showroom di Casoria', hint: "Foto dell'esposizione o dell'ingresso", ratio: '4 / 3' },
+];
+
+/** Spazi immagine dei prodotti: cosa fotografare per ogni scheda. */
+const PRODUCT_SLOTS = [
+  { slot: 'hero', label: 'Prodotto in prospettiva 3/4', hint: 'Sfondo neutro, luce morbida' },
+  { slot: 'exploded', label: 'Vista esplosa o sezione', hint: 'Strati reali del modello' },
+  { slot: 'fabric', label: 'Dettaglio del tessuto', hint: 'Fascia, cuciture, cerniera' },
+];
+
+__exp.SITE_SLOTS = SITE_SLOTS;
+__exp.PRODUCT_SLOTS = PRODUCT_SLOTS;
+});
 __def("motion.js", function (__exp) {
 // Movimento e micro-interazioni. Tutto rispetta prefers-reduced-motion e il
 // contenuto resta leggibile anche se nessuna animazione parte.
@@ -3113,6 +3305,7 @@ __def("admin.js", function (__exp) {
 
 const {formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex} = __req("core/index.js");
 const {store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api} = __req("store.js");
+const {SITE_SLOTS} = __req("slots.js");
 const {esc, $, $$, toast, copyText, confirmDialog, openDialog, icon, slugify, fmtDate} = __req("ui.js");
 
 const CRED = 'vs-admin-cred';
@@ -3171,6 +3364,7 @@ const SECTIONS = [
   ['admin', 'Panoramica'],
   ['admin-catalogo', 'Prodotti'],
   ['admin-categorie', 'Categorie'],
+  ['admin-immagini', 'Immagini del sito'],
   ['admin-richieste', 'Richieste'],
   ['admin-impostazioni', 'Impostazioni'],
   ['admin-storico', 'Storico'],
@@ -3444,6 +3638,27 @@ function saveProduct(form, { silent = false } = {}) {
   return true;
 }
 
+// ------------------------------------------------------------- immagini del sito
+function viewSiteImages() {
+  const list = db().site_media;
+  shell('admin-immagini', 'Immagini del sito', `
+    <p class="small muted">Ogni spazio mostra un segnaposto finché non carichi e pubblichi una foto. Le foto restano in bozza fino alla pubblicazione; il testo alternativo è obbligatorio.</p>
+    <div class="adm-slots">${SITE_SLOTS.map((def) => {
+      const m = list.find((x) => x.slot === def.key);
+      const src = m && media.resolve(m);
+      return `<section class="adm-card adm-slot" data-slot="${def.key}">
+        <h2 class="adm-h2" style="margin:0">${esc(def.label)}</h2>
+        <figure class="ph ${src ? 'ph--photo' : ''}" style="--ratio:${def.ratio}">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph__inner">${icon('image', 26)}<span>${esc(def.hint)}</span></div>`}</figure>
+        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : '<span class="st st--archived">Segnaposto</span>'}</p>
+        ${m ? `<label class="field"><span class="lbl small">Testo alternativo</span><input class="input" data-sf="alt" value="${esc(m.alt)}" placeholder="Descrivi cosa si vede"></label>` : ''}
+        <div class="btn-row">
+          <label class="btn btn--ghost btn--sm">${m ? 'Sostituisci' : 'Carica foto'}<input type="file" accept="image/jpeg,image/png,image/webp" data-adm-sitefile="${def.key}" hidden></label>
+          ${m ? `<button class="btn btn--sm ${m.published ? 'btn--ghost' : 'btn--primary'}" data-adm="s-pub" data-slot="${def.key}">${m.published ? 'Nascondi' : 'Pubblica'}</button><button class="btn btn--danger btn--sm" data-adm="s-del" data-slot="${def.key}">Rimuovi</button>` : ''}
+        </div>
+      </section>`;
+    }).join('')}</div>`);
+}
+
 // ------------------------------------------------------------- categorie
 function viewCategories() {
   const d = db();
@@ -3585,6 +3800,7 @@ async function render(app) {
   else if (r === 'admin-catalogo') viewCatalog();
   else if ((m = /^admin-prodotto-(.+)$/.exec(r))) viewProductEdit(m[1]);
   else if (r === 'admin-categorie') viewCategories();
+  else if (r === 'admin-immagini') viewSiteImages();
   else if (r === 'admin-richieste') viewRequests();
   else if ((m = /^admin-richiesta-(.+)$/.exec(r))) viewRequest(m[1]);
   else if (r === 'admin-impostazioni') viewSettings();
@@ -3738,6 +3954,33 @@ function bind() {
         rerender();
         scrollTo(0, y);
       }
+    }
+    if (t.dataset.sf === 'alt') {
+      const key = t.closest('[data-slot]').dataset.slot;
+      const m = db().site_media.find((x) => x.slot === key);
+      m.alt = t.value.trim();
+      if (!m.alt && m.published) m.published = false;
+      store.commit('catalog');
+      return;
+    }
+    const siteKey = t.dataset.admSitefile;
+    if (siteKey && t.files?.length) {
+      try {
+        const { blob, width, height } = await processUpload(t.files[0]);
+        const src = await media.putBlob(blob);
+        const list = db().site_media;
+        const old = list.find((x) => x.slot === siteKey);
+        if (old) {
+          await media.deleteBlob(old.src);
+          Object.assign(old, { src, width, height, published: false });
+        } else list.push({ id: store.rid(), slot: siteKey, src, alt: '', published: false, focal_x: 50, focal_y: 50, width, height });
+        store.audit('immagine del sito', siteKey, 'Foto caricata in bozza');
+        store.commit('catalog');
+        toast('Foto caricata in bozza: aggiungi il testo alternativo e pubblicala');
+      } catch (err) {
+        toast(err.message || 'Caricamento non riuscito');
+      }
+      return rerender();
     }
     const fileMode = t.dataset.admFile;
     if (fileMode && t.files?.length) {
@@ -3953,6 +4196,28 @@ function bind() {
         rerender();
         break;
       }
+      case 's-pub': {
+        const m = d.site_media.find((x) => x.slot === t.dataset.slot);
+        if (!m.published && !m.alt.trim()) {
+          toast('Scrivi il testo alternativo prima di pubblicare');
+          return $(`[data-slot="${t.dataset.slot}"] [data-sf="alt"]`)?.focus();
+        }
+        m.published = !m.published;
+        store.audit('immagine del sito', m.slot, m.published ? 'Pubblicata' : 'Nascosta');
+        store.commit('catalog');
+        toast(m.published ? 'Pubblicata: il sito è già aggiornato' : 'Nascosta: torna il segnaposto');
+        rerender();
+        break;
+      }
+      case 's-del': {
+        if (!(await confirmDialog('Rimuovere la foto?', 'Nello spazio tornerà il segnaposto.', 'Rimuovi', true))) return;
+        const m = d.site_media.find((x) => x.slot === t.dataset.slot);
+        await media.deleteBlob(m.src);
+        d.site_media = d.site_media.filter((x) => x !== m);
+        store.commit('catalog');
+        rerender();
+        break;
+      }
       case 'cat-add': {
         const c = { id: store.rid(), slug: 'nuova-categoria-' + Date.now().toString(36), kind: 'materasso', name: 'Nuova categoria', description: '', sort: 99, status: 'draft' };
         d.categories.push(c);
@@ -4028,9 +4293,11 @@ const {formatCents,
   localBusinessJsonLd,
   breadcrumbJsonLd,
   MAX_QTY,} = __req("core/index.js");
-const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus} = __req("store.js");
+const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage} = __req("store.js");
 const {esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion} = __req("ui.js");
 const {productIllustration, layersFor} = __req("illustrations.js");
+const {heroHtml} = __req("hero.js");
+const {SITE_SLOTS, PRODUCT_SLOTS} = __req("slots.js");
 const {enhance, bump, explode} = __req("motion.js");
 
 const CFG = window.VS_CONFIG ?? {};
@@ -4209,7 +4476,7 @@ function productCard(idx, p, { compare = false, d = 0 } = {}) {
   ].slice(0, 3);
   const cover = coverFor(idx, p);
   return `<article class="card rv" style="--d:${d}" data-pid="${esc(p.id)}">
-    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}<span class="card__note">${cover?.illustrative ? 'Render illustrativo' : cover ? '' : 'Schema illustrativo'}</span></div>
+    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}${cover?.illustrative ? '<span class="card__note">Render illustrativo</span>' : cover ? '' : '<span class="card__note card__note--ph">' + icon('image', 14) + ' Foto in arrivo</span>'}</div>
     <div class="card__body">
       <span class="card__tech">${esc(p.technical_name)}</span>
       <h3><a href="${href.product(p)}" data-act="to-product">${esc(p.name)}</a></h3>
@@ -4226,39 +4493,35 @@ function productCard(idx, p, { compare = false, d = 0 } = {}) {
 // Profilo dell'ombra del Vesuvio nella foto della hero (coordinate dell'immagine 1536×1024)
 const RIDGE = 'M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390';
 
-function heroHtml() {
-  return `<section class="hero" aria-labelledby="hero-title">
-    <div class="hero__visual">
-      <div class="hero__par">
-        <div class="hero__art">
-          <img src="img/hero-vesuvio-1536.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 180vw, 100vw" width="1536" height="1024" alt="Materasso trapuntato su una base blu, in una stanza luminosa dove il sole proietta sul muro l'ombra del Vesuvio" fetchpriority="high">
-          <svg class="stitch-svg" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <defs><mask id="sew"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
-            <path class="thread" d="${RIDGE}" mask="url(#sew)"/>
-            <circle class="needle" r="7" style="offset-path: path('${RIDGE}')"/>
-          </svg>
-        </div>
+/** Segnaposto dichiarato per una foto ancora da fornire. */
+function placeholderHtml(def, { cls = '' } = {}) {
+  return `<figure class="ph ${cls}" style="--ratio:${def.ratio ?? '4 / 3'}" role="img" aria-label="Spazio per foto: ${esc(def.label)}">
+    <div class="ph__inner">${icon('image', 30)}<strong>${esc(def.label)}</strong><span>${esc(def.hint ?? '')}</span><em>Foto in arrivo</em></div></figure>`;
+}
+function slotHtml(key, opts = {}) {
+  const def = SITE_SLOTS.find((x) => x.key === key);
+  const img = siteImage(key);
+  if (img) return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${def.ratio}"><img src="${esc(img.src)}" alt="${esc(img.alt)}" loading="lazy" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%"></figure>`;
+  return placeholderHtml(def, opts);
+}
+
+function statementHtml() {
+  return `<section class="statement" aria-labelledby="st-title"><div class="wrap statement__grid">
+    <figure class="statement__img rv">
+      <div class="statement__art">
+        <img src="img/hero-vesuvio-1024.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 94vw, 60vw" width="1536" height="1024" loading="lazy" alt="Materasso trapuntato su una base blu, con l'ombra del Vesuvio proiettata sul muro">
+        <svg class="stitch-svg stitch-svg--inview" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs><mask id="sew2"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
+          <path class="thread" d="${RIDGE}" mask="url(#sew2)"/></svg>
       </div>
-      <div class="hero__scrim"></div>
-      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <span class="hero__badge">Ambientazione illustrativa</span>
+      <figcaption>Ambientazione illustrativa</figcaption>
+    </figure>
+    <div class="statement__text rv" style="--d:1">
+      <h2 id="st-title">Il Vesuvio ce l'abbiamo davanti ogni mattina.</h2>
+      <p>Per questo il nostro marchio ha il suo profilo, e per questo cuciamo ogni materasso come si faceva in bottega: a mano dove serve, con materiali scelti e controllati in fabbrica.</p>
+      <a class="btn btn--primary" href="#materassi">Scegli il tuo materasso</a>
     </div>
-    <div class="hero__content">
-      <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
-      <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
-      <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
-      <div class="btn-row">
-        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
-        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
-      </div>
-    </div>
-    <ul class="hero__strip" aria-label="In breve">
-      <li><strong>Dal 1986</strong>Produzione a Casoria</li>
-      <li><strong>Prezzo di fabbrica</strong>Senza intermediari</li>
-      <li><strong>Su misura</strong>Misure e altezze a richiesta</li>
-      <li><strong>Spedizione gratuita</strong>In Italia, isole comprese</li>
-    </ul>
-  </section>`;
+  </div></section>`;
 }
 
 function layersHtml(idx, p) {
@@ -4330,7 +4593,7 @@ function showroomHtml(compact = false) {
         <a class="btn btn--ghost" href="https://maps.apple.com/?daddr=${dest}" target="_blank" rel="noopener">Apri in Mappe</a>
       </div>
     </div>
-    <div class="map-card rv" style="--d:1">
+    <div class="showroom__media rv" style="--d:1">${slotHtml('showroom')}<div class="map-card">
       <svg class="mapbg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="400" height="300" fill="#e3eef3"/>
         <g fill="none" stroke="#fffcf7" stroke-width="12" stroke-linecap="round"><path d="M-10 210 C80 190 160 200 240 160 S360 90 420 80"/><path d="M120 -10 C130 80 150 160 140 320"/></g>
@@ -4340,7 +4603,7 @@ function showroomHtml(compact = false) {
       <span class="pin-dot" aria-hidden="true"></span>
       <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 4px"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
         <p class="small muted" style="margin:0">${CFG.mapEmbed ? '' : 'La mappa interattiva si attiva sul sito pubblicato, dopo il consenso ai cookie.'}</p></div>
-    </div>
+    </div></div>
   </div>`;
 }
 
@@ -4350,8 +4613,9 @@ function viewHome() {
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
   setMeta('', '', [localBusinessJsonLd()]);
-  const staticHero = state.lastRoute === undefined ? $('#app > .hero') : null;
-  app.innerHTML = `${staticHero ? '' : heroHtml()}
+  const heroPhoto = siteImage('hero_napoli');
+  const staticHero = state.lastRoute === undefined && !heroPhoto ? $('#app > .hero') : null;
+  app.innerHTML = `${staticHero ? '' : heroHtml(heroPhoto)}
 
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
@@ -4359,6 +4623,8 @@ function viewHome() {
     <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
     <div class="num rv" style="--d:3"><b data-count="8" data-from="0">8</b><span>misure standard, più il su misura</span></div>
   </div></section>
+
+  ${statementHtml()}
 
   <section class="section" aria-labelledby="cat-title">
     <div class="wrap">
@@ -4387,6 +4653,9 @@ function viewHome() {
       </dl>
     </div>
   </section>
+  <section class="section--tight" aria-label="Foto della fabbrica"><div class="wrap">
+    <div class="ph-row">${['fabbrica_cucito', 'fabbrica_taglio', 'fabbrica_materiali'].map((k, i) => `<div class="rv" style="--d:${i}">${slotHtml(k)}</div>`).join('')}</div>
+  </div></section>
 
   ${pocket ? `<section class="section" aria-labelledby="inside-title"><div class="wrap">
       <div class="sec-head rv"><div><h2 id="inside-title">Dentro il ${esc(pocket.name.replace('Vesuvio ', ''))}</h2><p>Il nostro Hybrid: tocca i numeri per vedere i componenti.</p></div>
@@ -4571,23 +4840,41 @@ function viewProduct(slug) {
   }
 }
 
+function galleryItems(idx, p, gallery) {
+  const kind = idx.kind(p);
+  const items = gallery.map((m) => ({ type: 'media', m }));
+  if (!items.length) items.push({ type: 'illus' });
+  const have = new Set(gallery.map((m) => m.slot));
+  const slots = kind === 'guanciale' || kind === 'rete' ? PRODUCT_SLOTS.filter((x) => x.slot !== 'exploded') : PRODUCT_SLOTS;
+  for (const def of slots) if (!have.has(def.slot)) items.push({ type: 'ph', def });
+  return items;
+}
 function galleryHtml(idx, p, gallery, i) {
-  if (!gallery.length) {
-    const kind = idx.kind(p);
+  const kind = idx.kind(p);
+  const items = galleryItems(idx, p, gallery);
+  const it = items[i] ?? items[0];
+  let main;
+  if (it.type === 'illus') {
     const layered = kind === 'materasso' || kind === 'topper';
-    return `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
+    main = `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
       <span class="gallery__label" style="top:14px;bottom:auto">Schema illustrativo, non in scala</span>
-      ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>
-      <p class="small muted" style="margin-top:10px">Le foto del prodotto saranno pubblicate appena disponibili.</p>`;
+      ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>`;
+  } else if (it.type === 'ph') {
+    main = `<div class="gallery__main gallery__main--ph">${placeholderHtml({ ...it.def, ratio: '3 / 2' }, { cls: 'ph--fill' })}</div>`;
+  } else {
+    const m = it.m;
+    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
+    main = `<div class="gallery__main">${tag || fallbackHtml(kind)}
+      ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${gallery.indexOf(m)}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
+      ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>`;
   }
-  const m = gallery[i] ?? gallery[0];
-  const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
-  return `<div class="gallery__main">${tag || fallbackHtml(idx.kind(p))}
-      ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${i}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
-      ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>
-    ${gallery.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${gallery
-      .map((g, j) => `<button class="thumb" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="Mostra immagine ${j + 1}: ${esc(g.alt)}">${imgTag(g, { sizes: '80px' }) || ''}</button>`)
-      .join('')}</div>` : ''}`;
+  const thumb = (t, j) => {
+    const inner = t.type === 'media' ? imgTag(t.m, { sizes: '80px' }) || '' : t.type === 'illus' ? productIllustration(p, kind) : `<span class="thumb__ph">${icon('image', 18)}</span>`;
+    const label = t.type === 'media' ? t.m.alt : t.type === 'illus' ? 'Schema illustrativo' : `Spazio per foto: ${t.def.label}`;
+    return `<button class="thumb ${t.type === 'ph' ? 'thumb--ph' : ''}" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="${esc(label)}">${inner}</button>`;
+  };
+  return `${main}<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>
+    ${gallery.length ? '' : '<p class="small muted" style="margin-top:8px">Le foto del prodotto saranno pubblicate appena disponibili.</p>'}`;
 }
 
 function renderBuy(idx, p) {
@@ -5118,6 +5405,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const g = mediaFor(cp.idx, cp.p);
       $('[data-gallery]').innerHTML = galleryHtml(cp.idx, cp.p, g, Number(t.dataset.i));
+      if ($('#gal-stage')) explode($('#gal-stage'), 0.6, 700);
       $(`[data-act="thumb"][data-i="${t.dataset.i}"]`)?.focus();
       break;
     }

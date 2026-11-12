@@ -33,11 +33,12 @@ function writeLS(key, val) {
 }
 
 function freshDb() {
-  return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [] };
+  return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [], site_media: [] };
 }
 
 let db = readLS(DB_KEY) ?? freshDb();
 if (!db.seed_version) db = freshDb();
+db.site_media ??= [];
 const listeners = new Set();
 
 export const store = {
@@ -106,7 +107,7 @@ function idbReq(mode, fn) {
 export const media = {
   async init() {
     idb = await openIdb();
-    const keys = db.media.filter((m) => m.src.startsWith('idb:')).map((m) => m.src.slice(4));
+    const keys = [...db.media, ...(db.site_media ?? [])].filter((m) => m.src.startsWith('idb:')).map((m) => m.src.slice(4));
     for (const k of keys) {
       try {
         const b = await idbReq('readonly', (s) => s.get(k));
@@ -156,6 +157,14 @@ export async function processUpload(file) {
   c.getContext('2d').drawImage(bmp, 0, 0, w, h);
   const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.85));
   return { blob: blob ?? file, width: w, height: h };
+}
+
+/** Foto pubblicata in uno spazio del sito, oppure null (si mostra il segnaposto). */
+export function siteImage(key, { drafts = false } = {}) {
+  const m = (db.site_media ?? []).find((x) => x.slot === key && (drafts || x.published));
+  if (!m) return null;
+  const src = media.resolve(m);
+  return src ? { ...m, src } : null;
 }
 
 // ---------- Catalogo ----------
