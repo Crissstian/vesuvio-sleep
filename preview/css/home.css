@@ -333,6 +333,7 @@ body.is-scrolled .brand img {
 .hero {
   position: relative;
   margin-top: calc(-1 * var(--header-h));
+  height: max(620px, min(calc(100vh - var(--topbar-h)), 980px));
   height: max(620px, min(calc(100svh - var(--topbar-h)), 980px));
   overflow: hidden;
   background: #e8dccb;
@@ -628,6 +629,11 @@ body.is-scrolled .brand img {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .stitch-svg .needle {
+    display: none;
+  }
+}
+@supports not (offset-path: path('M0 0')) {
   .stitch-svg .needle {
     display: none;
   }
