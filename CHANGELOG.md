@@ -1,5 +1,12 @@
 # Changelog
 
+## Apertura su Napoli e segnaposto foto (12/11/2026, notte)
+- Corretto il blocco all'avvio: IndexedDB non fermava più il primo disegno della pagina. Hero e ticker sono già nell'HTML; in caso di errore compare un avviso visibile.
+- Apertura con un panorama illustrato del Golfo di Napoli (Vesuvio, lungomare, Castel dell'Ovo, pino di Posillipo) e un ingresso a strati: il mare luccica, le barche ondeggiano, le nuvole scorrono e la cucitura ricalca il profilo del Vesuvio. È un segnaposto dichiarato: la foto reale si carica in Admin › Immagini del sito.
+- Segnaposto «Foto in arrivo» per tutte le immagini mancanti: card dei prodotti, galleria della scheda (prospettiva 3/4, esploso, tessuto), fabbrica (cucito, taglio, materiali) e showroom.
+- Nuova sezione con il render dell'ombra del Vesuvio e la cucitura che si disegna quando entra in vista.
+- Verificata la pagina pubblicata in Chrome: nessun errore in console. Corretta la sovrapposizione tra titolo e menu su schermi bassi.
+
 ## Revisione estetica (12/11/2026, sera)
 - **Causa della pagina "vuota":** nel visualizzatore degli artifact, che gira in un frame isolato, gli script caricati come moduli ES venivano bloccati e restavano visibili solo intestazione e footer. Ora `scripts/bundle.py` unisce tutto in uno script classico (`js/bundle.js`); un test e2e verifica il rendering in un iframe con origine opaca.
 - Nuova hero a tutto schermo con `hero-alternativa` (ambientazione illustrativa): un punto a filo animato ricalca l'ombra del Vesuvio sul muro. Il titolo entra a righe e il fondo resta leggero sul puntatore; l'header è trasparente sopra la foto.

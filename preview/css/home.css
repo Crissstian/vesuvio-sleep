@@ -333,8 +333,10 @@ body.is-scrolled .brand img {
 .hero {
   position: relative;
   margin-top: calc(-1 * var(--header-h));
-  height: max(620px, min(calc(100vh - var(--topbar-h)), 980px));
-  height: max(620px, min(calc(100svh - var(--topbar-h)), 980px));
+  min-height: max(620px, min(calc(100vh - var(--topbar-h)), 980px));
+  min-height: max(620px, min(calc(100svh - var(--topbar-h)), 980px));
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: #e8dccb;
   isolation: isolate;
@@ -395,10 +397,11 @@ body.is-scrolled .brand img {
 .hero__content {
   position: relative;
   z-index: 2;
-  height: 100%;
+  flex: 1;
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: calc(var(--header-h) + 24px) var(--pad) 128px;
+  padding: calc(var(--header-h) + 40px) var(--pad) 128px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

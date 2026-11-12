@@ -22,7 +22,9 @@ Stato al 12/11/2026. Ogni voce indica se è **verificato**, solo **predisposto**
 | Foto definitive per prodotto | **Mancanti** per 9 prodotti pubblicati su 10. Solo il Pocket 2400 Elite ha immagini (render illustrativi, etichettati). Gli altri usano un'illustrazione sobria di categoria, sostituibile da admin senza toccare il codice. |
 | Render «da assegnare» e foto di riferimento | **Non pubblicati**: serve indicare modello/SKU e autorizzazione per ciascuno. |
 | Foto reale di fabbrica/showroom | **Mancante**: la scena «lavorazione» è generata ed è indicata come illustrativa. |
-| Immagine della hero | Usata `hero-alternativa` (alternativa hero prevista dalla mappa asset), etichettata «Ambientazione illustrativa». Il materasso nella foto non è associato a nessun modello. Confermare i diritti d'uso. |
+| Foto di Napoli per l'apertura | **Mancante**: ora c'è un panorama illustrato con l'etichetta «Illustrazione provvisoria». Serve una foto con diritti d'uso; si carica da Admin › Immagini del sito (spazio «Apertura: Napoli»). |
+| Foto reali di fabbrica (cucito, taglio, materiali) e showroom | **Mancanti**: al loro posto ci sono segnaposto «Foto in arrivo». |
+| Render dell'ombra del Vesuvio | Usata `hero-alternativa` (alternativa hero prevista dalla mappa asset), etichettata «Ambientazione illustrativa». Il materasso nella foto non è associato a nessun modello. Confermare i diritti d'uso. |
 | Illustrazioni schematiche a strati | Generate dalla composizione pubblica del dataset, etichettate «non in scala». Da sostituire con le foto approvate dall'admin. |
 | Pocket 2400 Elite H30 | Prezzi **mancanti**: variante visibile ma disabilitata. |
 | Topper Memory Cloud 5 | Prezzi **mancanti**: in bozza, categoria nascosta dal menu. SKU `VS-TOP-MC5-…` è una proposta da confermare. |
