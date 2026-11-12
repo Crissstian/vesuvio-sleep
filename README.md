@@ -21,7 +21,7 @@ npm run build:seed     # rigenera preview/js/seed.js e supabase/seed.sql dal JSO
 npm run serve          # http://localhost:8765
 ```
 
-La preview non richiede build né dipendenze: basta servire `preview/`.
+La preview non richiede dipendenze: basta servire `preview/`. Dopo aver modificato i file in `preview/js/`, esegui `npm run build:bundle`. La pagina carica `js/bundle.js`, uno script classico, perché i moduli ES vengono bloccati nei frame isolati come il visualizzatore degli artifact.
 
 **Admin:** apri `#admin`. Al primo accesso crei una password, perché non esistono password predefinite. L'accesso è locale al browser e non sostituisce Supabase Auth.
 

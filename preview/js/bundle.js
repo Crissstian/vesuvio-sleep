@@ -1,0 +1,5340 @@
+/* Generato da scripts/bundle.py: non modificare a mano. */
+(function () {
+'use strict';
+const __defs = {}, __cache = {};
+function __def(n, f) { __defs[n] = f; }
+function __req(n) { if (!__cache[n]) { __cache[n] = {}; __defs[n](__cache[n]); } return __cache[n]; }
+__def("core/types.js", function (__exp) {
+// Tipi di dominio condivisi tra preview statica e futura app Next.js.
+// Rispecchiano le tabelle in supabase/migrations.
+
+
+
+});
+__def("core/catalog.js", function (__exp) {
+const STANDARD_SIZES = ['80x190', '90x200', '120x190', '140x190', '160x190', '165x190', '170x200', '180x200'];
+const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+function formatCents(cents) {
+    return eur.format(cents / 100);
+}
+/** "1.234,50" / "220" / "220.5" -> centesimi; null se non valido. */
+function parseEuroToCents(input) {
+    const s = String(input).trim().replace(/\s|€/g, '');
+    if (!s)
+        return null;
+    const norm = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s;
+    if (!/^\d+(\.\d{1,2})?$/.test(norm))
+        return null;
+    return Math.round(parseFloat(norm) * 100);
+}
+function formatSize(size) {
+    return size ? size.replace('x', '×') : '';
+}
+function parseSize(size) {
+    const m = /^(\d{2,3})x(\d{3})$/.exec(size);
+    return m ? { w: Number(m[1]), l: Number(m[2]) } : null;
+}
+// --- SKU (Master Spec §13) ---
+function mattressSku(line, height, size) {
+    return `VS-${line}-H${height}-${size.replace('x', '')}`;
+}
+function baseSku(line, size) {
+    return `VS-RETE-${line}-${size.replace('x', '')}`;
+}
+function pillowSku(line) {
+    return `VS-GUA-${line}`;
+}
+/** Proposta per i topper: non definita nel Master Spec, da confermare. */
+function topperSku(line, size) {
+    return `VS-TOP-${line}-${size.replace('x', '')}`;
+}
+function customSku(date, id) {
+    const d = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return `VS-CUSTOM-${d}-${id}`;
+}
+function skuFor(kind, line, size, height) {
+    if (kind === 'materasso' && size && height)
+        return mattressSku(line, height, size);
+    if (kind === 'rete' && size)
+        return baseSku(line, size);
+    if (kind === 'topper' && size)
+        return topperSku(line, size);
+    if (kind === 'guanciale')
+        return pillowSku(line);
+    return `VS-${line}${size ? '-' + size.replace('x', '') : ''}${height ? '-H' + height : ''}`;
+}
+const AVAILABILITY_LABEL = {
+    available: 'Disponibile',
+    in_production: 'In produzione',
+    made_to_order: 'Realizzato su ordinazione',
+    unavailable: 'Non acquistabile online',
+};
+// --- Regole di acquistabilità ---
+function isVariantPurchasable(v, p, c) {
+    return (v.active &&
+        v.price_cents !== null &&
+        v.price_cents > 0 &&
+        v.availability !== 'unavailable' &&
+        p.status === 'published' &&
+        !!c &&
+        c.status === 'published');
+}
+class CatalogIndex {
+    constructor(snap) {
+        this.snap = snap;
+        this.byProduct = new Map();
+        this.products = new Map();
+        this.categories = new Map();
+        this.variants = new Map();
+        for (const c of snap.categories)
+            this.categories.set(c.id, c);
+        for (const p of snap.products)
+            this.products.set(p.id, p);
+        for (const v of snap.variants) {
+            this.variants.set(v.id, v);
+            const arr = this.byProduct.get(v.product_id) ?? [];
+            arr.push(v);
+            this.byProduct.set(v.product_id, arr);
+        }
+        for (const arr of this.byProduct.values())
+            arr.sort((a, b) => a.sort - b.sort);
+    }
+    category(p) {
+        return this.categories.get(p.category_id);
+    }
+    kind(p) {
+        return this.category(p)?.kind;
+    }
+    variantsOf(p, onlyActive = true) {
+        const all = this.byProduct.get(p.id) ?? [];
+        return onlyActive ? all.filter((v) => v.active) : all;
+    }
+    purchasableVariants(p) {
+        const c = this.category(p);
+        return this.variantsOf(p).filter((v) => isVariantPurchasable(v, p, c));
+    }
+    isProductPurchasable(p) {
+        return this.purchasableVariants(p).length > 0;
+    }
+    minPrice(p) {
+        const prices = this.purchasableVariants(p).map((v) => v.price_cents);
+        return prices.length ? Math.min(...prices) : null;
+    }
+    maxPrice(p) {
+        const prices = this.purchasableVariants(p).map((v) => v.price_cents);
+        return prices.length ? Math.max(...prices) : null;
+    }
+    /** Prodotti pubblici: pubblicati, in categoria pubblicata, con almeno una variante acquistabile. */
+    publicProducts(kind) {
+        return this.snap.products
+            .filter((p) => p.status === 'published' && this.category(p)?.status === 'published')
+            .filter((p) => !kind || this.kind(p) === kind)
+            .filter((p) => this.isProductPurchasable(p))
+            .sort((a, b) => a.sort - b.sort);
+    }
+    /** Categorie da mostrare nel menu commerciale: solo con articoli acquistabili. */
+    commercialCategories() {
+        return this.snap.categories
+            .filter((c) => c.status === 'published')
+            .filter((c) => this.publicProducts(c.kind).length > 0)
+            .sort((a, b) => a.sort - b.sort);
+    }
+    sizesOf(p) {
+        const s = new Set();
+        for (const v of this.variantsOf(p))
+            if (v.size)
+                s.add(v.size);
+        return STANDARD_SIZES.filter((x) => s.has(x)).concat([...s].filter((x) => !STANDARD_SIZES.includes(x)));
+    }
+    heightsOf(p) {
+        const s = new Set();
+        for (const v of this.variantsOf(p))
+            if (v.height_cm)
+                s.add(v.height_cm);
+        return [...s].sort((a, b) => a - b);
+    }
+    findVariant(p, size, height) {
+        return this.variantsOf(p).find((v) => (v.size ?? null) === (size ?? null) && (v.height_cm ?? null) === (height ?? null));
+    }
+    purchasableHeights(p) {
+        const s = new Set();
+        for (const v of this.purchasableVariants(p))
+            if (v.height_cm)
+                s.add(v.height_cm);
+        return [...s].sort((a, b) => a - b);
+    }
+    /** Variante acquistabile più economica per una misura (es. abbinamenti). */
+    cheapestAtSize(p, size) {
+        return this.purchasableVariants(p)
+            .filter((v) => (size ? v.size === size : true))
+            .sort((a, b) => a.price_cents - b.price_cents)[0];
+    }
+}
+
+__exp.STANDARD_SIZES = STANDARD_SIZES;
+__exp.formatCents = formatCents;
+__exp.parseEuroToCents = parseEuroToCents;
+__exp.formatSize = formatSize;
+__exp.parseSize = parseSize;
+__exp.mattressSku = mattressSku;
+__exp.baseSku = baseSku;
+__exp.pillowSku = pillowSku;
+__exp.topperSku = topperSku;
+__exp.customSku = customSku;
+__exp.skuFor = skuFor;
+__exp.AVAILABILITY_LABEL = AVAILABILITY_LABEL;
+__exp.isVariantPurchasable = isVariantPurchasable;
+__exp.CatalogIndex = CatalogIndex;
+});
+__def("core/pairings.js", function (__exp) {
+/** Regole del prompt: mai un altro materasso come complemento di un materasso. */
+const PAIRING_RULES = {
+    materasso: ['rete', 'guanciale', 'topper'],
+    rete: ['materasso'],
+    guanciale: ['materasso', 'topper'],
+    topper: ['materasso', 'guanciale'],
+    letto: [],
+};
+const SIZED = ['materasso', 'rete', 'topper'];
+function pairingsFor(idx, product, selectedSize, excludeVariantIds = []) {
+    const kind = idx.kind(product);
+    if (!kind)
+        return [];
+    const groups = [];
+    const seen = new Set([product.id]);
+    for (const target of PAIRING_RULES[kind]) {
+        const items = [];
+        for (const p of idx.publicProducts(target)) {
+            if (seen.has(p.id))
+                continue;
+            let variant;
+            if (SIZED.includes(target) && SIZED.includes(kind) && selectedSize) {
+                // compatibilità dimensionale: solo la stessa misura, altrimenti si salta
+                variant = idx.cheapestAtSize(p, selectedSize);
+                if (!variant)
+                    continue;
+            }
+            else if (!SIZED.includes(target)) {
+                const vs = idx.purchasableVariants(p);
+                variant = vs.length === 1 ? vs[0] : undefined;
+            }
+            if (variant && excludeVariantIds.includes(variant.id))
+                continue;
+            const fromPrice = variant ? variant.price_cents : idx.minPrice(p);
+            seen.add(p.id);
+            items.push({ product: p, variant, fromPrice });
+        }
+        if (items.length)
+            groups.push({ kind: target, items });
+    }
+    return groups;
+}
+
+__exp.PAIRING_RULES = PAIRING_RULES;
+__exp.pairingsFor = pairingsFor;
+});
+__def("core/sleepMatch.js", function (__exp) {
+const W = { lt60: 0, '60-85': 1, '85-110': 2, gt110: 3 };
+/**
+ * Restituisce UN solo materasso reale e acquistabile. Nessun budget, nessuna diagnosi.
+ * Le motivazioni citano solo caratteristiche documentate del prodotto.
+ */
+function sleepMatch(idx, a) {
+    const candidates = idx.publicProducts('materasso').filter((p) => p.match);
+    if (!candidates.length)
+        return null;
+    const sleepers = [a.me, ...(a.sleepers === 'couple' && a.partner ? [a.partner] : [])];
+    const maxW = Math.max(...sleepers.map((s) => W[s.weight]));
+    const feels = sleepers.map((s) => s.feel);
+    const wantsWelcome = feels.includes('accogliente') && !feels.includes('sostenuto');
+    const wantsSupport = feels.includes('sostenuto') && !feels.includes('accogliente');
+    const mixedFeel = feels.includes('accogliente') && feels.includes('sostenuto');
+    let best = null;
+    for (const p of candidates) {
+        const t = p.match;
+        let s = 0;
+        const r = [];
+        const add = (pts, reason) => {
+            s += pts;
+            if (reason && pts > 0)
+                r.push([pts, reason]);
+        };
+        if (t.independent_springs) {
+            if (maxW >= 2)
+                add(3, 'Le molle indipendenti insacchettate offrono un sostegno pensato anche per corporature più robuste.');
+            if (a.sleepers === 'couple' && a.partnerMotion === 'importante')
+                add(4, 'Le molle insacchettate lavorano in modo indipendente: aiuta a percepire meno i movimenti di chi dorme accanto.');
+            else if (a.sleepers === 'couple')
+                add(1);
+            if (wantsSupport)
+                add(2, 'Ha una risposta sostenuta, come preferisci.');
+            if (mixedFeel)
+                add(1);
+        }
+        if (t.tech === 'memory') {
+            if (wantsWelcome)
+                add(3, 'Lo strato in Memory Foam rende il piano più accogliente, come preferisci.');
+            if (a.position === 'fianco' || a.focus === 'spalle')
+                add(2, 'Chi dorme sul fianco di solito apprezza un piano accogliente in corrispondenza delle spalle.');
+        }
+        if (t.ventilation) {
+            if (a.heat === 'spesso')
+                add(4, 'La fascia perimetrale 3D traspirante favorisce il ricambio d\'aria lungo i lati.');
+            if (a.heat === 'a-volte')
+                add(2, 'La fascia perimetrale 3D traspirante aiuta il ricambio d\'aria.');
+        }
+        if (p.summer_winter && a.heat !== 'raramente')
+            add(1, 'È reversibile, con un lato invernale e uno estivo.');
+        if (t.tech === 'foam') {
+            if (!wantsWelcome && maxW <= 1)
+                add(2, 'L\'anima monoblocco in poliuretano ad alta densità dà un sostegno uniforme.');
+            if (a.focus === 'schiena' && maxW <= 1)
+                add(1);
+            if (a.position === 'pancia')
+                add(1);
+        }
+        if (a.position === 'pancia' && t.welcome <= 1)
+            add(1);
+        if (a.focus === 'schiena' && t.welcome <= 1 && maxW >= 2)
+            add(1);
+        if (a.tech !== 'non-so' && a.tech === t.tech)
+            add(2, 'Corrisponde alla tecnologia che preferisci.');
+        if (a.removable) {
+            if (p.removable_cover)
+                add(1, 'Ha il rivestimento sfoderabile.');
+            else
+                add(-6);
+        }
+        // a parità di punteggio vince l'ordine di catalogo (candidates è già ordinato)
+        if (!best || s > best.s)
+            best = { p, s, r };
+    }
+    if (!best)
+        return null;
+    const reasons = best.r.sort((x, y) => y[0] - x[0]).map((x) => x[1]);
+    const uniq = [...new Set(reasons)].slice(0, 3);
+    if (uniq.length < 2 && best.p.composition)
+        uniq.push(best.p.composition);
+    const heights = idx.purchasableHeights(best.p);
+    let height = null;
+    let heightReason = null;
+    if (heights.length) {
+        const max = heights[heights.length - 1];
+        if ((maxW >= 2 || a.sleepers === 'couple') && heights.length > 1) {
+            height = max;
+            heightReason = `Ti proponiamo H${max}, la più alta disponibile per questo modello: è la scelta che suggeriamo per ${a.sleepers === 'couple' ? 'chi dorme in due' : 'corporature più robuste'}.`;
+        }
+        else {
+            height = heights.includes(25) ? 25 : heights[0];
+            heightReason = heights.length > 1 ? `H${height} è un buon punto di partenza; nella scheda puoi scegliere le altre altezze.` : null;
+        }
+        if (heights.length === 1) {
+            heightReason = `Online è disponibile in H${height}; per altre altezze puoi chiedere un preventivo.`;
+        }
+    }
+    return { product: best.p, height, reasons: uniq.slice(0, 3), heightReason };
+}
+
+__exp.sleepMatch = sleepMatch;
+});
+__def("core/whatsapp.js", function (__exp) {
+const {formatCents, formatSize} = __req("core/catalog.js");
+/** Oltre questa lunghezza di URL alcuni client troncano: si passa al messaggio breve. */
+const WA_MAX_URL = 1900;
+/** Accetta solo numeri in formato internazionale (prefisso paese obbligatorio), senza indovinarlo. */
+function normalizeWhatsAppNumber(raw) {
+    if (!raw || !String(raw).trim())
+        return { ok: false, reason: 'Numero non configurato.' };
+    let s = String(raw).trim().replace(/[\s().-]/g, '');
+    if (s.startsWith('+'))
+        s = s.slice(1);
+    else if (s.startsWith('00'))
+        s = s.slice(2);
+    else
+        return { ok: false, reason: 'Inserisci il numero con il prefisso internazionale, per esempio +39…' };
+    if (!/^\d{8,15}$/.test(s))
+        return { ok: false, reason: 'Il numero deve contenere da 8 a 15 cifre dopo il prefisso.' };
+    if (s.startsWith('0'))
+        return { ok: false, reason: 'Il prefisso internazionale non può iniziare con 0.' };
+    return { ok: true, digits: s };
+}
+function lineText(l, i) {
+    const spec = [l.size ? formatSize(l.size) : null, l.height_cm ? `H${l.height_cm}` : null].filter(Boolean).join(', ');
+    return `${i + 1}) ${l.name}${spec ? ' – ' + spec : ''}\n   SKU ${l.sku} · ${l.qty} × ${formatCents(l.unit_cents)} = ${formatCents(l.unit_cents * l.qty)}`;
+}
+/** Riepilogo completo: è anche il testo del pulsante "Copia il riepilogo". Nessun dato personale. */
+function buildFullMessage(s) {
+    return [
+        'Ciao Vesuvio Sleep, vorrei confermare questa richiesta dal sito.',
+        `Riferimento: ${s.ref}`,
+        '',
+        ...s.lines.map(lineText),
+        '',
+        `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
+        ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
+        '',
+        'Attendo la vostra conferma su disponibilità e consegna.',
+    ].join('\n');
+}
+function buildShortMessage(s) {
+    const n = s.lines.reduce((a, l) => a + l.qty, 0);
+    return [
+        'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
+        `Riferimento: ${s.ref}`,
+        `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+        'Incollo qui sotto il riepilogo completo copiato dal sito.',
+    ].join('\n');
+}
+function waLink(digits, text) {
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+function planWhatsApp(rawNumber, s) {
+    const full = buildFullMessage(s);
+    const num = normalizeWhatsAppNumber(rawNumber);
+    if (!num.ok)
+        return { url: null, text: full, short: false, fullText: full, numberError: num.reason };
+    const fullUrl = waLink(num.digits, full);
+    if (fullUrl.length <= WA_MAX_URL)
+        return { url: fullUrl, text: full, short: false, fullText: full, numberError: null };
+    const short = buildShortMessage(s);
+    return { url: waLink(num.digits, short), text: short, short: true, fullText: full, numberError: null };
+}
+function buildQuoteMessage(q) {
+    return [
+        'Ciao Vesuvio Sleep, vorrei un preventivo per un fuori misura.',
+        `Riferimento: ${q.ref}`,
+        `Prodotto: ${q.product}`,
+        `Misura: ${q.width_cm}×${q.length_cm} cm${q.height_cm ? `, altezza ${q.height_cm} cm` : ''}`,
+        ...(q.notes.trim() ? [`Note: ${q.notes.trim()}`] : []),
+    ].join('\n');
+}
+/** Riferimento leggibile e univoco: VS-R-20261112-7KQ4 (richiesta) o VS-Q-… (preventivo). */
+function makeRef(prefix, date, rand = Math.random) {
+    const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 4; i++)
+        code += alphabet[Math.floor(rand() * alphabet.length)];
+    const d = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return `VS-${prefix}-${d}-${code}`;
+}
+
+__exp.WA_MAX_URL = WA_MAX_URL;
+__exp.normalizeWhatsAppNumber = normalizeWhatsAppNumber;
+__exp.buildFullMessage = buildFullMessage;
+__exp.buildShortMessage = buildShortMessage;
+__exp.waLink = waLink;
+__exp.planWhatsApp = planWhatsApp;
+__exp.buildQuoteMessage = buildQuoteMessage;
+__exp.makeRef = makeRef;
+});
+__def("core/cart.js", function (__exp) {
+const {isVariantPurchasable} = __req("core/catalog.js");
+const MAX_QTY = 20;
+/**
+ * Ricontrolla prezzo, pubblicazione e disponibilità. In produzione la stessa
+ * logica gira lato server (funzione SQL validate_cart / route handler).
+ */
+function validateCart(idx, items) {
+    const lines = items.map((item) => {
+        const variant = idx.variants.get(item.variant_id);
+        const product = variant ? idx.products.get(variant.product_id) : undefined;
+        if (!variant || !product)
+            return { item, status: 'missing', unit_cents: null, message: 'Questo articolo non è più nel catalogo.' };
+        if (!isVariantPurchasable(variant, product, idx.category(product)))
+            return { item, status: 'unavailable', product, variant, unit_cents: null, message: 'Questa configurazione non è più acquistabile online.' };
+        const unit = variant.price_cents;
+        if (item.seen_price_cents !== null && item.seen_price_cents !== unit)
+            return { item, status: 'price_changed', product, variant, unit_cents: unit, message: 'Il prezzo è cambiato da quando lo hai aggiunto. Controlla e conferma.' };
+        return { item, status: 'ok', product, variant, unit_cents: unit, message: null };
+    });
+    const total = lines.reduce((a, l) => a + (l.status === 'ok' ? l.unit_cents * l.item.qty : 0), 0);
+    const issues = lines.filter((l) => l.status !== 'ok').length;
+    return { lines, total_cents: total, canSubmit: lines.length > 0 && issues === 0, issues };
+}
+function toSummaryLines(v) {
+    return v.lines
+        .filter((l) => l.status === 'ok')
+        .map((l) => ({
+        name: l.product.name,
+        size: l.variant.size,
+        height_cm: l.variant.height_cm,
+        sku: l.variant.sku,
+        qty: l.item.qty,
+        unit_cents: l.unit_cents,
+    }));
+}
+function addToCart(items, variant, qty = 1) {
+    const out = items.map((i) => ({ ...i }));
+    const ex = out.find((i) => i.variant_id === variant.id);
+    if (ex) {
+        ex.qty = Math.min(MAX_QTY, ex.qty + qty);
+        ex.seen_price_cents = variant.price_cents;
+    }
+    else
+        out.push({ variant_id: variant.id, qty: Math.min(MAX_QTY, qty), seen_price_cents: variant.price_cents });
+    return out;
+}
+
+__exp.MAX_QTY = MAX_QTY;
+__exp.validateCart = validateCart;
+__exp.toSummaryLines = toSummaryLines;
+__exp.addToCart = addToCart;
+});
+__def("core/seo.js", function (__exp) {
+const BUSINESS = {
+    name: 'Vesuvio Sleep',
+    legalName: "MATERASSI D'AUTORE A.V. S.R.L.S.",
+    vat: '10456501211',
+    street: 'Via Raffaele Salierno 38',
+    postalCode: '80026',
+    locality: 'Casoria',
+    region: 'NA',
+    country: 'IT',
+    since: 1986,
+    hours: [
+        { days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '09:00', closes: '18:00' },
+        { days: ['Saturday'], opens: '10:00', closes: '14:00' },
+    ],
+};
+const AV = {
+    available: 'https://schema.org/InStock',
+    in_production: 'https://schema.org/MadeToOrder',
+    made_to_order: 'https://schema.org/MadeToOrder',
+};
+/** Dati strutturati prodotto: solo prezzi e stati reali, nessun rating. */
+function productJsonLd(idx, p, opts = {}) {
+    const vs = idx.purchasableVariants(p);
+    if (!vs.length)
+        return null;
+    const low = idx.minPrice(p);
+    const high = idx.maxPrice(p);
+    const avail = AV[vs[0].availability] ?? 'https://schema.org/MadeToOrder';
+    const ld = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: p.name,
+        description: p.short,
+        brand: { '@type': 'Brand', name: BUSINESS.name },
+        sku: vs.length === 1 ? vs[0].sku : undefined,
+        offers: vs.length === 1
+            ? { '@type': 'Offer', priceCurrency: 'EUR', price: (low / 100).toFixed(2), availability: avail, url: opts.url }
+            : { '@type': 'AggregateOffer', priceCurrency: 'EUR', lowPrice: (low / 100).toFixed(2), highPrice: (high / 100).toFixed(2), offerCount: vs.length, availability: avail },
+    };
+    if (opts.images?.length)
+        ld.image = opts.images;
+    if (opts.url)
+        ld.url = opts.url;
+    return JSON.parse(JSON.stringify(ld));
+}
+function localBusinessJsonLd(url) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FurnitureStore',
+        name: BUSINESS.name,
+        legalName: BUSINESS.legalName,
+        vatID: BUSINESS.vat,
+        foundingDate: String(BUSINESS.since),
+        url,
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: BUSINESS.street,
+            postalCode: BUSINESS.postalCode,
+            addressLocality: BUSINESS.locality,
+            addressRegion: BUSINESS.region,
+            addressCountry: BUSINESS.country,
+        },
+        openingHoursSpecification: BUSINESS.hours.map((h) => ({ '@type': 'OpeningHoursSpecification', dayOfWeek: h.days, opens: h.opens, closes: h.closes })),
+    };
+}
+function breadcrumbJsonLd(items) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: it.url })),
+    };
+}
+/** Sitemap con sole pagine pubblicabili; da servire solo sul dominio reale, mai in preview. */
+function buildSitemap(idx, baseUrl, staticPaths = ['/', '/sleep-match', '/confronto', '/guida-misure', '/fuori-misura', '/showroom']) {
+    const base = baseUrl.replace(/\/$/, '');
+    const urls = [
+        ...staticPaths,
+        ...idx.commercialCategories().map((c) => `/${c.slug}`),
+        ...idx.publicProducts().map((p) => `/${idx.category(p).slug}/${p.slug}`),
+    ];
+    return [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ...urls.map((u) => `  <url><loc>${base}${u}</loc></url>`),
+        '</urlset>',
+    ].join('\n');
+}
+
+__exp.BUSINESS = BUSINESS;
+__exp.productJsonLd = productJsonLd;
+__exp.localBusinessJsonLd = localBusinessJsonLd;
+__exp.breadcrumbJsonLd = breadcrumbJsonLd;
+__exp.buildSitemap = buildSitemap;
+});
+__def("core/payments.js", function (__exp) {
+/**
+ * Interfaccia pagamenti PREDISPOSTA E DISATTIVATA.
+ * Al lancio l'unico percorso è la richiesta su WhatsApp. Nessun provider crea
+ * sessioni, chiede carte o mostra loghi finché il flag non viene abilitato lato
+ * server, con segreti server-side, webhook verificati e test in sandbox.
+ */
+const DEFAULT_PAYMENT_FLAGS = Object.freeze({ stripe: false, paypal: false, klarna: false });
+class PaymentDisabledError extends Error {
+    constructor(id) {
+        super(`Il pagamento ${id} non è attivo: al lancio le richieste si confermano su WhatsApp.`);
+        this.name = 'PaymentDisabledError';
+    }
+}
+function disabledProvider(id, label, requirements) {
+    return {
+        id,
+        label,
+        requirements,
+        async createSession() {
+            throw new PaymentDisabledError(id);
+        },
+        async handleWebhook() {
+            throw new PaymentDisabledError(id);
+        },
+    };
+}
+const PROVIDERS = {
+    stripe: disabledProvider('stripe', 'Carte, Apple Pay, Google Pay (Stripe)', [
+        'Account Stripe verificato intestato alla società',
+        'STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET solo lato server',
+        'Dominio verificato per Apple Pay',
+        'Webhook checkout.session.completed con verifica firma e idempotenza',
+        'Test completi in modalità test prima del live',
+    ]),
+    paypal: disabledProvider('paypal', 'PayPal', [
+        'Account PayPal Business',
+        'PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET solo lato server',
+        'Webhook con verifica firma e idempotenza',
+        'Test in sandbox',
+    ]),
+    klarna: disabledProvider('klarna', 'Klarna', [
+        'Contratto Klarna e requisiti del mercato italiano',
+        'Credenziali solo lato server',
+        'Informativa sul pagamento rateale',
+        'Test in playground',
+    ]),
+};
+/** Metodi da mostrare al cliente: con i flag di default la lista è vuota. */
+function visibleMethods(flags = DEFAULT_PAYMENT_FLAGS) {
+    return Object.keys(PROVIDERS).filter((k) => flags[k] === true).map((k) => PROVIDERS[k]);
+}
+
+__exp.DEFAULT_PAYMENT_FLAGS = DEFAULT_PAYMENT_FLAGS;
+__exp.PaymentDisabledError = PaymentDisabledError;
+__exp.PROVIDERS = PROVIDERS;
+__exp.visibleMethods = visibleMethods;
+});
+__def("core/index.js", function (__exp) {
+Object.assign(__exp, __req("core/types.js"));
+Object.assign(__exp, __req("core/catalog.js"));
+Object.assign(__exp, __req("core/pairings.js"));
+Object.assign(__exp, __req("core/sleepMatch.js"));
+Object.assign(__exp, __req("core/whatsapp.js"));
+Object.assign(__exp, __req("core/cart.js"));
+Object.assign(__exp, __req("core/seo.js"));
+Object.assign(__exp, __req("core/payments.js"));
+
+
+});
+__def("seed.js", function (__exp) {
+// Generato da scripts/build_seed.py a partire da Vesuvio_Sleep_Site_Data_v1.0.json. Non modificare a mano.
+const SEED = {
+ "version": "seed-2026-11-12",
+ "categories": [
+  {
+   "slug": "materassi",
+   "kind": "materasso",
+   "name": "Materassi",
+   "sort": 1,
+   "status": "published",
+   "description": "Poliuretano, Memory Foam e molle insacchettate, prodotti nella nostra fabbrica di Casoria.",
+   "id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7"
+  },
+  {
+   "slug": "reti",
+   "kind": "rete",
+   "name": "Reti",
+   "sort": 2,
+   "status": "published",
+   "description": "Reti a doghe in acciaio e legno, con piedi inclusi.",
+   "id": "081007a7-5196-569c-97e5-d95d486d696c"
+  },
+  {
+   "slug": "guanciali",
+   "kind": "guanciale",
+   "name": "Guanciali",
+   "sort": 3,
+   "status": "published",
+   "description": "Guanciali in piuma e in Memory.",
+   "id": "d13d67b4-9aa1-5b1d-b636-53db094666e6"
+  },
+  {
+   "slug": "topper",
+   "kind": "topper",
+   "name": "Topper",
+   "sort": 4,
+   "status": "published",
+   "description": "Topper in Memory Foam da 5 cm.",
+   "id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d"
+  },
+  {
+   "slug": "letti-a-castello",
+   "kind": "letto",
+   "name": "Letti a castello",
+   "sort": 5,
+   "status": "draft",
+   "description": "Letti a castello in acciaio.",
+   "id": "f2317874-21e7-594e-982e-5154d66caf0a"
+  }
+ ],
+ "products": [
+  {
+   "id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "slug": "essential-foam",
+   "technical_name": "Poliuretano espanso",
+   "short": "Poliuretano espanso ad alta densità: sostegno uniforme e stabile, in tre altezze.",
+   "description": "L'anima monoblocco in poliuretano ad alta densità e alta portanza dà un sostegno uniforme, stabile e duraturo. È il modello più essenziale della gamma, disponibile in H20, H25 e H30. Il rivestimento non è sfoderabile.",
+   "composition": "Anima monoblocco in poliuretano ad alta densità e alta portanza.",
+   "highlights": [
+    "Anima monoblocco ad alta densità",
+    "Tre altezze: H20, H25, H30",
+    "Sostegno uniforme"
+   ],
+   "claims": [
+    "antiacaro",
+    "ipoallergenico",
+    "Free Humidity"
+   ],
+   "removable_cover": false,
+   "reversible": false,
+   "summer_winter": false,
+   "hybrid": false,
+   "firmness_display": "Medio-rigido",
+   "line_code": "ESS",
+   "status": "published",
+   "sort": 1,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "foam",
+    "welcome": 0,
+    "ventilation": false,
+    "independent_springs": false
+   },
+   "internal_notes": "Rigidità indicativa da verificare sul prodotto reale. VERIFY: claim antiacaro / ipoallergenico / Free Humidity da confrontare con etichetta.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Essential Foam"
+  },
+  {
+   "id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "slug": "memory-duo",
+   "technical_name": "Memory Foam 2 strati",
+   "short": "Memory Foam premium su base in poliuretano ad alta densità. Sfoderabile e reversibile.",
+   "description": "Uno strato di comfort in Memory Foam premium ad alta densità poggia su una base portante in poliuretano ad alta densità. È più accogliente dell'Essential ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
+   "composition": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
+   "highlights": [
+    "Memory Foam premium",
+    "Lato invernale e lato estivo",
+    "Sfoderabile"
+   ],
+   "claims": [
+    "antiacaro",
+    "ipoallergenico",
+    "Free Humidity"
+   ],
+   "removable_cover": true,
+   "reversible": true,
+   "summer_winter": true,
+   "hybrid": false,
+   "firmness_display": "Medio-rigido e accogliente",
+   "line_code": "MD",
+   "status": "published",
+   "sort": 2,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "memory",
+    "welcome": 2,
+    "ventilation": false,
+    "independent_springs": false
+   },
+   "internal_notes": "Rigidità indicativa da verificare sul prodotto reale. Memory ~5 cm come riferimento visual/copy; non pubblicare lo spessore dei singoli strati finché non verificato. VERIFY: claim antiacaro / ipoallergenico / Free Humidity da confrontare con etichetta. CONFLICT prezzo H25 160x190: listino recente €220 vs indicazione precedente €250. Usato €220, da confermare.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Memory Duo"
+  },
+  {
+   "id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "slug": "memory-air-3d",
+   "technical_name": "Memory Foam 2 strati con fascia 3D",
+   "short": "Memory Foam e poliuretano ad alta densità con fascia perimetrale 3D traspirante.",
+   "description": "Memory Foam premium e poliuretano ad alta densità, con una fascia perimetrale 3D traspirante che favorisce la ventilazione laterale. Reversibile con lato invernale e lato estivo, rivestimento sfoderabile.",
+   "composition": "Memory Foam premium + poliuretano ad alta densità + fascia perimetrale 3D traspirante.",
+   "highlights": [
+    "Fascia perimetrale 3D traspirante",
+    "Lato invernale e lato estivo",
+    "Sfoderabile"
+   ],
+   "claims": [
+    "antiacaro",
+    "ipoallergenico",
+    "Free Humidity",
+    "fascia 3D traspirante"
+   ],
+   "removable_cover": true,
+   "reversible": true,
+   "summer_winter": true,
+   "hybrid": false,
+   "firmness_display": "Medio-rigido",
+   "line_code": "MA3D",
+   "status": "published",
+   "sort": 3,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "memory",
+    "welcome": 1.5,
+    "ventilation": true,
+    "independent_springs": false
+   },
+   "internal_notes": "Rigidità indicativa da verificare sul prodotto reale. VERIFY: claim antiacaro / ipoallergenico / Free Humidity da confrontare con etichetta.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Memory Air 3D"
+  },
+  {
+   "id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "slug": "pocket-2400-elite",
+   "technical_name": "2400 molle insacchettate + Memory",
+   "short": "Molle indipendenti insacchettate e Memory Foam: il nostro Hybrid più sostenuto.",
+   "description": "Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. Le 2400 molle sono riferite alla misura 160×190; sulle altre misure il molleggio è proporzionato alla superficie. Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
+   "composition": "Molle indipendenti insacchettate + Memory Foam + elementi in poliuretano ad alta densità per stabilizzazione e supporto.",
+   "highlights": [
+    "Molle indipendenti insacchettate",
+    "Strato di comfort in Memory",
+    "Sfoderabile"
+   ],
+   "claims": [
+    "antiacaro",
+    "ipoallergenico",
+    "Free Humidity"
+   ],
+   "removable_cover": true,
+   "reversible": false,
+   "summer_winter": false,
+   "hybrid": true,
+   "firmness_display": "Sostenuto / medio-rigido",
+   "line_code": "P2400",
+   "status": "published",
+   "sort": 4,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "molle",
+    "welcome": 1,
+    "ventilation": false,
+    "independent_springs": true
+   },
+   "internal_notes": "Rigidità indicativa da verificare sul prodotto reale. VERIFY: claim antiacaro / ipoallergenico / Free Humidity da confrontare con etichetta.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Pocket 2400 Elite"
+  },
+  {
+   "id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "slug": "rete-flex",
+   "technical_name": "Rete a doghe",
+   "short": "Acciaio e doghe in legno, piedi inclusi.",
+   "description": "Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.",
+   "composition": "Acciaio + legno.",
+   "highlights": [
+    "Piedi inclusi",
+    "Telaio in acciaio",
+    "Doghe in legno"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "FLEX",
+   "status": "published",
+   "sort": 10,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
+   "name": "Vesuvio Rete Flex"
+  },
+  {
+   "id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "slug": "rete-strong",
+   "technical_name": "Rete Strong",
+   "short": "Acciaio rinforzato e doghe in legno, piedi inclusi.",
+   "description": "Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.",
+   "composition": "Acciaio rinforzato + legno.",
+   "highlights": [
+    "Piedi inclusi",
+    "Telaio in acciaio",
+    "Doghe in legno"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "STRONG",
+   "status": "published",
+   "sort": 11,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
+   "name": "Vesuvio Rete Strong"
+  },
+  {
+   "id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "slug": "guanciale-piuma",
+   "technical_name": "Guanciale piuma",
+   "short": "Guanciale in piuma, alto 12 cm.",
+   "description": "Guanciale in piuma, alto 12 cm.",
+   "composition": "Piuma.",
+   "highlights": [
+    "Altezza 12 cm",
+    "Piuma"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "PIUMA",
+   "status": "published",
+   "sort": 20,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Misure del guanciale PENDING: non pubblicarle finché non fornite.",
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Piuma"
+  },
+  {
+   "id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "slug": "guanciale-memory-flakes",
+   "technical_name": "Guanciale fiocchi di memory",
+   "short": "Guanciale con imbottitura in fiocchi di Memory, alto 12 cm.",
+   "description": "Guanciale con imbottitura in fiocchi di Memory, alto 12 cm.",
+   "composition": "Fiocchi di Memory.",
+   "highlights": [
+    "Altezza 12 cm",
+    "Fiocchi di Memory"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MFLAKES",
+   "status": "published",
+   "sort": 21,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Misure del guanciale PENDING: non pubblicarle finché non fornite.",
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Flakes"
+  },
+  {
+   "id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "slug": "guanciale-memory-classic",
+   "technical_name": "Guanciale memory",
+   "short": "Guanciale classico in Memory, alto 15 cm.",
+   "description": "Guanciale classico in Memory, alto 15 cm.",
+   "composition": "Memory.",
+   "highlights": [
+    "Altezza 15 cm",
+    "Memory"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MCLASSIC",
+   "status": "published",
+   "sort": 22,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Misure del guanciale PENDING: non pubblicarle finché non fornite.",
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Classic"
+  },
+  {
+   "id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "slug": "guanciale-memory-cervical",
+   "technical_name": "Guanciale memory foam",
+   "short": "Guanciale cervicale in Memory Foam, alto 12 cm.",
+   "description": "Guanciale cervicale in Memory Foam, alto 12 cm.",
+   "composition": "Memory Foam.",
+   "highlights": [
+    "Altezza 12 cm",
+    "Memory Foam"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MCERV",
+   "status": "published",
+   "sort": 23,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Misure del guanciale PENDING: non pubblicarle finché non fornite.",
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Cervical"
+  },
+  {
+   "id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "slug": "topper-memory-cloud-5",
+   "technical_name": "Topper Memory H5",
+   "short": "Topper in Memory Foam alto 5 cm, sfoderabile.",
+   "description": "Topper in Memory Foam alto 5 cm con rivestimento sfoderabile, in tutte le misure standard.",
+   "composition": "Memory Foam.",
+   "highlights": [
+    "Altezza 5 cm",
+    "Sfoderabile"
+   ],
+   "claims": [],
+   "removable_cover": true,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MC5",
+   "status": "draft",
+   "sort": 30,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "Prezzi PENDING. SKU topper proposto (VS-TOP-…), da confermare.",
+   "category_id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d",
+   "name": "Vesuvio Topper Memory Cloud 5"
+  },
+  {
+   "id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "slug": "pocket-1600",
+   "technical_name": "Molle",
+   "short": "",
+   "description": "",
+   "composition": "",
+   "highlights": [],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "P1600",
+   "status": "draft",
+   "sort": 40,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "PENDING foto, prezzi e specifiche.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Pocket 1600"
+  },
+  {
+   "id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
+   "slug": "bonnell-classic",
+   "technical_name": "Molle",
+   "short": "",
+   "description": "",
+   "composition": "",
+   "highlights": [],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "BON",
+   "status": "draft",
+   "sort": 40,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "PENDING foto, prezzi e specifiche.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Bonnell Classic"
+  },
+  {
+   "id": "776e1cc9-7936-5184-8e16-a64dafe637fc",
+   "slug": "castello-steel",
+   "technical_name": "Letto a castello in acciaio",
+   "short": "",
+   "description": "",
+   "composition": "",
+   "highlights": [],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "CAST",
+   "status": "draft",
+   "sort": 50,
+   "lead_time": null,
+   "match": null,
+   "internal_notes": "PENDING misure e prezzi (con e senza materassi H20).",
+   "category_id": "f2317874-21e7-594e-982e-5154d66caf0a",
+   "name": "Vesuvio Castello Steel"
+  }
+ ],
+ "variants": [
+  {
+   "id": "967ac953-0a53-5ea1-842a-87457ad13631",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-80190",
+   "size": "80x190",
+   "height_cm": 20,
+   "price_cents": 9000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2000
+  },
+  {
+   "id": "86593d8a-85f3-5cfa-814e-67bcd38c59bb",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-90200",
+   "size": "90x200",
+   "height_cm": 20,
+   "price_cents": 10000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2001
+  },
+  {
+   "id": "dc177db7-99c3-5981-aa02-90392ef21579",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-120190",
+   "size": "120x190",
+   "height_cm": 20,
+   "price_cents": 13000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2002
+  },
+  {
+   "id": "00995cda-3a8e-5bd8-bd1d-6748a34358e1",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-140190",
+   "size": "140x190",
+   "height_cm": 20,
+   "price_cents": 15000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2003
+  },
+  {
+   "id": "e1f4457e-1833-585f-8391-b04aee3c90fa",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-160190",
+   "size": "160x190",
+   "height_cm": 20,
+   "price_cents": 17000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2004
+  },
+  {
+   "id": "281d2fa5-b5d6-5771-9b32-d1777eb2bc2b",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-165190",
+   "size": "165x190",
+   "height_cm": 20,
+   "price_cents": 18000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2005
+  },
+  {
+   "id": "6fb21ecc-da10-5a0e-8e7e-8c1997800e41",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-170200",
+   "size": "170x200",
+   "height_cm": 20,
+   "price_cents": 23000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2006
+  },
+  {
+   "id": "7fdeedb3-ed4e-52b7-8bba-12c14ca8e15e",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H20-180200",
+   "size": "180x200",
+   "height_cm": 20,
+   "price_cents": 26000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2007
+  },
+  {
+   "id": "8f22d685-b565-57c0-b79b-847d1691110f",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 11000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "7ffc23fc-d981-5978-86ad-c7ec31b571ec",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 12000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "5649b20e-6d40-5ddb-8975-97432b06dd34",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": 16000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "c3892485-0c58-5992-ba44-01c1f026262f",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 18000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "7ed042bd-4890-5b06-a64f-cab9a98d57bd",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "298eb18a-9b4a-51f3-a5a4-a10709706a82",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 21000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "f68c1efc-c58f-5a0a-86f5-e698b0ac6d12",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "eebae259-0c6f-566b-9968-baa103e8b0fa",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 27000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "93a39ffe-dbdf-555a-81fc-66c33bf0e842",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-80190",
+   "size": "80x190",
+   "height_cm": 30,
+   "price_cents": 14000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3000
+  },
+  {
+   "id": "8460dec7-9a2d-54f3-9e16-a5413184c2de",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-90200",
+   "size": "90x200",
+   "height_cm": 30,
+   "price_cents": 16000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3001
+  },
+  {
+   "id": "17910dc0-b163-5522-90eb-b11e880d6099",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-120190",
+   "size": "120x190",
+   "height_cm": 30,
+   "price_cents": 19000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3002
+  },
+  {
+   "id": "e37be91f-073e-547a-9b74-b3ffea3a3906",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-140190",
+   "size": "140x190",
+   "height_cm": 30,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3003
+  },
+  {
+   "id": "7a334ab9-0540-5041-9719-1c91189cef27",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-160190",
+   "size": "160x190",
+   "height_cm": 30,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3004
+  },
+  {
+   "id": "0334ab51-93ac-53c8-bfdd-575e4ec51c9f",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-165190",
+   "size": "165x190",
+   "height_cm": 30,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3005
+  },
+  {
+   "id": "85306b32-53e5-58ab-a8d8-9367f60b65c2",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-170200",
+   "size": "170x200",
+   "height_cm": 30,
+   "price_cents": 25000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3006
+  },
+  {
+   "id": "09dad827-458b-55d9-9edd-219735dcb4fd",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "sku": "VS-ESS-H30-180200",
+   "size": "180x200",
+   "height_cm": 30,
+   "price_cents": 28000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3007
+  },
+  {
+   "id": "8a07ccf3-5cd6-58d0-bc48-1257490fc198",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 12000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "d60ca066-91a7-54ad-9e7e-ae82281f6ba0",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 14000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "71f5694c-3599-5043-85a4-ac11fdfdf21d",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": 18000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "d6e4ba31-b18f-5982-8c5a-d513657494ad",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "7c8cca5e-98c7-572d-a0ae-aa1945ee7ee3",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "3bdb5528-b3ba-5f3e-8dae-29a508421e0b",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "5a5ec3d2-ed2a-5f0e-82e7-1ae8ce4f0934",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 26000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "72a56946-5058-5490-8699-d7a144b932f7",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 30000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "21d34678-1dd3-53d5-ab78-881279b038ca",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-80190",
+   "size": "80x190",
+   "height_cm": 30,
+   "price_cents": 14000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3000
+  },
+  {
+   "id": "43e04bcf-bfc3-5b64-b6f8-2bc323ab6f81",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-90200",
+   "size": "90x200",
+   "height_cm": 30,
+   "price_cents": 16000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3001
+  },
+  {
+   "id": "08c23783-b9ca-55b2-ae77-6b2c9482d548",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-120190",
+   "size": "120x190",
+   "height_cm": 30,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3002
+  },
+  {
+   "id": "4c1c1ea5-475e-5f8f-8ff6-a71d39bb094b",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-140190",
+   "size": "140x190",
+   "height_cm": 30,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3003
+  },
+  {
+   "id": "ebc7977a-0c23-5fd7-8c18-9f4662aba37d",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-160190",
+   "size": "160x190",
+   "height_cm": 30,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3004
+  },
+  {
+   "id": "30d018fd-e567-5e03-ba8a-278bd2ed08ea",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-165190",
+   "size": "165x190",
+   "height_cm": 30,
+   "price_cents": 26000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3005
+  },
+  {
+   "id": "e624e310-22d3-5c69-9b3f-0def88b27fa7",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-170200",
+   "size": "170x200",
+   "height_cm": 30,
+   "price_cents": 28000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3006
+  },
+  {
+   "id": "c8fd204f-ee7f-5ccc-8cd8-be87fa029bad",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "sku": "VS-MD-H30-180200",
+   "size": "180x200",
+   "height_cm": 30,
+   "price_cents": 32000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3007
+  },
+  {
+   "id": "6b7223c1-96db-51d4-aaf4-af12634d0509",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 17000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "43db3f73-2e99-5f0b-8f18-31d2af08a9b0",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "9461b4eb-b4da-5aa8-a3b8-473feccf663c",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": 25000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "3e224857-bced-5d13-8397-d5cff4615458",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 27500,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "724992db-f61d-5611-9730-2fa77ddbabb7",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 30000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "c34c6f7b-888a-5424-b605-cb1a3978ed6f",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 32000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "e55ddb0b-6170-5556-bf7d-a7a8215a5943",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 34000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "0843a6e8-6981-5039-bd3e-ab44168b3481",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 36000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "d03ed27d-b429-5b8d-a6a6-46577a32976a",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-80190",
+   "size": "80x190",
+   "height_cm": 30,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3000
+  },
+  {
+   "id": "eb03c6f3-1196-5ce4-8115-81f1cbe153af",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-90200",
+   "size": "90x200",
+   "height_cm": 30,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3001
+  },
+  {
+   "id": "bda7a485-a5a9-5575-8307-5172afe7b6a9",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-120190",
+   "size": "120x190",
+   "height_cm": 30,
+   "price_cents": 30000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3002
+  },
+  {
+   "id": "632c1af7-1497-501a-b06b-3f90a5536b99",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-140190",
+   "size": "140x190",
+   "height_cm": 30,
+   "price_cents": 35000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3003
+  },
+  {
+   "id": "b4e05f7d-f087-5903-92e8-36da3c2a0901",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-160190",
+   "size": "160x190",
+   "height_cm": 30,
+   "price_cents": 37000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3004
+  },
+  {
+   "id": "02071f19-67b9-5cd9-9b62-d26920a42878",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-165190",
+   "size": "165x190",
+   "height_cm": 30,
+   "price_cents": 39000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3005
+  },
+  {
+   "id": "922d59bf-3f78-5396-8c3c-254f4d6f1995",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-170200",
+   "size": "170x200",
+   "height_cm": 30,
+   "price_cents": 41000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3006
+  },
+  {
+   "id": "d18f949e-d37d-58ba-8d73-7c37f376d6af",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "sku": "VS-MA3D-H30-180200",
+   "size": "180x200",
+   "height_cm": 30,
+   "price_cents": 45000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3007
+  },
+  {
+   "id": "1635c6ff-6e59-55aa-9755-efdef865c4af",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "ebeae128-c635-5af6-b718-bf9943d6dd09",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "365033c4-e02e-5a78-aaac-889c1fa15fab",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": 32000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "be76be28-9784-586a-8cf8-88b8d84bd4c3",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 34000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "b94d3907-7679-5648-8a7d-ae1767aa2f38",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 37000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "9ca88932-2563-53df-bc6d-8a00d1c8f239",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 38000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "d3c4d2fd-319e-5a1f-be14-0898fe6bbf20",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 42000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "d9c74290-5732-5513-85a4-a1f7a09dd6a2",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 45000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "7286e0b5-2edc-5ae0-bcf7-8be1b5d53632",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-80190",
+   "size": "80x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3000
+  },
+  {
+   "id": "a52c256d-f083-5609-854c-f9984f69d22b",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-90200",
+   "size": "90x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3001
+  },
+  {
+   "id": "d437f8d7-77d6-5276-ad19-fc9c5ac00321",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-120190",
+   "size": "120x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3002
+  },
+  {
+   "id": "a658f207-4fe6-5de5-b70d-fa66cf816adc",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-140190",
+   "size": "140x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3003
+  },
+  {
+   "id": "ea8206d8-905a-50fc-8fbe-22195cda7704",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-160190",
+   "size": "160x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3004
+  },
+  {
+   "id": "8ec3a81a-05e5-573f-8d53-eafa93158568",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-165190",
+   "size": "165x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3005
+  },
+  {
+   "id": "118000ae-9fe7-57b7-8ba3-769a02acd488",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-170200",
+   "size": "170x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3006
+  },
+  {
+   "id": "e35e9379-4a29-57af-aaa6-b0d794d54de3",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P2400-H30-180200",
+   "size": "180x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3007
+  },
+  {
+   "id": "f1bfae31-2ae0-5ee3-b676-d17b379279f8",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-80190",
+   "size": "80x190",
+   "height_cm": null,
+   "price_cents": 9000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "2d6a1d0d-77b2-52bf-92b7-9af43e9a0067",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-90200",
+   "size": "90x200",
+   "height_cm": null,
+   "price_cents": 11000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 1
+  },
+  {
+   "id": "bfc2a3c6-e670-5a84-abf2-8eacb1493502",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-120190",
+   "size": "120x190",
+   "height_cm": null,
+   "price_cents": 14000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2
+  },
+  {
+   "id": "603907db-0844-5e2a-bd0d-3ab7e58b9416",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-140190",
+   "size": "140x190",
+   "height_cm": null,
+   "price_cents": 16000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3
+  },
+  {
+   "id": "ea787ffc-0f5b-5263-bb49-417c5d41cf15",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-160190",
+   "size": "160x190",
+   "height_cm": null,
+   "price_cents": 17000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 4
+  },
+  {
+   "id": "cc11caed-88ee-5072-8eb0-89ccc2283122",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-165190",
+   "size": "165x190",
+   "height_cm": null,
+   "price_cents": 18000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 5
+  },
+  {
+   "id": "2581788b-70dd-5e83-9818-73f3efae7ba6",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-170200",
+   "size": "170x200",
+   "height_cm": null,
+   "price_cents": 19000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 6
+  },
+  {
+   "id": "3d87dc55-a71d-5ecc-a1d8-ccdb30a78354",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "sku": "VS-RETE-FLEX-180200",
+   "size": "180x200",
+   "height_cm": null,
+   "price_cents": 21000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 7
+  },
+  {
+   "id": "67cec49a-e4f6-5394-bb07-cb4d544de389",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-80190",
+   "size": "80x190",
+   "height_cm": null,
+   "price_cents": 11000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "fe6151ec-0043-555e-add1-9a9298e6cbb2",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-90200",
+   "size": "90x200",
+   "height_cm": null,
+   "price_cents": 13000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 1
+  },
+  {
+   "id": "4fc27aec-26fc-5de8-adcc-0760f084ac19",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-120190",
+   "size": "120x190",
+   "height_cm": null,
+   "price_cents": 16000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2
+  },
+  {
+   "id": "efd10e96-f648-50d1-a3c4-4f0d44a38b80",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-140190",
+   "size": "140x190",
+   "height_cm": null,
+   "price_cents": 18000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 3
+  },
+  {
+   "id": "fd01628c-7ec6-50c0-811c-de764a6b313d",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-160190",
+   "size": "160x190",
+   "height_cm": null,
+   "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 4
+  },
+  {
+   "id": "7ef9a2e3-b3ea-581a-bc0c-32e6aabb790b",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-165190",
+   "size": "165x190",
+   "height_cm": null,
+   "price_cents": 21000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 5
+  },
+  {
+   "id": "f50477fd-68b5-5a00-a380-37468523b7f7",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-170200",
+   "size": "170x200",
+   "height_cm": null,
+   "price_cents": 23000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 6
+  },
+  {
+   "id": "8b8cd4ad-cfe9-5b79-8eb1-435eb76958a0",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "sku": "VS-RETE-STRONG-180200",
+   "size": "180x200",
+   "height_cm": null,
+   "price_cents": 25000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 7
+  },
+  {
+   "id": "be829365-9775-566e-93a2-0789c732b598",
+   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "sku": "VS-GUA-PIUMA",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 5000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "c1cfd111-fb03-5b25-a8a3-db39a2a54688",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "sku": "VS-GUA-MFLAKES",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 3500,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "ad021a28-454c-5012-a35a-760491eb7c16",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "sku": "VS-GUA-MCLASSIC",
+   "size": null,
+   "height_cm": 15,
+   "price_cents": 4000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "86475a77-f08f-5f9c-9027-bcb8829cff64",
+   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "sku": "VS-GUA-MCERV",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 4000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "6093b019-f4b0-503b-904f-492f4f9b5d7f",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-80190",
+   "size": "80x190",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "736e01f3-c154-5c9b-9cca-bc7f2e695079",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-90200",
+   "size": "90x200",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 1
+  },
+  {
+   "id": "9a47b101-ab93-5271-87ec-fcd1fab25f04",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-120190",
+   "size": "120x190",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2
+  },
+  {
+   "id": "ede0e53d-1fcd-5594-898f-9763616a71a4",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-140190",
+   "size": "140x190",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3
+  },
+  {
+   "id": "109cf7ea-5312-51cf-88e9-976ca6110dda",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-160190",
+   "size": "160x190",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 4
+  },
+  {
+   "id": "f57ebd61-b403-590e-800c-fda96174a68f",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-165190",
+   "size": "165x190",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 5
+  },
+  {
+   "id": "e19963d5-6f92-580a-8494-ad06c1f056f3",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-170200",
+   "size": "170x200",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 6
+  },
+  {
+   "id": "712f5c9e-cc0e-517c-a3ef-149fe5a3327d",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "sku": "VS-TOP-MC5-180200",
+   "size": "180x200",
+   "height_cm": 5,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 7
+  }
+ ],
+ "media": [
+  {
+   "id": "5a315093-9295-5417-9948-b1e6b6141bd6",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "slot": "hero",
+   "src": "img/pocket-2400-cutaway-1200.webp",
+   "srcset": "img/pocket-2400-cutaway-720.webp 720w, img/pocket-2400-cutaway-1200.webp 1200w",
+   "width": 1200,
+   "height": 800,
+   "alt": "Render del Vesuvio Pocket 2400 Elite con un angolo aperto che mostra lo strato in Memory e le molle insacchettate",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "is_cover": true,
+   "published": true,
+   "sort": 1,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
+   "id": "a16eb03a-d85c-5c0b-8643-dfba4c5f72d9",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "slot": "exploded",
+   "src": "img/pocket-2400-esploso-1200.webp",
+   "srcset": "img/pocket-2400-esploso-720.webp 720w, img/pocket-2400-esploso-1200.webp 1200w",
+   "width": 1200,
+   "height": 800,
+   "alt": "Vista esplosa illustrativa del Vesuvio Pocket 2400 Elite: rivestimento, Memory Foam, poliuretano, molle insacchettate e base",
+   "caption": "Vista illustrativa a strati, non in scala",
+   "illustrative": true,
+   "is_cover": false,
+   "published": true,
+   "sort": 2,
+   "focal_x": 50,
+   "focal_y": 50,
+   "hotspots": [
+    {
+     "x": 50,
+     "y": 15,
+     "title": "Rivestimento sfoderabile",
+     "text": "Si apre con la cerniera. Lavaggio secondo le indicazioni in etichetta."
+    },
+    {
+     "x": 56,
+     "y": 34,
+     "title": "Memory Foam",
+     "text": "Lo strato di comfort, a contatto con il rivestimento."
+    },
+    {
+     "x": 56,
+     "y": 48,
+     "title": "Poliuretano ad alta densità",
+     "text": "Elementi di supporto e stabilizzazione."
+    },
+    {
+     "x": 40,
+     "y": 66,
+     "title": "Molle indipendenti insacchettate",
+     "text": "2400 molle nella misura 160×190; sulle altre misure il molleggio è proporzionato alla superficie."
+    },
+    {
+     "x": 52,
+     "y": 86,
+     "title": "Base di stabilizzazione",
+     "text": "Elementi in poliuretano ad alta densità che contengono il molleggio."
+    }
+   ]
+  }
+ ],
+ "settings": {
+  "whatsapp_number": "",
+  "shipping_note": "gratuita in tutta Italia, isole comprese",
+  "show_claims": true,
+  "payments": {
+   "stripe": false,
+   "paypal": false,
+   "klarna": false
+  }
+ }
+};
+
+__exp.SEED = SEED;
+});
+__def("store.js", function (__exp) {
+// Livello dati della PREVIEW.
+// Simula il backend Supabase nel browser di chi la usa: localStorage per i dati,
+// IndexedDB per le foto caricate. Le funzioni `api.*` corrispondono alle funzioni
+// SQL in supabase/migrations/0003_functions.sql (validate_cart, create_request…).
+
+const {SEED} = __req("seed.js");
+const {CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber} = __req("core/index.js");
+
+const DB_KEY = 'vs-preview-db-v1';
+const CART_KEY = 'vs-cart-v1';
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const nowIso = () => new Date().toISOString();
+const rid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
+
+let storageOk = true;
+function readLS(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    storageOk = false;
+    return null;
+  }
+}
+function writeLS(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+    return true;
+  } catch {
+    storageOk = false;
+    return false;
+  }
+}
+
+function freshDb() {
+  return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [] };
+}
+
+let db = readLS(DB_KEY) ?? freshDb();
+if (!db.seed_version) db = freshDb();
+const listeners = new Set();
+
+const store = {
+  get db() {
+    return db;
+  },
+  get storageOk() {
+    return storageOk;
+  },
+  subscribe(fn) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  },
+  commit(reason) {
+    writeLS(DB_KEY, db);
+    if (reason) listeners.forEach((fn) => fn(reason));
+  },
+  audit(action, entity, detail) {
+    db.audit.unshift({ id: rid(), at: nowIso(), action, entity, detail });
+    db.audit = db.audit.slice(0, 400);
+  },
+  reset() {
+    db = freshDb();
+    this.commit('reset');
+  },
+  rid,
+};
+
+// ---------- Impostazioni ----------
+const ENV = window.VS_CONFIG ?? {};
+function whatsappNumber() {
+  // la variabile d'ambiente (config.js) prevale sull'impostazione admin, come in produzione
+  if (ENV.whatsappNumber) return { raw: ENV.whatsappNumber, source: 'env' };
+  return { raw: db.settings.whatsapp_number || '', source: 'admin' };
+}
+function whatsappStatus() {
+  const n = whatsappNumber();
+  return { ...n, check: normalizeWhatsAppNumber(n.raw) };
+}
+
+// ---------- Media (IndexedDB) ----------
+const blobUrls = new Map();
+let idb = null;
+function openIdb() {
+  return new Promise((res) => {
+    try {
+      const r = indexedDB.open('vs-preview-media', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('blobs');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch {
+      res(null);
+    }
+  });
+}
+function idbReq(mode, fn) {
+  return new Promise((res, rej) => {
+    if (!idb) return rej(new Error('IndexedDB non disponibile'));
+    const tx = idb.transaction('blobs', mode);
+    const r = fn(tx.objectStore('blobs'));
+    tx.oncomplete = () => res(r?.result);
+    tx.onerror = () => rej(tx.error);
+  });
+}
+const media = {
+  async init() {
+    idb = await openIdb();
+    const keys = db.media.filter((m) => m.src.startsWith('idb:')).map((m) => m.src.slice(4));
+    for (const k of keys) {
+      try {
+        const b = await idbReq('readonly', (s) => s.get(k));
+        if (b) blobUrls.set(k, URL.createObjectURL(b));
+      } catch {
+        /* foto non recuperabile: verrà mostrato il fallback */
+      }
+    }
+  },
+  available: () => !!idb,
+  resolve(m) {
+    if (!m) return null;
+    if (m.src.startsWith('idb:')) return blobUrls.get(m.src.slice(4)) ?? null;
+    return m.src;
+  },
+  async putBlob(blob) {
+    const key = rid();
+    if (idb) await idbReq('readwrite', (s) => s.put(blob, key));
+    blobUrls.set(key, URL.createObjectURL(blob));
+    return 'idb:' + key;
+  },
+  async deleteBlob(src) {
+    if (!src?.startsWith('idb:')) return;
+    const k = src.slice(4);
+    if (idb) await idbReq('readwrite', (s) => s.delete(k)).catch(() => {});
+    const u = blobUrls.get(k);
+    if (u) URL.revokeObjectURL(u);
+    blobUrls.delete(k);
+  },
+};
+
+/** Valida e ricomprime un'immagine caricata: JPEG/PNG/WebP, max 8 MB, lato lungo max 1800 px. */
+async function processUpload(file) {
+  const okTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!okTypes.includes(file.type)) throw new Error('Formato non supportato: usa JPEG, PNG o WebP.');
+  if (file.size > 8 * 1024 * 1024) throw new Error('File troppo grande: il limite è 8 MB.');
+  const bmp = await createImageBitmap(file).catch(() => {
+    throw new Error('Il file non è un\'immagine leggibile.');
+  });
+  if (bmp.width < 400 || bmp.height < 300) throw new Error('Immagine troppo piccola: servono almeno 400×300 px.');
+  const scale = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * scale);
+  const h = Math.round(bmp.height * scale);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.85));
+  return { blob: blob ?? file, width: w, height: h };
+}
+
+// ---------- Catalogo ----------
+/** Vista pubblica: media non pubblicati esclusi. Con drafts=true (solo admin) include le bozze. */
+function catalog({ drafts = false } = {}) {
+  const snap = {
+    categories: db.categories,
+    products: drafts
+      ? db.products.map((p) => (p.status === 'draft' ? { ...p, status: 'published' } : p)).filter((p) => p.status !== 'archived')
+      : db.products,
+    variants: db.variants,
+    media: drafts ? db.media : db.media.filter((m) => m.published),
+  };
+  return new CatalogIndex(snap);
+}
+function mediaFor(idx, p) {
+  return idx.snap.media.filter((m) => m.product_id === p.id).sort((a, b) => a.sort - b.sort);
+}
+function coverFor(idx, p) {
+  const ms = mediaFor(idx, p).filter((m) => m.slot !== 'exploded');
+  return ms.find((m) => m.is_cover) ?? ms[0] ?? null;
+}
+
+// ---------- Carrello ----------
+let cartItems = readLS(CART_KEY) ?? [];
+const cart = {
+  get items() {
+    return cartItems;
+  },
+  set(items) {
+    cartItems = items.filter((i) => i.qty > 0);
+    writeLS(CART_KEY, cartItems);
+    listeners.forEach((fn) => fn('cart'));
+  },
+  count() {
+    return cartItems.reduce((a, i) => a + i.qty, 0);
+  },
+  clear() {
+    this.set([]);
+  },
+};
+
+// ---------- "Server" simulato ----------
+const api = {
+  /** Ricontrollo come farebbe il server: legge sempre lo stato salvato, non quello della pagina. */
+  validateCart(items) {
+    return validateCart(catalog(), items);
+  },
+  createCartRequest(validation) {
+    const ref = makeRef('R', new Date());
+    const items = validation.lines
+      .filter((l) => l.status === 'ok')
+      .map((l) => ({
+        variant_id: l.variant.id,
+        product_id: l.product.id,
+        name: l.product.name,
+        sku: l.variant.sku,
+        size: l.variant.size,
+        height_cm: l.variant.height_cm,
+        qty: l.item.qty,
+        unit_cents: l.unit_cents,
+      }));
+    const r = {
+      id: rid(),
+      ref,
+      type: 'cart',
+      status: 'bozza',
+      items,
+      total_cents: validation.total_cents,
+      quote: null,
+      internal_notes: '',
+      tracking: '',
+      created_at: nowIso(),
+      updated_at: nowIso(),
+      history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: 'Riepilogo generato dal carrello' }],
+    };
+    db.requests.unshift(r);
+    store.commit('requests');
+    return r;
+  },
+  createQuoteRequest(q) {
+    const ref = makeRef('Q', new Date());
+    const r = {
+      id: rid(),
+      ref,
+      type: q.b2b ? 'b2b' : 'quote',
+      status: 'bozza',
+      items: [],
+      total_cents: null,
+      quote: { ...q, price_cents: null, reply: '', custom_sku: null },
+      internal_notes: '',
+      tracking: '',
+      created_at: nowIso(),
+      updated_at: nowIso(),
+      history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: 'Richiesta di preventivo fuori misura' }],
+    };
+    db.requests.unshift(r);
+    store.commit('requests');
+    return r;
+  },
+  /** Il click su WhatsApp NON prova l'invio: diventa solo "in attesa di contatto". */
+  markWaiting(ref) {
+    const r = db.requests.find((x) => x.ref === ref);
+    if (!r || r.status !== 'bozza') return;
+    r.status = 'in_attesa_contatto';
+    r.updated_at = nowIso();
+    r.history.push({ at: nowIso(), status: r.status, by: 'sito', note: 'Il cliente ha aperto WhatsApp (invio non verificabile)' });
+    store.commit('requests');
+  },
+  customSku: (id) => customSku(new Date(), id),
+};
+
+const REQUEST_STATUS = {
+  bozza: 'Bozza',
+  in_attesa_contatto: 'In attesa di contatto',
+  in_trattativa: 'In trattativa',
+  confermato_manualmente: 'Confermato su WhatsApp',
+  in_preparazione: 'In preparazione',
+  spedito: 'Spedito',
+  consegnato: 'Consegnato',
+  annullato: 'Annullato',
+  chiuso: 'Chiuso',
+};
+const REQUEST_TYPE = { cart: 'Carrello', quote: 'Fuori misura', b2b: 'Strutture ricettive' };
+
+__exp.store = store;
+__exp.whatsappNumber = whatsappNumber;
+__exp.whatsappStatus = whatsappStatus;
+__exp.media = media;
+__exp.processUpload = processUpload;
+__exp.catalog = catalog;
+__exp.mediaFor = mediaFor;
+__exp.coverFor = coverFor;
+__exp.cart = cart;
+__exp.api = api;
+__exp.REQUEST_STATUS = REQUEST_STATUS;
+__exp.REQUEST_TYPE = REQUEST_TYPE;
+});
+__def("ui.js", function (__exp) {
+// Piccoli helper DOM senza dipendenze.
+
+const esc = (v) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Transizione tra viste: View Transitions se disponibile, altrimenti classe CSS breve. */
+function swap(el, html, { animate = true } = {}) {
+  const apply = () => {
+    el.innerHTML = html;
+  };
+  if (!animate || reducedMotion()) return apply();
+  if (document.startViewTransition) {
+    try {
+      document.startViewTransition(apply);
+      return;
+    } catch {
+      /* fallback sotto */
+    }
+  }
+  apply();
+  el.classList.remove('is-entering');
+  void el.offsetWidth;
+  el.classList.add('is-entering');
+}
+
+let toastTimer;
+function toast(msg, kind = 'info') {
+  let t = $('#toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.dataset.kind = kind;
+  t.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('is-visible'), 3200);
+}
+
+/** Copia negli appunti; se il browser rifiuta, seleziona il testo di una textarea di riserva. */
+async function copyText(text, fallbackTextarea) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Riepilogo copiato negli appunti');
+    return true;
+  } catch {
+    if (fallbackTextarea) {
+      fallbackTextarea.hidden = false;
+      fallbackTextarea.value = text;
+      fallbackTextarea.focus();
+      fallbackTextarea.select();
+      toast('Il testo è selezionato: copialo con Ctrl+C o tieni premuto e scegli Copia');
+    } else toast('Copia non consentita da questo browser');
+    return false;
+  }
+}
+
+/** Dialog modale accessibile basato su <dialog>; niente alert/confirm (bloccati nel frame). */
+function openDialog({ title, body, actions = [], wide = false, onClose }) {
+  const d = document.createElement('dialog');
+  d.className = 'dlg' + (wide ? ' dlg--wide' : '');
+  d.setAttribute('aria-labelledby', 'dlg-title');
+  d.innerHTML = `
+    <div class="dlg__head"><h2 id="dlg-title">${esc(title)}</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi">${icon('close')}</button></div>
+    <div class="dlg__body">${body}</div>
+    ${actions.length ? `<div class="dlg__actions">${actions.map((a, i) => `<button class="btn ${a.kind === 'danger' ? 'btn--danger' : a.primary ? 'btn--primary' : 'btn--ghost'}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}`;
+  document.body.append(d);
+  const prev = document.activeElement;
+  const close = (v) => {
+    d.close();
+    d.remove();
+    onClose?.(v);
+    prev?.focus?.();
+  };
+  d.addEventListener('click', (e) => {
+    if (e.target === d || e.target.closest('[data-close]')) close(null);
+    const b = e.target.closest('[data-i]');
+    if (b) {
+      const a = actions[Number(b.dataset.i)];
+      const r = a.onClick?.(d);
+      if (r !== false) close(a.value ?? a.label);
+    }
+  });
+  d.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    close(null);
+  });
+  d.showModal();
+  return { el: d, close };
+}
+
+function confirmDialog(title, message, confirmLabel, danger = false) {
+  return new Promise((res) => {
+    openDialog({
+      title,
+      body: `<p>${esc(message)}</p>`,
+      actions: [
+        { label: 'Annulla', value: false },
+        { label: confirmLabel, value: true, primary: !danger, kind: danger ? 'danger' : undefined },
+      ],
+      onClose: (v) => res(v === true),
+    });
+  });
+}
+
+function slugify(s) {
+  return String(s)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+}
+
+function fmtDate(iso) {
+  try {
+    return new Intl.DateTimeFormat('it-IT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+const ICONS = {
+  cart: '<path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L20.5 8H6.1"/><circle cx="10" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  zoom: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8v6M8 11h6"/>',
+  minus: '<path d="M6 12h12"/>',
+  plus: '<path d="M12 6v12M6 12h12"/>',
+  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>',
+  pin: '<path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  wa: '<path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.4-4.3a8.5 8.5 0 1 1 15.6-4.5z"/><path d="M9 8.6c.2 2.9 2.6 5.4 5.6 5.8l1.1-1.2-1.7-.9-.8.8c-1.1-.4-2-1.3-2.4-2.4l.8-.8-.9-1.7z"/>',
+  copy: '<rect x="8" y="8" width="11" height="12" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>',
+  arrowUp: '<path d="M12 18V6M7 11l5-5 5 5"/>',
+  arrowDown: '<path d="M12 6v12M7 13l5 5 5-5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+  truck: '<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>',
+  ruler: '<path d="M3 15.5L15.5 3l5.5 5.5L8.5 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8"/>',
+};
+function icon(name, size = 22) {
+  return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[name] ?? ''}</svg>`;
+}
+
+__exp.esc = esc;
+__exp.$ = $;
+__exp.$$ = $$;
+__exp.reducedMotion = reducedMotion;
+__exp.swap = swap;
+__exp.toast = toast;
+__exp.copyText = copyText;
+__exp.openDialog = openDialog;
+__exp.confirmDialog = confirmDialog;
+__exp.slugify = slugify;
+__exp.fmtDate = fmtDate;
+__exp.icon = icon;
+});
+__def("illustrations.js", function (__exp) {
+// Illustrazioni SCHEMATICHE dei prodotti (SVG generato), usate dove non ci sono
+// foto confermate. Gli strati vengono dalla composizione pubblica del dataset;
+// spessori e proporzioni NON sono in scala e non vanno letti come dati tecnici.
+
+let uid = 0;
+const C = 0.866;
+const S = 0.5;
+
+// Strati dall'alto verso il basso
+const LAYERS = {
+  'essential-foam': [
+    { k: 'cover', label: 'Rivestimento', note: 'Antiacaro e ipoallergenico, non sfoderabile' },
+    { k: 'foam', h: 16, label: 'Anima monoblocco', note: 'Poliuretano ad alta densità e alta portanza' },
+  ],
+  'memory-duo': [
+    { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Lato invernale e lato estivo' },
+    { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort, ad alta densità' },
+    { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
+  ],
+  'memory-air-3d': [
+    { k: 'cover', zip: true, mesh: true, label: 'Fascia perimetrale 3D', note: 'Traspirante, per la ventilazione laterale' },
+    { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort' },
+    { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
+  ],
+  'pocket-2400-elite': [
+    { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
+    { k: 'memory', label: 'Memory Foam', note: 'Lo strato di comfort' },
+    { k: 'foam', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
+    { k: 'springs', label: 'Molle insacchettate', note: '2400 nella misura 160×190' },
+    { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
+  ],
+};
+const BY_TECH = {
+  foam: LAYERS['essential-foam'],
+  memory: LAYERS['memory-duo'],
+  molle: LAYERS['pocket-2400-elite'],
+};
+function layersFor(p) {
+  return LAYERS[p.slug] ?? BY_TECH[p.match?.tech] ?? null;
+}
+
+const STYLE = {
+  cover: { h: 6, top: '#fbf9f4', l: '#efe9dd', r: '#e4dccc' },
+  memory: { h: 7, top: '#a9d0ea', l: '#85b8dc', r: '#6ea6cf' },
+  foam: { h: 9, top: '#f3ead6', l: '#e6d9bb', r: '#d9c9a4' },
+  springs: { h: 10, top: '#e9eef2', l: '#dfe6ec', r: '#cfd9e1' },
+  base: { h: 5, top: '#2a6f8f', l: '#1d5873', r: '#164a61' },
+  topper: { h: 5, top: '#a9d0ea', l: '#85b8dc', r: '#6ea6cf' },
+};
+
+function P(x, y, z, o) {
+  return [o.cx + (x - y) * C, o.cy + (x + y) * S - z];
+}
+const pts = (arr) => arr.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ');
+
+function slab(o, z0, h, st, extra = '') {
+  const { w, d } = o;
+  const z1 = z0 + h;
+  const top = [P(0, 0, z1, o), P(w, 0, z1, o), P(w, d, z1, o), P(0, d, z1, o)];
+  const left = [P(0, d, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(0, d, z1, o)];
+  const right = [P(w, 0, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(w, 0, z1, o)];
+  return `<polygon points="${pts(left)}" fill="${st.l}"/><polygon points="${pts(right)}" fill="${st.r}"/><polygon points="${pts(top)}" fill="${st.top}"/>${extra}
+    <polyline points="${pts([P(0, d, z1, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="none" stroke="rgba(14,52,68,.18)" stroke-width=".8"/>`;
+}
+
+function coverDetails(o, z0, h, ly, id) {
+  const { w, d } = o;
+  const z1 = z0 + h;
+  let s = '';
+  // trapuntatura: punti cuciti sul piano
+  for (let i = 1; i < 7; i++) {
+    s += `<polyline points="${pts([P((w * i) / 7, 0, z1, o), P((w * i) / 7, d, z1, o)])}" stroke="#c8785b" stroke-width=".9" stroke-dasharray="2.4 2.6" fill="none" opacity=".55"/>`;
+  }
+  for (let j = 1; j < 5; j++) {
+    s += `<polyline points="${pts([P(0, (d * j) / 5, z1, o), P(w, (d * j) / 5, z1, o)])}" stroke="#c8785b" stroke-width=".9" stroke-dasharray="2.4 2.6" fill="none" opacity=".45"/>`;
+  }
+  // bordino blu
+  s += `<polyline points="${pts([P(0, d, z1, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="none" stroke="#206786" stroke-width="2.2" stroke-linejoin="round"/>`;
+  s += `<polyline points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, 0, z0, o)])}" fill="none" stroke="#206786" stroke-width="1.6" stroke-linejoin="round"/>`;
+  if (ly.mesh) {
+    s += `<polygon points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(0, d, z1, o)])}" fill="url(#mesh${id})"/>`;
+    s += `<polygon points="${pts([P(w, 0, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="url(#mesh${id})" opacity=".8"/>`;
+  } else {
+    for (let i = 1; i < 26; i++) {
+      const x = (w * i) / 26;
+      s += `<polyline points="${pts([P(x, d, z0 + 1, o), P(x, d, z1 - 1, o)])}" stroke="rgba(14,52,68,.09)" stroke-width=".7"/>`;
+    }
+  }
+  if (ly.zip) s += `<polyline points="${pts([P(w * 0.08, d, z0 + h * 0.35, o), P(w * 0.92, d, z0 + h * 0.35, o)])}" stroke="#8a97a0" stroke-width=".9" stroke-dasharray="1.2 1.2" fill="none"/>`;
+  return s;
+}
+
+function memoryDots(o, z0, h) {
+  let s = '';
+  const z1 = z0 + h;
+  for (let i = 0; i < 26; i++) {
+    const x = ((i * 37) % 97) / 97;
+    const y = ((i * 53) % 89) / 89;
+    const [px, py] = P(o.w * (0.05 + 0.9 * x), o.d * (0.05 + 0.9 * y), z1, o);
+    s += `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="1.1" ry=".6" fill="#6ea6cf" opacity=".55"/>`;
+  }
+  return s;
+}
+
+function springs(o, z0, h) {
+  const { w, d } = o;
+  let s = '';
+  const n = 14;
+  // file sulla faccia sinistra (anteriore)
+  for (let i = 0; i < n; i++) {
+    const x = (w * (i + 0.5)) / n;
+    const [bx, by] = P(x, d, z0, o);
+    const tone = i % 3 === 1 ? '#8fbadb' : '#f4f6f8';
+    s += `<rect x="${(bx - 4.6).toFixed(1)}" y="${(by - h).toFixed(1)}" width="9.2" height="${h}" rx="3.5" fill="${tone}" stroke="rgba(14,52,68,.22)" stroke-width=".6"/>`;
+    s += `<line x1="${(bx - 4).toFixed(1)}" x2="${(bx + 4).toFixed(1)}" y1="${(by - h / 2).toFixed(1)}" y2="${(by - h / 2).toFixed(1)}" stroke="rgba(14,52,68,.15)" stroke-width=".6"/>`;
+  }
+  // file sulla faccia destra
+  const m = 11;
+  for (let j = 0; j < m; j++) {
+    const y = (d * (j + 0.5)) / m;
+    const [bx, by] = P(w, y, z0, o);
+    const tone = j % 3 === 2 ? '#7fb0d4' : '#e4eaef';
+    s += `<rect x="${(bx - 4.2).toFixed(1)}" y="${(by - h).toFixed(1)}" width="8.4" height="${h}" rx="3.3" fill="${tone}" stroke="rgba(14,52,68,.2)" stroke-width=".6"/>`;
+  }
+  // tappi sul piano
+  for (let i = 0; i < 9; i++)
+    for (let j = 0; j < 7; j++) {
+      const [px, py] = P((w * (i + 0.5)) / 9, (d * (j + 0.5)) / 7, z0 + h, o);
+      s += `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="5" ry="2.6" fill="${(i + j) % 4 === 0 ? '#a9cbe4' : '#fff'}" stroke="rgba(14,52,68,.15)" stroke-width=".5"/>`;
+    }
+  return s;
+}
+
+/**
+ * Materasso a strati. `ex` (0–1) apre gli strati: in CSS ogni strato usa
+ * translateY(calc(var(--ex) * var(--i) * -1 * var(--gap))).
+ */
+function mattressSvg(layers, { title = '', gap = 30, compact = false } = {}) {
+  const id = ++uid;
+  const o = { w: 200, d: 150, cx: 0, cy: 0 };
+  const list = layers.map((l) => ({ ...l, h: (l.h ?? STYLE[l.k].h) * 2.2 }));
+  const total = list.reduce((a, l) => a + l.h, 0);
+  const maxLift = gap * (list.length - 1);
+  // limiti della proiezione
+  const minX = -o.d * C;
+  const maxX = o.w * C;
+  const pad = 14;
+  o.cx = -minX + pad;
+  o.cy = pad + total + (compact ? gap * 0.6 : maxLift) + 2;
+  const vbW = maxX - minX + pad * 2;
+  const vbH = o.cy + (o.w + o.d) * S + pad;
+  let z = 0;
+  const groups = [];
+  // dal basso verso l'alto: l'ultimo disegnato copre quelli sotto
+  [...list].reverse().forEach((ly, i) => {
+    const st = STYLE[ly.k];
+    let inner = slab(o, z, ly.h, st);
+    if (ly.k === 'cover') inner += coverDetails(o, z, ly.h, ly, id);
+    if (ly.k === 'memory') inner += memoryDots(o, z, ly.h);
+    if (ly.k === 'springs') inner += springs(o, z, ly.h);
+    groups.push(`<g class="ly" style="--i:${i}">${inner}</g>`);
+    z += ly.h;
+  });
+  // ombra a terra
+  const shadow = `<polygon points="${pts([P(-6, -6, 0, o), P(o.w + 6, -6, 0, o), P(o.w + 10, o.d + 10, 0, o), P(-6, o.d + 6, 0, o)])}" fill="rgba(14,52,68,.16)" filter="url(#blur${id})"/>`;
+  return `<svg class="mx" viewBox="0 0 ${vbW.toFixed(0)} ${vbH.toFixed(0)}" style="--gap:${gap}px" role="img" aria-label="${title ? title + ': ' : ''}schema illustrativo degli strati, non in scala">
+    <defs><filter id="blur${id}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+    <pattern id="mesh${id}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="5" height="5" fill="#eef4f7"/><circle cx="2.5" cy="2.5" r="1.25" fill="#9fc2d6"/></pattern></defs>
+    ${shadow}${groups.join('')}</svg>`;
+}
+
+function baseSvg(strong = false) {
+  const o = { w: 210, d: 150, cx: 0, cy: 0 };
+  const pad = 14;
+  o.cx = o.d * C + pad;
+  o.cy = pad + 30;
+  const vbW = (o.w + o.d) * C + pad * 2;
+  const vbH = o.cy + (o.w + o.d) * S + pad + 20;
+  const frame = '#1d5873';
+  let s = `<polygon points="${pts([P(-4, -4, 0, o), P(o.w + 4, -4, 0, o), P(o.w + 8, o.d + 8, 0, o), P(-4, o.d + 4, 0, o)])}" fill="rgba(14,52,68,.14)"/>`;
+  // piedi
+  for (const [x, y] of [[4, o.d - 4], [o.w - 4, o.d - 4], [o.w - 4, 4]]) {
+    const [a, b] = P(x, y, 0, o);
+    s += `<rect x="${(a - 2.5).toFixed(1)}" y="${(b - 18).toFixed(1)}" width="5" height="18" rx="1.5" fill="${frame}"/>`;
+  }
+  // telaio
+  s += slab(o, 18, strong ? 7 : 5, { top: '#2a6f8f', l: frame, r: '#164a61' });
+  // doghe in legno
+  const n = strong ? 16 : 13;
+  for (let i = 0; i < n; i++) {
+    const x = (o.w * (i + 0.5)) / n;
+    const a = P(x - 4, 6, 24 + (strong ? 2 : 0), o);
+    const b = P(x + 4, 6, 24 + (strong ? 2 : 0), o);
+    const c = P(x + 4, o.d - 6, 24 + (strong ? 2 : 0), o);
+    const d = P(x - 4, o.d - 6, 24 + (strong ? 2 : 0), o);
+    s += `<polygon points="${pts([a, b, c, d])}" fill="${i % 2 ? '#dcbf91' : '#e6cda3'}" stroke="#b8975f" stroke-width=".5"/>`;
+  }
+  return `<svg class="mx" viewBox="0 0 ${vbW.toFixed(0)} ${vbH.toFixed(0)}" role="img" aria-label="Schema illustrativo della rete a doghe">${s}</svg>`;
+}
+
+function pillowSvg(variant = 'classic') {
+  const id = ++uid;
+  const cervical = variant === 'cervical';
+  const body = cervical
+    ? 'M40 92 C40 60 70 52 120 56 C150 58 160 70 180 70 C200 70 210 58 240 56 C280 54 300 66 300 92 C300 120 270 128 170 128 C70 128 40 122 40 92 Z'
+    : 'M46 70 C40 50 70 40 170 40 C270 40 300 50 294 70 C300 92 300 106 294 124 C300 142 270 152 170 152 C70 152 40 142 46 124 C40 106 40 92 46 70 Z';
+  const fill = variant === 'piuma' ? '#fbf9f4' : variant === 'flakes' ? '#eef5fa' : '#e3eff8';
+  return `<svg class="mx mx--pillow" viewBox="0 0 340 190" role="img" aria-label="Schema illustrativo del guanciale">
+    <defs><radialGradient id="pg${id}" cx="45%" cy="35%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="${fill}"/></radialGradient>
+    <filter id="pb${id}"><feGaussianBlur stdDeviation="6"/></filter></defs>
+    <ellipse cx="170" cy="${cervical ? 146 : 166}" rx="130" ry="12" fill="rgba(14,52,68,.16)" filter="url(#pb${id})"/>
+    <path d="${body}" fill="url(#pg${id})" stroke="rgba(14,52,68,.25)" stroke-width="1.4"/>
+    <path d="${body}" fill="none" stroke="#c8785b" stroke-width="1.3" stroke-dasharray="4 4" transform="translate(170 ${cervical ? 92 : 96}) scale(.9) translate(-170 -${cervical ? 92 : 96})" opacity=".7"/>
+    ${variant === 'flakes' ? Array.from({ length: 18 }, (_, i) => `<circle cx="${80 + ((i * 47) % 180)}" cy="${70 + ((i * 29) % 60)}" r="2.2" fill="#9fc2d6" opacity=".6"/>`).join('') : ''}
+  </svg>`;
+}
+
+/** Illustrazione per un prodotto, in base a categoria e slug. */
+function productIllustration(p, kind, opts = {}) {
+  if (kind === 'rete') return baseSvg(/strong/.test(p.slug));
+  if (kind === 'guanciale') return pillowSvg(/cerv/.test(p.slug) ? 'cervical' : /piuma/.test(p.slug) ? 'piuma' : /flakes/.test(p.slug) ? 'flakes' : 'classic');
+  if (kind === 'topper') return mattressSvg([{ k: 'cover', zip: true, h: 4, label: '' }, { k: 'topper', label: '' }], { title: p.name, ...opts });
+  const ls = layersFor(p) ?? LAYERS['essential-foam'];
+  return mattressSvg(ls, { title: p.name, ...opts });
+}
+
+__exp.layersFor = layersFor;
+__exp.mattressSvg = mattressSvg;
+__exp.baseSvg = baseSvg;
+__exp.pillowSvg = pillowSvg;
+__exp.productIllustration = productIllustration;
+});
+__def("motion.js", function (__exp) {
+// Movimento e micro-interazioni. Tutto rispetta prefers-reduced-motion e il
+// contenuto resta leggibile anche se nessuna animazione parte.
+
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fine = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+document.documentElement.classList.add('js');
+
+let io;
+function revealObserver() {
+  if (io) return io;
+  if (!('IntersectionObserver' in window)) return null;
+  io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add('in');
+        if (e.target.dataset.count) countUp(e.target);
+        if (e.target.hasAttribute('data-autoexplode')) e.target.dispatchEvent(new CustomEvent('vs:visible'));
+        io.unobserve(e.target);
+      }
+    },
+    { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
+  );
+  return io;
+}
+
+function countUp(el) {
+  const to = Number(el.dataset.count);
+  const from = Number(el.dataset.from ?? 0);
+  if (reduced() || !Number.isFinite(to)) {
+    el.textContent = el.dataset.final ?? String(to);
+    return;
+  }
+  const dur = 1300;
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    el.textContent = String(Math.round(from + (to - from) * e));
+    if (k < 1) requestAnimationFrame(step);
+    else el.textContent = el.dataset.final ?? String(to);
+  };
+  requestAnimationFrame(step);
+}
+
+/** Da chiamare dopo ogni render di pagina. */
+function enhance(root = document) {
+  const obs = revealObserver();
+  root.querySelectorAll('.rv, [data-count], [data-autoexplode]').forEach((el) => {
+    if (obs) obs.observe(el);
+    else {
+      el.classList.add('in');
+      if (el.dataset.count) el.textContent = el.dataset.final ?? el.dataset.count;
+    }
+  });
+  // parallasse leggero della hero sul puntatore (solo desktop, breve, transform)
+  const hero = root.querySelector('.hero');
+  const par = hero?.querySelector('.hero__par');
+  if (hero && par && fine() && !reduced()) {
+    hero.addEventListener('pointermove', (e) => {
+      const r = hero.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      par.style.setProperty('--px', `${(-x * 12).toFixed(1)}px`);
+      par.style.setProperty('--py', `${(-y * 8).toFixed(1)}px`);
+    });
+    hero.addEventListener('pointerleave', () => {
+      par.style.setProperty('--px', '0px');
+      par.style.setProperty('--py', '0px');
+    });
+  }
+}
+
+// alone che segue il puntatore sui bottoni principali
+document.addEventListener(
+  'pointermove',
+  (e) => {
+    const b = e.target.closest?.('.btn--primary');
+    if (!b || !fine()) return;
+    const r = b.getBoundingClientRect();
+    b.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    b.style.setProperty('--my', `${e.clientY - r.top}px`);
+  },
+  { passive: true },
+);
+
+// stato dell'header durante lo scorrimento
+let ticking = false;
+function onScroll() {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => {
+    document.body.classList.toggle('is-scrolled', window.scrollY > 12);
+    ticking = false;
+  });
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+function bump(el) {
+  if (!el || reduced()) return;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+/** Apre gradualmente gli strati di un'illustrazione (0 → target). */
+function explode(el, target = 0.75, dur = 1100) {
+  if (!el) return;
+  if (reduced()) {
+    el.style.setProperty('--ex', String(target));
+    return;
+  }
+  const from = Number(getComputedStyle(el).getPropertyValue('--ex')) || 0;
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    el.style.setProperty('--ex', (from + (target - from) * e).toFixed(3));
+    const input = el.querySelector('input[type=range]');
+    if (input) input.value = String(Math.round((from + (target - from) * e) * 100));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+__exp.enhance = enhance;
+__exp.bump = bump;
+__exp.explode = explode;
+});
+__def("admin.js", function (__exp) {
+// Admin della PREVIEW. Stessa struttura dell'admin Supabase previsto:
+// CRUD categorie/prodotti/varianti, media, richieste, impostazioni, storico.
+// L'accesso qui è locale al browser (PBKDF2 + sessione); in produzione è Supabase Auth + RLS.
+
+const {formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex} = __req("core/index.js");
+const {store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api} = __req("store.js");
+const {esc, $, $$, toast, copyText, confirmDialog, openDialog, icon, slugify, fmtDate} = __req("ui.js");
+
+const CRED = 'vs-admin-cred';
+const SESSION = 'vs-admin-session';
+const SESSION_MS = 8 * 3600 * 1000;
+let root;
+const db = () => store.db;
+
+// ------------------------------------------------------------- accesso
+function getCred() {
+  try {
+    return JSON.parse(localStorage.getItem(CRED) || 'null');
+  } catch {
+    return null;
+  }
+}
+function isLogged() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(SESSION) || 'null');
+    return s && s.exp > Date.now();
+  } catch {
+    return false;
+  }
+}
+async function derive(pass, saltB64) {
+  const enc = new TextEncoder();
+  const salt = saltB64 ? Uint8Array.from(atob(saltB64), (c) => c.charCodeAt(0)) : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, key, 256);
+  const b64 = (u8) => btoa(String.fromCharCode(...new Uint8Array(u8)));
+  return { salt: b64(salt), hash: b64(bits) };
+}
+function startSession() {
+  sessionStorage.setItem(SESSION, JSON.stringify({ exp: Date.now() + SESSION_MS }));
+}
+
+function viewLogin() {
+  const cred = getCred();
+  const noCrypto = !window.crypto?.subtle;
+  root.innerHTML = `<div class="adm-login wrap section">
+    <h1>${cred ? 'Accedi all\'admin' : 'Crea l\'accesso admin'}</h1>
+    <p class="lead">${cred ? 'Inserisci la password che hai creato per questa anteprima.' : 'Prima volta: scegli una password per l\'admin di questa anteprima. Non esistono password predefinite.'}</p>
+    <p class="note small">Accesso locale di anteprima: protegge l'admin in questo browser, non sostituisce l'autenticazione Supabase prevista per il sito reale.</p>
+    ${noCrypto ? '<p class="note note--err">Questo browser non supporta la cifratura necessaria: apri l\'anteprima in un browser aggiornato.</p>' : ''}
+    <form class="form" id="adm-login" novalidate>
+      <div class="field"><label for="pw">Password</label><input class="input" type="password" id="pw" autocomplete="${cred ? 'current-password' : 'new-password'}" minlength="10" required></div>
+      ${cred ? '' : '<div class="field"><label for="pw2">Ripeti la password</label><input class="input" type="password" id="pw2" autocomplete="new-password" required><span class="hint">Almeno 10 caratteri.</span></div>'}
+      <p class="err-msg" id="login-err" role="alert"></p>
+      <div><button class="btn btn--primary" ${noCrypto ? 'disabled' : ''}>${cred ? 'Accedi' : 'Crea accesso'}</button></div>
+    </form>
+    <p class="small muted" style="margin-top:24px"><a href="#">Torna al sito</a></p></div>`;
+}
+
+// ------------------------------------------------------------- layout
+const SECTIONS = [
+  ['admin', 'Panoramica'],
+  ['admin-catalogo', 'Prodotti'],
+  ['admin-categorie', 'Categorie'],
+  ['admin-richieste', 'Richieste'],
+  ['admin-impostazioni', 'Impostazioni'],
+  ['admin-storico', 'Storico'],
+];
+function shell(active, title, body, actions = '') {
+  const waiting = db().requests.filter((r) => r.status === 'in_attesa_contatto').length;
+  root.innerHTML = `<div class="adm">
+    <nav class="adm__nav" aria-label="Admin">${SECTIONS.map(([h, l]) => `<a href="#${h}" ${h === active ? 'aria-current="page"' : ''}>${l}${h === 'admin-richieste' && waiting ? ` <span class="adm__pill">${waiting}</span>` : ''}</a>`).join('')}
+      <button class="link-btn small" data-adm="logout">Esci</button></nav>
+    <div class="adm__main"><div class="adm__head"><h1>${esc(title)}</h1><div class="btn-row">${actions}</div></div>${body}</div></div>`;
+}
+
+// ------------------------------------------------------------- panoramica
+function blockers() {
+  const out = [];
+  const wa = whatsappStatus();
+  if (!wa.check.ok) out.push(['err', 'Numero WhatsApp per le richieste non configurato: il sito permette solo di copiare il riepilogo.', '#admin-impostazioni', 'Configura']);
+  for (const p of db().products) if (/CONFLICT/.test(p.internal_notes || '')) out.push(['warn', `${p.name}: prezzo in conflitto da confermare.`, `#admin-prodotto-${p.id}`, 'Apri']);
+  const idx = catalog();
+  const noPhoto = idx.publicProducts().filter((p) => !db().media.some((m) => m.product_id === p.id && m.published));
+  if (noPhoto.length) out.push(['info', `${noPhoto.length} prodotti pubblicati senza foto confermate (si vede l'illustrazione di categoria): ${noPhoto.map((p) => p.name.replace('Vesuvio ', '')).join(', ')}.`, `#admin-prodotto-${noPhoto[0].id}`, 'Carica foto']);
+  for (const p of db().products.filter((x) => x.status === 'published' && !idx.isProductPurchasable(x))) out.push(['warn', `${p.name}: pubblicato ma senza varianti acquistabili, quindi nascosto.`, `#admin-prodotto-${p.id}`, 'Apri']);
+  if (!media.available()) out.push(['warn', 'IndexedDB non disponibile: le foto caricate non resteranno dopo il ricaricamento.', null, null]);
+  return out;
+}
+function viewOverview() {
+  const d = db();
+  const counts = {
+    pub: d.products.filter((p) => p.status === 'published').length,
+    draft: d.products.filter((p) => p.status === 'draft').length,
+    waiting: d.requests.filter((r) => r.status === 'in_attesa_contatto').length,
+    quotes: d.requests.filter((r) => r.type !== 'cart' && !['chiuso', 'annullato'].includes(r.status)).length,
+  };
+  const b = blockers();
+  shell('admin', 'Panoramica', `
+    <div class="adm-stats">
+      <a href="#admin-catalogo"><strong>${counts.pub}</strong> prodotti pubblicati</a>
+      <a href="#admin-catalogo"><strong>${counts.draft}</strong> bozze</a>
+      <a href="#admin-richieste"><strong>${counts.waiting}</strong> richieste in attesa di contatto</a>
+      <a href="#admin-richieste"><strong>${counts.quotes}</strong> preventivi aperti</a>
+    </div>
+    <h2 class="adm-h2">Da sistemare prima del lancio</h2>
+    ${b.length ? `<ul class="adm-list">${b.map(([k, t, h, l]) => `<li class="adm-row adm-row--${k}"><span>${esc(t)}</span>${h ? `<a class="btn btn--ghost btn--sm" href="${h}">${l}</a>` : ''}</li>`).join('')}</ul>` : '<p class="note note--ok">Nessun blocco rilevato.</p>'}
+    <h2 class="adm-h2">Bozze in attesa di dati</h2>
+    <ul class="adm-list">${d.products.filter((p) => p.status === 'draft').map((p) => `<li class="adm-row"><span><strong>${esc(p.name)}</strong><br><span class="small muted">${esc(p.internal_notes || '')}</span></span><a class="btn btn--ghost btn--sm" href="#admin-prodotto-${p.id}">Modifica</a></li>`).join('') || '<li class="adm-row">Nessuna bozza</li>'}</ul>`);
+}
+
+// ------------------------------------------------------------- prodotti
+const STATUS_LABEL = { draft: 'Bozza', published: 'Pubblicato', archived: 'Archiviato' };
+function viewCatalog() {
+  const d = db();
+  const idx = catalog();
+  const q = (sessionStorage.getItem('adm-q') || '').toLowerCase();
+  const st = sessionStorage.getItem('adm-st') || 'all';
+  const list = d.products
+    .filter((p) => (st === 'all' ? true : p.status === st))
+    .filter((p) => !q || (p.name + ' ' + p.slug + ' ' + p.technical_name).toLowerCase().includes(q))
+    .sort((a, b) => (d.categories.find((c) => c.id === a.category_id)?.sort ?? 0) - (d.categories.find((c) => c.id === b.category_id)?.sort ?? 0) || a.sort - b.sort);
+  shell('admin-catalogo', 'Prodotti', `
+    <div class="adm-filters"><input class="input" type="search" placeholder="Cerca per nome o slug" value="${esc(q)}" data-adm-input="q" aria-label="Cerca prodotti">
+      <select class="input" data-adm-change="st" aria-label="Stato">${[['all', 'Tutti gli stati'], ...Object.entries(STATUS_LABEL)].map(([v, l]) => `<option value="${v}" ${st === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="adm-table" role="table" aria-label="Prodotti">
+      <div class="adm-tr adm-tr--h" role="row"><span role="columnheader">Prodotto</span><span role="columnheader">Categoria</span><span role="columnheader">Varianti</span><span role="columnheader">Prezzo</span><span role="columnheader">Stato</span></div>
+      ${list.map((p) => {
+        const c = d.categories.find((x) => x.id === p.category_id);
+        const all = idx.variantsOf(p, false);
+        const ok = idx.purchasableVariants(p).length;
+        const min = idx.minPrice(p);
+        return `<a class="adm-tr" role="row" href="#admin-prodotto-${p.id}"><span role="cell"><strong>${esc(p.name)}</strong><br><span class="small muted">/${esc(p.slug)}</span></span><span role="cell">${esc(c?.name ?? '—')}</span><span role="cell">${ok}/${all.length} acquistabili</span><span role="cell">${min !== null ? 'da ' + formatCents(min) : '—'}</span><span role="cell"><span class="st st--${p.status}">${STATUS_LABEL[p.status]}</span></span></a>`;
+      }).join('') || '<p class="muted" style="padding:16px">Nessun prodotto trovato.</p>'}
+    </div>`, `<button class="btn btn--primary btn--sm" data-adm="new-product">Nuovo prodotto</button>`);
+}
+
+function variantRow(p, v, kind) {
+  return `<div class="adm-var" data-vid="${esc(v.id)}">
+    <label><span>Misura</span><input class="input" data-f="size" value="${esc(v.size ?? '')}" placeholder="160x190" ${kind === 'guanciale' ? 'disabled' : ''}></label>
+    <label><span>Altezza cm</span><input class="input" data-f="height_cm" inputmode="numeric" value="${esc(v.height_cm ?? '')}"></label>
+    <label class="adm-var__sku"><span>SKU</span><input class="input" data-f="sku" value="${esc(v.sku)}"></label>
+    <label><span>Prezzo €</span><input class="input" data-f="price" inputmode="decimal" value="${v.price_cents !== null ? (v.price_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="vuoto = non acquistabile"></label>
+    <label><span>Disponibilità</span><select class="input" data-f="availability">${Object.entries(AVAILABILITY_LABEL).map(([k, l]) => `<option value="${k}" ${v.availability === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <label class="check"><input type="checkbox" data-f="active" ${v.active ? 'checked' : ''}> Attiva</label>
+    <button type="button" class="icon-btn" data-adm="var-del" data-id="${esc(v.id)}" aria-label="Elimina variante ${esc(v.sku)}">${icon('trash', 20)}</button>
+  </div>`;
+}
+
+function groupVariants(vs) {
+  const map = new Map();
+  for (const v of vs) {
+    const k = v.height_cm ?? null;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(v);
+  }
+  return [...map.entries()];
+}
+
+function mediaCard(m, i, n) {
+  const src = media.resolve(m);
+  return `<div class="adm-media" data-mid="${esc(m.id)}">
+    <div class="adm-media__img" data-adm="focal" data-id="${esc(m.id)}" title="Tocca per impostare il punto focale">
+      ${src ? `<img src="${esc(src)}" alt="" style="object-position:${m.focal_x}% ${m.focal_y}%">` : `<div class="fallback">${icon('image', 40)}<span class="small">File non disponibile in questo browser</span></div>`}
+      <span class="adm-focal" style="left:${m.focal_x}%;top:${m.focal_y}%" aria-hidden="true"></span>
+      <span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>
+    </div>
+    <div class="adm-media__crops" aria-label="Anteprima ritagli">${src ? `<figure><img src="${esc(src)}" alt="" style="aspect-ratio:4/3;object-fit:${m.illustrative ? 'contain' : 'cover'};object-position:${m.focal_x}% ${m.focal_y}%"><figcaption>Card 4:3</figcaption></figure><figure><img src="${esc(src)}" alt="" style="aspect-ratio:1;object-fit:${m.illustrative ? 'contain' : 'cover'};object-position:${m.focal_x}% ${m.focal_y}%"><figcaption>Carrello 1:1</figcaption></figure>` : ''}</div>
+    <div class="adm-media__fields">
+      <label><span>Slot</span><select class="input" data-mf="slot">${['hero', 'exploded', 'fabric', 'extra'].map((s) => `<option ${m.slot === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
+      <label><span>Testo alternativo</span><input class="input" data-mf="alt" value="${esc(m.alt)}" placeholder="Descrivi cosa si vede"></label>
+      <label><span>Didascalia</span><input class="input" data-mf="caption" value="${esc(m.caption ?? '')}" placeholder="Es. Render illustrativo"></label>
+      <label class="check"><input type="checkbox" data-mf="illustrative" ${m.illustrative ? 'checked' : ''}> Render o immagine illustrativa</label>
+      <label class="check"><input type="radio" name="cover" data-mf="is_cover" ${m.is_cover ? 'checked' : ''}> Copertina</label>
+    </div>
+    <div class="adm-media__actions">
+      <button type="button" class="icon-btn" data-adm="m-up" data-id="${esc(m.id)}" ${i === 0 ? 'disabled' : ''} aria-label="Sposta prima">${icon('arrowUp', 20)}</button>
+      <button type="button" class="icon-btn" data-adm="m-down" data-id="${esc(m.id)}" ${i === n - 1 ? 'disabled' : ''} aria-label="Sposta dopo">${icon('arrowDown', 20)}</button>
+      <label class="btn btn--ghost btn--sm">Sostituisci<input type="file" accept="image/jpeg,image/png,image/webp" data-adm-file="replace" data-id="${esc(m.id)}" hidden></label>
+      <button type="button" class="btn btn--sm ${m.published ? 'btn--ghost' : 'btn--primary'}" data-adm="m-pub" data-id="${esc(m.id)}">${m.published ? 'Nascondi' : 'Pubblica foto'}</button>
+      <button type="button" class="btn btn--danger btn--sm" data-adm="m-del" data-id="${esc(m.id)}">Elimina</button>
+    </div>
+  </div>`;
+}
+
+function referencedProduct(id) {
+  return db().requests.some((r) => r.items.some((i) => i.product_id === id) || r.quote?.product_id === id);
+}
+function referencedVariant(id) {
+  return db().requests.some((r) => r.items.some((i) => i.variant_id === id));
+}
+
+function viewProductEdit(id) {
+  const d = db();
+  const p = d.products.find((x) => x.id === id);
+  if (!p) return shell('admin-catalogo', 'Prodotto non trovato', '<p><a href="#admin-catalogo">Torna ai prodotti</a></p>');
+  const c = d.categories.find((x) => x.id === p.category_id);
+  const kind = c?.kind ?? 'materasso';
+  const vs = d.variants.filter((v) => v.product_id === p.id).sort((a, b) => a.sort - b.sort);
+  const ms = d.media.filter((m) => m.product_id === p.id).sort((a, b) => a.sort - b.sort);
+  const idx = catalog();
+  const purch = idx.purchasableVariants({ ...p, status: 'published' }).length;
+  const canDelete = p.status === 'draft' && !referencedProduct(p.id);
+  const actions = `${p.status !== 'published' ? `<button class="btn btn--primary btn--sm" data-adm="status" data-v="published">Pubblica</button>` : ''}
+    ${p.status === 'published' ? `<button class="btn btn--ghost btn--sm" data-adm="status" data-v="draft">Riporta in bozza</button>` : ''}
+    ${p.status !== 'archived' ? `<button class="btn btn--ghost btn--sm" data-adm="status" data-v="archived">Archivia</button>` : ''}
+    ${canDelete ? `<button class="btn btn--danger btn--sm" data-adm="delete-product">Elimina bozza</button>` : ''}`;
+  shell('admin-catalogo', p.name, `
+    <p class="small"><a href="#admin-catalogo">← Prodotti</a> · Stato: <span class="st st--${p.status}">${STATUS_LABEL[p.status]}</span> · ${purch} varianti acquistabili
+      ${p.status === 'published' && c?.status === 'published' ? ` · <a href="#prodotto-${esc(p.slug)}">Vedi sul sito</a>` : ''}
+      · <button class="link-btn" data-adm="preview">Anteprima con bozze</button></p>
+    ${p.internal_notes ? `<p class="note note--warn small"><strong>Note interne:</strong> ${esc(p.internal_notes)}</p>` : ''}
+    <form id="adm-product" class="form adm-form" novalidate data-id="${esc(p.id)}">
+      <section class="adm-card"><h2 class="adm-h2">Dati principali</h2>
+        <div class="adm-grid">
+          <div class="field"><label for="f-name">Nome</label><input class="input" id="f-name" name="name" value="${esc(p.name)}" required></div>
+          <div class="field"><label for="f-slug">Slug</label><input class="input" id="f-slug" name="slug" value="${esc(p.slug)}" pattern="[a-z0-9-]+" required><span class="hint">Indirizzo della scheda: lettere minuscole, numeri e trattini.</span></div>
+          <div class="field"><label for="f-cat">Categoria</label><select class="input" id="f-cat" name="category_id">${d.categories.map((x) => `<option value="${x.id}" ${x.id === p.category_id ? 'selected' : ''}>${esc(x.name)}${x.status !== 'published' ? ' (non pubblicata)' : ''}</option>`).join('')}</select></div>
+          <div class="field"><label for="f-tech">Nome tecnico</label><input class="input" id="f-tech" name="technical_name" value="${esc(p.technical_name)}"></div>
+          <div class="field"><label for="f-line">Codice linea (SKU)</label><input class="input" id="f-line" name="line_code" value="${esc(p.line_code)}"></div>
+          <div class="field"><label for="f-sort">Ordinamento</label><input class="input" id="f-sort" name="sort" inputmode="numeric" value="${esc(p.sort)}"></div>
+        </div>
+        <div class="field"><label for="f-short">Descrizione breve</label><input class="input" id="f-short" name="short" value="${esc(p.short)}" maxlength="180"></div>
+        <div class="field"><label for="f-desc">Descrizione</label><textarea class="textarea" id="f-desc" name="description">${esc(p.description)}</textarea></div>
+        <div class="field"><label for="f-comp">Composizione</label><input class="input" id="f-comp" name="composition" value="${esc(p.composition)}"></div>
+        <div class="adm-grid">
+          <div class="field"><label for="f-hl">Punti chiave (uno per riga)</label><textarea class="textarea" id="f-hl" name="highlights">${esc((p.highlights || []).join('\n'))}</textarea></div>
+          <div class="field"><label for="f-cl">Claim tessuto (uno per riga)</label><textarea class="textarea" id="f-cl" name="claims">${esc((p.claims || []).join('\n'))}</textarea><span class="hint">Pubblica solo claim verificati sull'etichetta.</span></div>
+        </div>
+        <div class="adm-grid">
+          <div class="field"><label for="f-firm">Rigidità indicativa</label><input class="input" id="f-firm" name="firmness_display" value="${esc(p.firmness_display ?? '')}"></div>
+          <div class="field"><label for="f-lead">Tempi</label><input class="input" id="f-lead" name="lead_time" value="${esc(p.lead_time ?? '')}" placeholder="Es. Produzione in circa 2 giorni"></div>
+        </div>
+        <div class="adm-checks">
+          <label class="check"><input type="checkbox" name="removable_cover" ${p.removable_cover ? 'checked' : ''}> Sfoderabile</label>
+          <label class="check"><input type="checkbox" name="summer_winter" ${p.summer_winter ? 'checked' : ''}> Lato estivo/invernale</label>
+          <label class="check"><input type="checkbox" name="hybrid" ${p.hybrid ? 'checked' : ''}> Hybrid (molle + Memory)</label>
+        </div>
+        <div class="field"><label for="f-notes">Note interne (mai pubbliche)</label><textarea class="textarea" id="f-notes" name="internal_notes">${esc(p.internal_notes ?? '')}</textarea></div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">SEO</h2>
+        <div class="field"><label for="f-st">Titolo SEO</label><input class="input" id="f-st" name="seo_title" value="${esc(p.seo_title ?? '')}" maxlength="70" placeholder="${esc(p.name)}"><span class="hint">Lascia vuoto per usare il nome. Max 70 caratteri.</span></div>
+        <div class="field"><label for="f-sd">Descrizione SEO</label><textarea class="textarea" id="f-sd" name="seo_description" maxlength="160" placeholder="${esc(p.short)}">${esc(p.seo_description ?? '')}</textarea><span class="hint">Max 160 caratteri.</span></div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Varianti e prezzi</h2>
+        <p class="small muted">Prezzi IVA inclusa. Una variante senza prezzo, disattivata o "non acquistabile" resta visibile ma disabilitata nella scheda.</p>
+        <div id="adm-vars">${groupVariants(vs).map(([h, list], gi) => `<details class="adm-vgroup" ${gi === 0 || vs.length <= 8 ? 'open' : ''}><summary>${h === null ? 'Senza altezza' : 'H' + h} · ${list.length} varianti · ${list.filter((v) => v.price_cents !== null && v.active && v.availability !== 'unavailable').length} acquistabili</summary>${list.map((v) => variantRow(p, v, kind)).join('')}</details>`).join('') || '<p class="muted">Nessuna variante.</p>'}</div>
+        <div class="btn-row" style="margin-top:12px"><button type="button" class="btn btn--ghost btn--sm" data-adm="var-add">Aggiungi variante</button><button type="button" class="btn btn--ghost btn--sm" data-adm="var-grid">Genera griglia misure × altezze</button><button type="button" class="btn btn--ghost btn--sm" data-adm="var-sku">Rigenera SKU</button></div>
+      </section>
+      <div class="adm-save"><button class="btn btn--primary">Salva modifiche</button><span class="small muted" id="save-state"></span></div>
+    </form>
+    <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Foto</h2>
+      <p class="small muted">JPEG, PNG o WebP fino a 8 MB, almeno 400×300 px. Le foto nuove restano in bozza finché non le pubblichi; il testo alternativo è obbligatorio per pubblicare. Tocca un'immagine per scegliere il punto da tenere al centro nei ritagli.</p>
+      <div id="adm-media">${ms.map((m, i) => mediaCard(m, i, ms.length)).join('') || '<p class="muted">Nessuna foto: sul sito si vede l\'illustrazione della categoria.</p>'}</div>
+      <label class="btn btn--primary btn--sm" style="margin-top:12px">Carica foto<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-adm-file="new" hidden></label>
+      <span class="small muted" id="upload-state" aria-live="polite"></span>
+    </section>`, actions);
+}
+
+function readProductForm(form) {
+  const p = db().products.find((x) => x.id === form.dataset.id);
+  const fd = new FormData(form);
+  const lines = (k) => String(fd.get(k) || '').split('\n').map((s) => s.trim()).filter(Boolean);
+  const errors = [];
+  const name = String(fd.get('name')).trim();
+  const slug = slugify(String(fd.get('slug')) || name);
+  if (!name) errors.push('Il nome è obbligatorio.');
+  if (db().products.some((x) => x.slug === slug && x.id !== p.id)) errors.push(`Lo slug "${slug}" è già usato.`);
+  const next = {
+    ...p,
+    name,
+    slug,
+    category_id: String(fd.get('category_id')),
+    technical_name: String(fd.get('technical_name')).trim(),
+    line_code: String(fd.get('line_code')).trim().toUpperCase(),
+    sort: Number(fd.get('sort')) || 0,
+    short: String(fd.get('short')).trim(),
+    description: String(fd.get('description')).trim(),
+    composition: String(fd.get('composition')).trim(),
+    highlights: lines('highlights'),
+    claims: lines('claims'),
+    firmness_display: String(fd.get('firmness_display')).trim() || null,
+    lead_time: String(fd.get('lead_time')).trim() || null,
+    removable_cover: fd.get('removable_cover') === 'on',
+    summer_winter: fd.get('summer_winter') === 'on',
+    hybrid: fd.get('hybrid') === 'on',
+    internal_notes: String(fd.get('internal_notes')).trim(),
+    seo_title: String(fd.get('seo_title')).trim(),
+    seo_description: String(fd.get('seo_description')).trim(),
+  };
+  // varianti
+  const vars = [];
+  $$('.adm-var', form).forEach((row, i) => {
+    const g = (f) => $(`[data-f="${f}"]`, row);
+    const old = db().variants.find((v) => v.id === row.dataset.vid);
+    const size = g('size').value.trim().toLowerCase().replace('×', 'x') || null;
+    const h = g('height_cm').value.trim() ? Number(g('height_cm').value) : null;
+    const priceRaw = g('price').value.trim();
+    const price = priceRaw ? parseEuroToCents(priceRaw) : null;
+    if (size && !/^\d{2,3}x\d{2,3}$/.test(size)) errors.push(`Riga ${i + 1}: misura non valida (usa 160x190).`);
+    if (priceRaw && price === null) errors.push(`Riga ${i + 1}: prezzo non valido.`);
+    if (h !== null && (!Number.isInteger(h) || h < 1 || h > 60)) errors.push(`Riga ${i + 1}: altezza non valida.`);
+    vars.push({ ...(old ?? { id: row.dataset.vid, product_id: p.id }), size, height_cm: h, sku: g('sku').value.trim(), price_cents: price, availability: g('availability').value, active: g('active').checked, sort: i });
+  });
+  const skus = vars.map((v) => v.sku);
+  if (skus.some((s) => !s)) errors.push('Ogni variante deve avere uno SKU.');
+  const dup = skus.find((s, i) => s && skus.indexOf(s) !== i);
+  if (dup) errors.push(`SKU duplicato: ${dup}.`);
+  const others = db().variants.filter((v) => v.product_id !== p.id).map((v) => v.sku);
+  const clash = skus.find((s) => others.includes(s));
+  if (clash) errors.push(`Lo SKU ${clash} è già usato da un altro prodotto.`);
+  return { p, next, vars, errors };
+}
+
+function saveProduct(form, { silent = false } = {}) {
+  const { p, next, vars, errors } = readProductForm(form);
+  if (errors.length) {
+    openDialog({ title: 'Controlla i dati', body: `<ul>${errors.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`, actions: [{ label: 'Ho capito', primary: true }] });
+    return false;
+  }
+  const d = db();
+  // storico prezzi, utile per le future comunicazioni di riduzione prezzo
+  for (const v of vars) {
+    const old = d.variants.find((x) => x.id === v.id);
+    if (old && old.price_cents !== v.price_cents) {
+      d.price_history.unshift({ at: new Date().toISOString(), variant_id: v.id, sku: v.sku, old: old.price_cents, new: v.price_cents });
+      store.audit('prezzo', v.sku, `${old.price_cents === null ? '—' : formatCents(old.price_cents)} → ${v.price_cents === null ? '—' : formatCents(v.price_cents)}`);
+    }
+  }
+  d.variants = d.variants.filter((v) => v.product_id !== p.id).concat(vars);
+  Object.assign(p, next);
+  store.audit('modifica prodotto', p.name, 'Dati e varianti salvati');
+  store.commit('catalog');
+  if (!silent) toast('Modifiche salvate');
+  return true;
+}
+
+// ------------------------------------------------------------- categorie
+function viewCategories() {
+  const d = db();
+  const idx = catalog();
+  shell('admin-categorie', 'Categorie', `
+    <p class="small muted">Una categoria pubblicata compare nel menu solo se contiene almeno un articolo acquistabile.</p>
+    <form id="adm-cats" class="form" novalidate>
+      ${d.categories.sort((a, b) => a.sort - b.sort).map((c) => `<div class="adm-card adm-cat" data-cid="${c.id}">
+        <div class="adm-grid">
+          <div class="field"><label>Nome</label><input class="input" data-c="name" value="${esc(c.name)}"></div>
+          <div class="field"><label>Slug</label><input class="input" data-c="slug" value="${esc(c.slug)}"></div>
+          <div class="field"><label>Tipo</label><select class="input" data-c="kind">${['materasso', 'rete', 'guanciale', 'topper', 'letto'].map((k) => `<option ${c.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>
+          <div class="field"><label>Ordine</label><input class="input" data-c="sort" inputmode="numeric" value="${c.sort}"></div>
+          <div class="field"><label>Stato</label><select class="input" data-c="status">${Object.entries(STATUS_LABEL).map(([k, l]) => `<option value="${k}" ${c.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label>Descrizione</label><input class="input" data-c="description" value="${esc(c.description)}"></div>
+        <p class="small muted" style="margin:0">${d.products.filter((p) => p.category_id === c.id).length} prodotti · ${idx.publicProducts(c.kind).length} acquistabili · ${idx.commercialCategories().some((x) => x.id === c.id) ? 'visibile nel menu' : 'nascosta dal menu'}
+        ${d.products.some((p) => p.category_id === c.id) ? '' : ` · <button type="button" class="link-btn" data-adm="cat-del" data-id="${c.id}">Elimina</button>`}</p>
+      </div>`).join('')}
+      <div class="adm-save"><button class="btn btn--primary">Salva categorie</button></div>
+    </form>`, `<button class="btn btn--ghost btn--sm" data-adm="cat-add">Nuova categoria</button>`);
+}
+
+// ------------------------------------------------------------- richieste
+function viewRequests() {
+  const d = db();
+  const q = (sessionStorage.getItem('adm-rq') || '').toLowerCase();
+  const st = sessionStorage.getItem('adm-rst') || 'all';
+  const ty = sessionStorage.getItem('adm-rty') || 'all';
+  const list = d.requests
+    .filter((r) => (st === 'all' ? true : r.status === st))
+    .filter((r) => (ty === 'all' ? true : r.type === ty))
+    .filter((r) => !q || JSON.stringify([r.ref, r.items, r.quote, r.internal_notes, r.tracking]).toLowerCase().includes(q));
+  shell('admin-richieste', 'Richieste e preventivi', `
+    <p class="note small">Le richieste nascono quando un cliente genera il riepilogo. Aprire WhatsApp non prova che il messaggio sia arrivato: lo stato si cambia a mano dopo il contatto.</p>
+    <div class="adm-filters">
+      <input class="input" type="search" placeholder="Cerca per riferimento, SKU, note" value="${esc(q)}" data-adm-input="rq" aria-label="Cerca richieste">
+      <select class="input" data-adm-change="rst" aria-label="Stato">${[['all', 'Tutti gli stati'], ...Object.entries(REQUEST_STATUS)].map(([v, l]) => `<option value="${v}" ${st === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <select class="input" data-adm-change="rty" aria-label="Tipo">${[['all', 'Tutti i tipi'], ...Object.entries(REQUEST_TYPE)].map(([v, l]) => `<option value="${v}" ${ty === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    </div>
+    <div class="adm-table" role="table" aria-label="Richieste">
+      <div class="adm-tr adm-tr--h" role="row"><span role="columnheader">Riferimento</span><span role="columnheader">Tipo</span><span role="columnheader">Contenuto</span><span role="columnheader">Totale</span><span role="columnheader">Stato</span></div>
+      ${list.map((r) => `<a class="adm-tr" role="row" href="#admin-richiesta-${esc(r.ref)}"><span role="cell"><strong>${esc(r.ref)}</strong><br><span class="small muted">${fmtDate(r.created_at)}</span></span><span role="cell">${REQUEST_TYPE[r.type]}</span>
+        <span role="cell" class="small">${r.items.length ? r.items.map((i) => `${i.qty}× ${esc(i.name.replace('Vesuvio ', ''))}${i.size ? ' ' + formatSize(i.size) : ''}`).join(', ') : esc(`${r.quote?.product ?? ''} ${r.quote?.width_cm}×${r.quote?.length_cm}${r.quote?.height_cm ? ' H' + r.quote.height_cm : ''}`)}</span>
+        <span role="cell">${r.total_cents ? formatCents(r.total_cents) : r.quote?.price_cents ? formatCents(r.quote.price_cents) : '—'}</span><span role="cell"><span class="st st--req-${r.status}">${REQUEST_STATUS[r.status]}</span></span></a>`).join('') || '<div class="empty" style="margin:12px"><p>Nessuna richiesta. Le richieste compaiono quando un cliente arriva al riepilogo dal carrello o prepara un preventivo fuori misura.</p></div>'}
+    </div>`);
+}
+
+function quoteReply(r) {
+  const q = r.quote;
+  return [
+    `Ciao, grazie per la richiesta ${r.ref}.`,
+    `${q.product}, misura ${q.width_cm}×${q.length_cm} cm${q.height_cm ? `, altezza ${q.height_cm} cm` : ''}.`,
+    q.price_cents ? `Prezzo: ${formatCents(q.price_cents)} IVA inclusa.` : '',
+    q.reply || '',
+    'Se ti va bene, rispondi a questo messaggio e ti confermiamo l\'ordine.',
+  ].filter(Boolean).join('\n');
+}
+
+function viewRequest(ref) {
+  const r = db().requests.find((x) => x.ref === ref);
+  if (!r) return shell('admin-richieste', 'Richiesta non trovata', '<p><a href="#admin-richieste">Torna alle richieste</a></p>');
+  const q = r.quote;
+  shell('admin-richieste', r.ref, `
+    <p class="small"><a href="#admin-richieste">← Richieste</a> · ${REQUEST_TYPE[r.type]} · creata ${fmtDate(r.created_at)}</p>
+    <form id="adm-request" class="form" data-ref="${esc(r.ref)}" novalidate>
+      <div class="adm-grid2">
+        <section class="adm-card">
+          ${r.items.length ? `<h2 class="adm-h2">Articoli</h2><table class="size-table"><tbody>${r.items.map((i) => `<tr><td>${esc(i.name)}<br><span class="small muted">${i.size ? formatSize(i.size) : ''}${i.height_cm && i.size ? ' H' + i.height_cm : ''} · ${esc(i.sku)}</span></td><td>${i.qty}×</td><td style="text-align:right">${formatCents(i.unit_cents * i.qty)}</td></tr>`).join('')}<tr><td colspan="2"><strong>Totale</strong></td><td style="text-align:right"><strong>${formatCents(r.total_cents)}</strong></td></tr></tbody></table>` : ''}
+          ${q ? `<h2 class="adm-h2">Preventivo fuori misura</h2>
+            <dl class="facts-list"><dt>Prodotto</dt><dd>${esc(q.product)}</dd><dt>Misura</dt><dd>${q.width_cm}×${q.length_cm} cm${q.height_cm ? `, H${q.height_cm}` : ''}</dd><dt>Note cliente</dt><dd>${esc(q.notes || '—')}</dd>${q.custom_sku ? `<dt>SKU personalizzato</dt><dd>${esc(q.custom_sku)}</dd>` : ''}</dl>
+            <div class="adm-grid" style="margin-top:14px"><div class="field"><label for="r-price">Prezzo proposto €</label><input class="input" id="r-price" name="price" inputmode="decimal" value="${q.price_cents ? (q.price_cents / 100).toFixed(2).replace('.', ',') : ''}"></div>
+              <div class="field"><label for="r-reply">Testo aggiuntivo (tempi, condizioni)</label><input class="input" id="r-reply" name="reply" value="${esc(q.reply)}"></div></div>
+            <div class="btn-row"><button type="button" class="btn btn--ghost btn--sm" data-adm="copy-reply">${icon('copy', 18)} Copia la risposta per WhatsApp</button>${q.custom_sku ? '' : '<button type="button" class="btn btn--ghost btn--sm" data-adm="custom-sku">Genera SKU personalizzato</button>'}</div>
+            <textarea class="textarea" id="copy-fallback" hidden readonly></textarea>
+            <p class="small muted">Al lancio la conferma avviene su WhatsApp: nessun link di pagamento viene generato.</p>` : ''}
+        </section>
+        <section class="adm-card">
+          <h2 class="adm-h2">Gestione</h2>
+          <div class="field"><label for="r-status">Stato</label><select class="input" id="r-status" name="status">${Object.entries(REQUEST_STATUS).map(([k, l]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label for="r-tracking">Tracking spedizione</label><input class="input" id="r-tracking" name="tracking" value="${esc(r.tracking)}" placeholder="Corriere e codice"></div>
+          <div class="field"><label for="r-notes">Note interne</label><textarea class="textarea" id="r-notes" name="internal_notes">${esc(r.internal_notes)}</textarea><span class="hint">Non salvare qui dati sanitari o di pagamento.</span></div>
+          <div class="field"><label for="r-hnote">Nota per lo storico (facoltativa)</label><input class="input" id="r-hnote" name="hnote" placeholder="Es. Confermato su WhatsApp, consegna giovedì"></div>
+          <button class="btn btn--primary">Salva</button>
+          <h3 style="margin-top:22px;font-size:1rem">Storico</h3>
+          <ol class="adm-history">${r.history.slice().reverse().map((h) => `<li><strong>${REQUEST_STATUS[h.status] ?? h.status}</strong> · ${fmtDate(h.at)} · ${esc(h.by)}${h.note ? `<br><span class="small muted">${esc(h.note)}</span>` : ''}</li>`).join('')}</ol>
+        </section>
+      </div>
+    </form>`);
+}
+
+// ------------------------------------------------------------- impostazioni
+function viewSettings() {
+  const s = db().settings;
+  const wa = whatsappStatus();
+  shell('admin-impostazioni', 'Impostazioni', `
+    <form id="adm-settings" class="form" novalidate>
+      <section class="adm-card"><h2 class="adm-h2">WhatsApp per le richieste</h2>
+        ${wa.source === 'env' ? `<p class="note">Il numero è impostato dalla configurazione d'ambiente e prevale su questo campo.</p>` : ''}
+        <div class="field"><label for="s-wa">Numero WhatsApp aziendale</label><input class="input" id="s-wa" name="whatsapp_number" value="${esc(s.whatsapp_number)}" placeholder="+39 …" inputmode="tel" aria-describedby="s-wa-h"><span class="hint" id="s-wa-h">Con prefisso internazionale. Da confermare prima del lancio: finché è vuoto il sito offre solo "Copia il riepilogo".</span></div>
+        <p class="${wa.check.ok ? 'note note--ok' : 'note note--warn'} small" id="wa-check">${wa.check.ok ? `Attivo: i link si aprono su wa.me/${esc(wa.check.digits)}` : esc(wa.check.reason)}</p>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Testi e condizioni</h2>
+        <div class="field"><label for="s-ship">Spedizione (testo pubblico)</label><input class="input" id="s-ship" name="shipping_note" value="${esc(s.shipping_note)}"></div>
+        <label class="check"><input type="checkbox" name="show_claims" ${s.show_claims ? 'checked' : ''}> Mostra i claim del tessuto nelle schede (antiacaro, ipoallergenico, Free Humidity)</label>
+      </section>
+      <div class="adm-save"><button class="btn btn--primary">Salva impostazioni</button></div>
+    </form>
+    <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Pagamenti online</h2>
+      <p class="small">Predisposti e disattivati. Al lancio le richieste si confermano solo su WhatsApp: nessun metodo è visibile al cliente e nessuna sessione di pagamento può essere creata.</p>
+      ${Object.values(PROVIDERS).map((pv) => `<details class="adm-pay"><summary><strong>${esc(pv.label)}</strong> <span class="st st--archived">Disattivato</span></summary><ul class="small">${pv.requirements.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`).join('')}
+    </section>
+    <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Sitemap del sito reale</h2>
+      <p class="small muted">Generata solo con le pagine pubblicabili. Non viene servita da questa anteprima, che resta non indicizzata.</p>
+      <div class="adm-filters"><input class="input" id="sm-base" value="https://vesuviosleep.it" aria-label="Dominio"><button class="btn btn--ghost btn--sm" data-adm="sitemap">Genera</button></div>
+      <textarea class="textarea" id="sm-out" readonly rows="6" aria-label="Sitemap" hidden></textarea>
+    </section>
+    <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Dati dell'anteprima</h2>
+      <p class="small muted">Catalogo, richieste e foto sono salvati solo in questo browser.</p>
+      <div class="btn-row"><button class="btn btn--ghost btn--sm" data-adm="export">Esporta i dati in JSON</button><button class="btn btn--danger btn--sm" data-adm="reset">Ripristina i dati iniziali</button></div>
+      <textarea class="textarea" id="export-out" readonly rows="6" hidden aria-label="Esportazione"></textarea>
+    </section>`);
+}
+
+function viewAudit() {
+  const a = db().audit;
+  shell('admin-storico', 'Storico delle modifiche', `<ol class="adm-history">${a.map((x) => `<li><strong>${esc(x.action)}</strong> · ${esc(x.entity)} · ${fmtDate(x.at)}<br><span class="small muted">${esc(x.detail ?? '')}</span></li>`).join('') || '<li class="muted">Ancora nessuna modifica.</li>'}</ol>
+    ${db().price_history.length ? `<h2 class="adm-h2" style="margin-top:24px">Storico prezzi</h2><ol class="adm-history">${db().price_history.map((h) => `<li>${esc(h.sku)}: ${h.old === null ? '—' : formatCents(h.old)} → ${h.new === null ? '—' : formatCents(h.new)} · ${fmtDate(h.at)}</li>`).join('')}</ol>` : ''}`);
+}
+
+// ------------------------------------------------------------- router admin
+async function render(app) {
+  root = app;
+  bind();
+  const r = location.hash.slice(1);
+  if (!isLogged()) return viewLogin();
+  let m;
+  if (r === 'admin') viewOverview();
+  else if (r === 'admin-catalogo') viewCatalog();
+  else if ((m = /^admin-prodotto-(.+)$/.exec(r))) viewProductEdit(m[1]);
+  else if (r === 'admin-categorie') viewCategories();
+  else if (r === 'admin-richieste') viewRequests();
+  else if ((m = /^admin-richiesta-(.+)$/.exec(r))) viewRequest(m[1]);
+  else if (r === 'admin-impostazioni') viewSettings();
+  else if (r === 'admin-storico') viewAudit();
+  else viewOverview();
+  document.title = 'Admin | Vesuvio Sleep (anteprima)';
+}
+const rerender = () => render(root);
+const currentProductId = () => $('#adm-product')?.dataset.id;
+
+// ------------------------------------------------------------- eventi
+let bound = false;
+function bind() {
+  if (bound) return;
+  bound = true;
+  const inAdmin = () => document.body.classList.contains('is-admin');
+
+  document.addEventListener('submit', async (e) => {
+    if (!inAdmin()) return;
+    const f = e.target;
+    e.preventDefault();
+    if (f.id === 'adm-login') {
+      const pw = $('#pw').value;
+      const err = $('#login-err');
+      const cred = getCred();
+      try {
+        if (!cred) {
+          if (pw.length < 10) return (err.textContent = 'La password deve avere almeno 10 caratteri.');
+          if (pw !== $('#pw2').value) return (err.textContent = 'Le due password non coincidono.');
+          const d = await derive(pw);
+          localStorage.setItem(CRED, JSON.stringify(d));
+          store.audit('accesso', 'admin', 'Creato l\'accesso admin dell\'anteprima');
+          store.commit();
+        } else {
+          const d = await derive(pw, cred.salt);
+          if (d.hash !== cred.hash) return (err.textContent = 'Password non corretta.');
+        }
+        startSession();
+        rerender();
+      } catch {
+        err.textContent = 'Impossibile salvare l\'accesso: il browser blocca l\'archiviazione locale.';
+      }
+    }
+    if (f.id === 'adm-product') {
+      if (saveProduct(f)) rerender();
+    }
+    if (f.id === 'adm-cats') {
+      const d = db();
+      const errs = [];
+      $$('.adm-cat', f).forEach((row) => {
+        const c = d.categories.find((x) => x.id === row.dataset.cid);
+        const g = (k) => $(`[data-c="${k}"]`, row).value.trim();
+        const slug = slugify(g('slug') || g('name'));
+        if (!g('name')) errs.push('Ogni categoria deve avere un nome.');
+        if (d.categories.some((x) => x.slug === slug && x.id !== c.id)) errs.push(`Slug duplicato: ${slug}`);
+        if (['admin', 'carrello', 'riepilogo', 'confronto', 'showroom', 'sleep-match', 'guida-misure', 'fuori-misura'].includes(slug) || slug.startsWith('prodotto-')) errs.push(`Lo slug "${slug}" è riservato.`);
+        Object.assign(c, { name: g('name'), slug, kind: g('kind'), sort: Number(g('sort')) || 0, status: g('status'), description: g('description') });
+      });
+      if (errs.length) return toast(errs[0]);
+      store.audit('modifica categorie', 'catalogo', 'Categorie aggiornate');
+      store.commit('catalog');
+      toast('Categorie salvate');
+      rerender();
+    }
+    if (f.id === 'adm-request') {
+      const r = db().requests.find((x) => x.ref === f.dataset.ref);
+      const fd = new FormData(f);
+      const status = String(fd.get('status'));
+      const hnote = String(fd.get('hnote') || '').trim();
+      if (r.quote) {
+        const raw = String(fd.get('price') || '').trim();
+        const c = raw ? parseEuroToCents(raw) : null;
+        if (raw && c === null) return toast('Prezzo non valido');
+        r.quote.price_cents = c;
+        r.quote.reply = String(fd.get('reply') || '').trim();
+      }
+      if (status !== r.status || hnote) r.history.push({ at: new Date().toISOString(), status, by: 'admin', note: hnote });
+      r.status = status;
+      r.tracking = String(fd.get('tracking') || '').trim();
+      r.internal_notes = String(fd.get('internal_notes') || '').trim();
+      r.updated_at = new Date().toISOString();
+      store.audit('richiesta', r.ref, `Stato: ${REQUEST_STATUS[status]}`);
+      store.commit('requests');
+      toast('Richiesta aggiornata');
+      rerender();
+    }
+    if (f.id === 'adm-settings') {
+      const fd = new FormData(f);
+      const raw = String(fd.get('whatsapp_number') || '').trim();
+      if (raw) {
+        const ch = normalizeWhatsAppNumber(raw);
+        if (!ch.ok) {
+          $('#s-wa').setAttribute('aria-invalid', 'true');
+          $('#wa-check').className = 'note note--err small';
+          $('#wa-check').textContent = ch.reason;
+          return $('#s-wa').focus();
+        }
+      }
+      const s = db().settings;
+      if (s.whatsapp_number !== raw) store.audit('impostazioni', 'WhatsApp', raw ? 'Numero aggiornato' : 'Numero rimosso');
+      s.whatsapp_number = raw;
+      s.shipping_note = String(fd.get('shipping_note') || '').trim() || s.shipping_note;
+      s.show_claims = fd.get('show_claims') === 'on';
+      store.commit('settings');
+      toast('Impostazioni salvate');
+      rerender();
+    }
+  });
+
+  document.addEventListener('input', (e) => {
+    if (!inAdmin()) return;
+    const k = e.target.dataset.admInput;
+    if (k) {
+      sessionStorage.setItem('adm-' + k, e.target.value);
+      clearTimeout(bind.t);
+      bind.t = setTimeout(() => {
+        const pos = e.target.selectionStart;
+        rerender();
+        const el = $(`[data-adm-input="${k}"]`);
+        el?.focus();
+        el?.setSelectionRange(pos, pos);
+      }, 250);
+    }
+    if (e.target.id === 'f-name' && $('#adm-product')) {
+      const p = db().products.find((x) => x.id === currentProductId());
+      if (p && p.status === 'draft' && (p.slug === slugify(p.name) || p.slug.startsWith('nuovo-prodotto'))) $('#f-slug').value = slugify(e.target.value);
+    }
+  });
+
+  document.addEventListener('change', async (e) => {
+    if (!inAdmin()) return;
+    const t = e.target;
+    if (t.dataset.admChange) {
+      sessionStorage.setItem('adm-' + t.dataset.admChange, t.value);
+      return rerender();
+    }
+    const mf = t.dataset.mf;
+    if (mf) {
+      const m = db().media.find((x) => x.id === t.closest('[data-mid]').dataset.mid);
+      if (mf === 'is_cover') db().media.filter((x) => x.product_id === m.product_id).forEach((x) => (x.is_cover = x.id === m.id));
+      else if (mf === 'illustrative') m.illustrative = t.checked;
+      else m[mf] = t.value.trim();
+      if (mf === 'alt' && !m.alt && m.published) {
+        m.published = false;
+        toast('Senza testo alternativo la foto torna in bozza');
+      }
+      store.audit('foto', m.id.slice(0, 8), `Campo ${mf} aggiornato`);
+      store.commit('catalog');
+      if (mf === 'is_cover' || mf === 'illustrative' || mf === 'alt') {
+        const y = scrollY;
+        rerender();
+        scrollTo(0, y);
+      }
+    }
+    const fileMode = t.dataset.admFile;
+    if (fileMode && t.files?.length) {
+      const pid = currentProductId();
+      if ($('#adm-product') && !saveProduct($('#adm-product'), { silent: true })) return;
+      const state = $('#upload-state');
+      for (const file of t.files) {
+        try {
+          state.textContent = `Elaboro ${file.name}…`;
+          const { blob, width, height } = await processUpload(file);
+          const src = await media.putBlob(blob);
+          if (fileMode === 'replace') {
+            const m = db().media.find((x) => x.id === t.dataset.id);
+            const old = m.src;
+            Object.assign(m, { src, srcset: undefined, width, height, published: false });
+            if (old.startsWith('idb:')) await media.deleteBlob(old);
+            store.audit('foto', m.id.slice(0, 8), 'Foto sostituita, torna in bozza');
+          } else {
+            const ms = db().media.filter((x) => x.product_id === pid);
+            db().media.push({ id: store.rid(), product_id: pid, slot: ms.some((x) => x.slot === 'hero') ? 'extra' : 'hero', src, alt: '', caption: '', illustrative: false, is_cover: !ms.length, published: false, sort: ms.length + 1, focal_x: 50, focal_y: 50, width, height });
+            store.audit('foto', file.name, 'Foto caricata in bozza');
+          }
+          store.commit('catalog');
+        } catch (err) {
+          toast(err.message || 'Caricamento non riuscito');
+          state.textContent = `${file.name}: ${err.message}`;
+          return;
+        }
+      }
+      toast(fileMode === 'replace' ? 'Foto sostituita: è in bozza finché non la pubblichi' : 'Foto caricata in bozza');
+      rerender();
+    }
+  });
+
+  document.addEventListener('click', async (e) => {
+    if (!inAdmin()) return;
+    const t = e.target.closest('[data-adm]');
+    if (!t) return;
+    const act = t.dataset.adm;
+    const d = db();
+    const pid = currentProductId();
+    const p = pid && d.products.find((x) => x.id === pid);
+    switch (act) {
+      case 'logout':
+        sessionStorage.removeItem(SESSION);
+        sessionStorage.removeItem('vs-preview-drafts');
+        location.hash = '';
+        break;
+      case 'new-product': {
+        const cat = d.categories[0];
+        const np = { id: store.rid(), slug: 'nuovo-prodotto-' + Date.now().toString(36), category_id: cat.id, name: 'Nuovo prodotto', technical_name: '', short: '', description: '', composition: '', highlights: [], claims: [], removable_cover: null, reversible: null, summer_winter: null, hybrid: false, firmness_display: null, line_code: 'NEW', status: 'draft', sort: 99, lead_time: null, match: null, internal_notes: '' };
+        d.products.push(np);
+        store.audit('nuovo prodotto', np.name, 'Creato in bozza');
+        store.commit('catalog');
+        location.hash = 'admin-prodotto-' + np.id;
+        break;
+      }
+      case 'status': {
+        const form = $('#adm-product');
+        if (!saveProduct(form, { silent: true })) return;
+        const v = t.dataset.v;
+        if (v === 'published') {
+          const idx = new CatalogIndex({ ...d, products: d.products.map((x) => (x.id === p.id ? { ...x, status: 'published' } : x)) });
+          const cat = d.categories.find((c) => c.id === p.category_id);
+          const warn = [];
+          if (!idx.isProductPurchasable({ ...p, status: 'published' })) warn.push('nessuna variante è acquistabile (prezzo, disponibilità o stato): il prodotto resterà nascosto dal catalogo');
+          if (cat?.status !== 'published') warn.push('la categoria non è pubblicata');
+          if (!p.short) warn.push('manca la descrizione breve');
+          if (warn.length && !(await confirmDialog('Pubblicare comunque?', `Attenzione: ${warn.join('; ')}.`, 'Pubblica comunque'))) return;
+        }
+        if (v === 'archived' && !(await confirmDialog('Archiviare il prodotto?', 'Sparirà dal sito ma resterà nello storico delle richieste. Puoi riportarlo in bozza in qualsiasi momento.', 'Archivia'))) return;
+        p.status = v;
+        store.audit('stato prodotto', p.name, STATUS_LABEL[v]);
+        store.commit('catalog');
+        toast(v === 'published' ? 'Pubblicato: il sito è già aggiornato' : `Stato: ${STATUS_LABEL[v]}`);
+        rerender();
+        break;
+      }
+      case 'delete-product': {
+        if (p.status !== 'draft' || referencedProduct(p.id)) return toast('Si possono eliminare solo bozze non collegate a richieste: archivia invece');
+        if (!(await confirmDialog('Eliminare definitivamente la bozza?', `${p.name}, con varianti e foto, verrà eliminato. L'operazione non si può annullare.`, 'Elimina definitivamente', true))) return;
+        for (const m of d.media.filter((x) => x.product_id === p.id)) await media.deleteBlob(m.src);
+        d.media = d.media.filter((x) => x.product_id !== p.id);
+        d.variants = d.variants.filter((x) => x.product_id !== p.id);
+        d.products = d.products.filter((x) => x.id !== p.id);
+        store.audit('eliminazione', p.name, 'Bozza eliminata definitivamente');
+        store.commit('catalog');
+        toast('Bozza eliminata');
+        location.hash = 'admin-catalogo';
+        break;
+      }
+      case 'preview':
+        if ($('#adm-product') && !saveProduct($('#adm-product'), { silent: true })) return;
+        sessionStorage.setItem('vs-preview-drafts', '1');
+        location.hash = 'prodotto-' + p.slug;
+        break;
+      case 'var-add': {
+        if (!saveProduct($('#adm-product'), { silent: true })) return;
+        const kind = d.categories.find((c) => c.id === p.category_id)?.kind;
+        d.variants.push({ id: store.rid(), product_id: p.id, sku: skuFor(kind, p.line_code, null, null) + '-' + Math.random().toString(36).slice(2, 5).toUpperCase(), size: null, height_cm: null, price_cents: null, availability: 'unavailable', active: true, sort: 999 });
+        store.commit('catalog');
+        rerender();
+        break;
+      }
+      case 'var-del': {
+        const id = t.dataset.id;
+        if (referencedVariant(id)) {
+          toast('Variante presente in richieste: disattivala invece di eliminarla');
+          const row = t.closest('.adm-var');
+          $('[data-f="active"]', row).checked = false;
+          return;
+        }
+        if (!(await confirmDialog('Eliminare la variante?', 'La variante verrà rimossa dopo il salvataggio.', 'Elimina', true))) return;
+        t.closest('.adm-var').remove();
+        saveProduct($('#adm-product'));
+        rerender();
+        break;
+      }
+      case 'var-grid': {
+        const kind = d.categories.find((c) => c.id === p.category_id)?.kind;
+        openDialog({
+          title: 'Genera varianti',
+          body: `<p class="small muted">Crea le combinazioni mancanti, senza prezzo e non acquistabili. Le esistenti non vengono toccate.</p>
+            <fieldset class="adm-checks" style="border:0;padding:0"><legend class="lbl">Misure</legend>${STANDARD_SIZES.map((s) => `<label class="check"><input type="checkbox" value="${s}" data-g="size" checked> ${formatSize(s)}</label>`).join('')}</fieldset>
+            <div class="field"><label for="g-h">Altezze in cm, separate da virgola</label><input class="input" id="g-h" value="${kind === 'materasso' ? '20, 25, 30' : kind === 'topper' ? '5' : ''}"></div>`,
+          actions: [
+            { label: 'Annulla' },
+            {
+              label: 'Genera',
+              primary: true,
+              onClick: (dlg) => {
+                if (!saveProduct($('#adm-product'), { silent: true })) return false;
+                const sizes = $$('[data-g="size"]:checked', dlg).map((x) => x.value);
+                const hs = $('#g-h', dlg).value.split(',').map((x) => parseInt(x, 10)).filter((x) => x > 0);
+                let n = 0;
+                for (const h of hs.length ? hs : [null])
+                  for (const s of sizes) {
+                    if (d.variants.some((v) => v.product_id === p.id && v.size === s && v.height_cm === h)) continue;
+                    d.variants.push({ id: store.rid(), product_id: p.id, sku: skuFor(kind, p.line_code, s, h), size: s, height_cm: h, price_cents: null, availability: 'unavailable', active: true, sort: (h ?? 0) * 100 + STANDARD_SIZES.indexOf(s) });
+                    n++;
+                  }
+                store.audit('varianti', p.name, `${n} varianti generate`);
+                store.commit('catalog');
+                toast(`${n} varianti create`);
+                setTimeout(rerender);
+              },
+            },
+          ],
+        });
+        break;
+      }
+      case 'var-sku': {
+        const kind = d.categories.find((c) => c.id === p.category_id)?.kind;
+        const line = $('#f-line').value.trim().toUpperCase();
+        $$('.adm-var').forEach((row) => {
+          const size = $('[data-f="size"]', row).value.trim() || null;
+          const h = $('[data-f="height_cm"]', row).value.trim() ? Number($('[data-f="height_cm"]', row).value) : null;
+          $('[data-f="sku"]', row).value = skuFor(kind, line, size, h);
+        });
+        toast('SKU rigenerati: salva per confermare');
+        break;
+      }
+      case 'focal': {
+        const m = d.media.find((x) => x.id === t.dataset.id);
+        const r = t.getBoundingClientRect();
+        m.focal_x = Math.round(((e.clientX - r.left) / r.width) * 100);
+        m.focal_y = Math.round(((e.clientY - r.top) / r.height) * 100);
+        store.commit('catalog');
+        const y = scrollY;
+        rerender();
+        scrollTo(0, y);
+        break;
+      }
+      case 'm-up':
+      case 'm-down': {
+        const ms = d.media.filter((x) => x.product_id === pid).sort((a, b) => a.sort - b.sort);
+        const i = ms.findIndex((x) => x.id === t.dataset.id);
+        const j = act === 'm-up' ? i - 1 : i + 1;
+        if (j < 0 || j >= ms.length) return;
+        [ms[i], ms[j]] = [ms[j], ms[i]];
+        ms.forEach((x, k) => (x.sort = k + 1));
+        store.commit('catalog');
+        rerender();
+        $(`[data-adm="${act}"][data-id="${CSS.escape(t.dataset.id)}"]`)?.focus();
+        break;
+      }
+      case 'm-pub': {
+        const m = d.media.find((x) => x.id === t.dataset.id);
+        if (!m.published && !m.alt.trim()) {
+          toast('Scrivi il testo alternativo prima di pubblicare la foto');
+          return $(`[data-mid="${CSS.escape(m.id)}"] [data-mf="alt"]`)?.focus();
+        }
+        m.published = !m.published;
+        store.audit('foto', m.alt.slice(0, 40) || m.id.slice(0, 8), m.published ? 'Pubblicata' : 'Nascosta');
+        store.commit('catalog');
+        toast(m.published ? 'Foto pubblicata' : 'Foto nascosta dal sito');
+        const y = scrollY;
+        rerender();
+        scrollTo(0, y);
+        break;
+      }
+      case 'm-del': {
+        const m = d.media.find((x) => x.id === t.dataset.id);
+        if (!(await confirmDialog('Eliminare la foto?', 'La foto verrà rimossa dal prodotto e dal sito.', 'Elimina', true))) return;
+        await media.deleteBlob(m.src);
+        d.media = d.media.filter((x) => x.id !== m.id);
+        if (m.is_cover) {
+          const first = d.media.filter((x) => x.product_id === m.product_id).sort((a, b) => a.sort - b.sort)[0];
+          if (first) first.is_cover = true;
+        }
+        store.audit('foto', m.id.slice(0, 8), 'Eliminata');
+        store.commit('catalog');
+        rerender();
+        break;
+      }
+      case 'cat-add': {
+        const c = { id: store.rid(), slug: 'nuova-categoria-' + Date.now().toString(36), kind: 'materasso', name: 'Nuova categoria', description: '', sort: 99, status: 'draft' };
+        d.categories.push(c);
+        store.audit('categoria', c.name, 'Creata in bozza');
+        store.commit('catalog');
+        rerender();
+        break;
+      }
+      case 'cat-del': {
+        if (d.products.some((x) => x.category_id === t.dataset.id)) return toast('La categoria contiene prodotti');
+        if (!(await confirmDialog('Eliminare la categoria?', 'La categoria è vuota e verrà eliminata.', 'Elimina', true))) return;
+        d.categories = d.categories.filter((c) => c.id !== t.dataset.id);
+        store.commit('catalog');
+        rerender();
+        break;
+      }
+      case 'copy-reply': {
+        const r = d.requests.find((x) => x.ref === $('#adm-request').dataset.ref);
+        const raw = $('#r-price').value.trim();
+        r.quote.price_cents = raw ? parseEuroToCents(raw) : null;
+        r.quote.reply = $('#r-reply').value.trim();
+        store.commit('requests');
+        await copyText(quoteReply(r), $('#copy-fallback'));
+        break;
+      }
+      case 'custom-sku': {
+        const r = d.requests.find((x) => x.ref === $('#adm-request').dataset.ref);
+        r.quote.custom_sku = api.customSku(r.ref.slice(-4));
+        store.audit('preventivo', r.ref, `SKU ${r.quote.custom_sku}`);
+        store.commit('requests');
+        rerender();
+        break;
+      }
+      case 'sitemap': {
+        const out = $('#sm-out');
+        out.hidden = false;
+        out.value = buildSitemap(catalog(), $('#sm-base').value.trim() || 'https://vesuviosleep.it');
+        break;
+      }
+      case 'export': {
+        const out = $('#export-out');
+        out.hidden = false;
+        out.value = JSON.stringify({ ...d, exported_at: new Date().toISOString() }, null, 1);
+        await copyText(out.value, out);
+        break;
+      }
+      case 'reset':
+        if (!(await confirmDialog('Ripristinare i dati iniziali?', 'Catalogo, richieste e impostazioni torneranno al dataset di partenza. Le foto caricate verranno scollegate. L\'accesso admin resta.', 'Ripristina', true))) return;
+        store.reset();
+        toast('Dati ripristinati');
+        rerender();
+        break;
+    }
+  });
+}
+
+__exp.render = render;
+});
+__def("app.js", function (__exp) {
+const {formatCents,
+  formatSize,
+  AVAILABILITY_LABEL,
+  STANDARD_SIZES,
+  parseSize,
+  pairingsFor,
+  sleepMatch,
+  addToCart,
+  toSummaryLines,
+  planWhatsApp,
+  buildQuoteMessage,
+  normalizeWhatsAppNumber,
+  productJsonLd,
+  localBusinessJsonLd,
+  breadcrumbJsonLd,
+  MAX_QTY,} = __req("core/index.js");
+const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus} = __req("store.js");
+const {esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion} = __req("ui.js");
+const {productIllustration, layersFor} = __req("illustrations.js");
+const {enhance, bump, explode} = __req("motion.js");
+
+const CFG = window.VS_CONFIG ?? {};
+const app = $('#app');
+const state = {
+  homeKind: 'materasso',
+  compare: new Set(),
+  filters: { tech: 'all', removable: false, height: 0, sort: 'reco' },
+  sel: {}, // productId -> {size, height, qty}
+  sm: null, // Sleep Match: risposte solo in memoria
+  sizes: ['160x190', '180x200'],
+  lastRoute: undefined,
+  labModel: null,
+};
+const KIND_PLURAL = { materasso: 'Materassi', rete: 'Reti', guanciale: 'Guanciali', topper: 'Topper', letto: 'Letti a castello' };
+const KIND_SING = { materasso: 'materasso', rete: 'rete', guanciale: 'guanciale', topper: 'topper', letto: 'letto' };
+const TECH_LABEL = { foam: 'Poliuretano', memory: 'Memory Foam', molle: 'Molle insacchettate' };
+
+// ---------------------------------------------------------------- immagini
+const FALLBACK = {
+  materasso: `<svg viewBox="0 0 240 140" aria-hidden="true"><path d="M30 62 L120 36 L212 58 L122 88 Z" fill="#fffcf7" stroke="currentColor" stroke-width="2"/><path d="M30 62 V92 L122 120 V88 M212 58 V88 L122 120" fill="#fffcf7" stroke="currentColor" stroke-width="2"/><path d="M30 74 L122 101 L212 70" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".45"/><path d="M36 64 L120 40 L205 59" fill="none" stroke="#c8785b" stroke-width="1.6" stroke-dasharray="5 5"/></svg>`,
+  rete: `<svg viewBox="0 0 240 140" aria-hidden="true"><path d="M28 66 L120 40 L214 62 L122 92 Z" fill="none" stroke="currentColor" stroke-width="2.2"/>${Array.from({ length: 9 }, (_, i) => { const t = (i + 1) / 10; return `<path d="M${28 + 94 * t} ${66 + 26 * t} L${120 + 94 * t} ${40 + 22 * t}" stroke="currentColor" stroke-width="3" opacity=".75"/>`; }).join('')}<path d="M40 70v26M118 95v24M206 66v24" stroke="currentColor" stroke-width="2.4"/></svg>`,
+  guanciale: `<svg viewBox="0 0 240 140" aria-hidden="true"><path d="M44 48 Q120 30 196 48 Q210 70 196 94 Q120 112 44 94 Q30 70 44 48 Z" fill="#fffcf7" stroke="currentColor" stroke-width="2"/><path d="M54 54 Q120 40 186 54 Q197 70 186 88 Q120 102 54 88 Q43 70 54 54 Z" fill="none" stroke="#c8785b" stroke-width="1.5" stroke-dasharray="5 5"/></svg>`,
+  topper: `<svg viewBox="0 0 240 140" aria-hidden="true"><path d="M30 70 L120 46 L212 66 L122 92 Z" fill="#fffcf7" stroke="currentColor" stroke-width="2"/><path d="M30 70 V80 L122 104 V92 M212 66 V76 L122 104" fill="none" stroke="currentColor" stroke-width="2"/><path d="M38 72 L120 50 L204 67" fill="none" stroke="#c8785b" stroke-width="1.5" stroke-dasharray="5 5"/></svg>`,
+  letto: `<svg viewBox="0 0 240 140" aria-hidden="true"><path d="M60 20v110M180 20v110M60 50h120M60 100h120" stroke="currentColor" stroke-width="3" fill="none"/></svg>`,
+};
+function fallbackHtml(kind) {
+  return `<div class="fallback">${FALLBACK[kind] ?? FALLBACK.materasso}</div>`;
+}
+function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls = '' } = {}) {
+  const src = media.resolve(m);
+  if (!src) return null;
+  const focal = `object-position:${m.focal_x ?? 50}% ${m.focal_y ?? 50}%`;
+  return `<img src="${esc(src)}" ${m.srcset ? `srcset="${esc(m.srcset)}" sizes="${esc(sizes)}"` : ''} alt="${esc(m.alt)}" ${m.width ? `width="${m.width}" height="${m.height}"` : ''} loading="${eager ? 'eager' : 'lazy'}" decoding="async" class="${cls}" style="${focal}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',innerHTML:window.__fb||''}))">`;
+}
+window.__fb = FALLBACK.materasso;
+function coverHtml(idx, p, opts = {}) {
+  const m = coverFor(idx, p);
+  return (m && imgTag(m, { ...opts, cls: m.illustrative ? '' : 'is-cover' })) || productIllustration(p, idx.kind(p));
+}
+
+// ---------------------------------------------------------------- helpers
+const href = {
+  product: (p) => `#prodotto-${p.slug}`,
+  category: (c) => `#${c.slug}`,
+};
+function priceFrom(idx, p) {
+  const min = idx.minPrice(p);
+  const max = idx.maxPrice(p);
+  if (min === null) return '';
+  return min === max ? `<span class="price">${formatCents(min)}</span>` : `<span class="price"><small>da</small>${formatCents(min)}</span>`;
+}
+function setMeta(title, desc, ld = []) {
+  document.title = title ? `${title} | Vesuvio Sleep` : 'Vesuvio Sleep | Materassi di fabbrica a Napoli, dal 1986';
+  $('meta[name="description"]').setAttribute('content', desc || 'Materassi prodotti a Casoria (Napoli) dal 1986 e venduti a prezzo di fabbrica: Memory Foam, poliuretano e molle insacchettate, reti e guanciali. Misure su richiesta.');
+  $('#ld').textContent = JSON.stringify(ld.length === 1 ? ld[0] : ld);
+}
+function crumbs(items) {
+  return `<nav class="crumbs wrap" aria-label="Percorso"><ol>${items
+    .map((it, i) => `<li>${it.href && i < items.length - 1 ? `<a href="${it.href}">${esc(it.name)}</a>` : `<span aria-current="page">${esc(it.name)}</span>`}</li>`)
+    .join('')}</ol></nav>`;
+}
+function availabilityHtml(v) {
+  if (!v) return '';
+  return `<span class="avail ${v.availability === 'unavailable' ? 'avail--off' : ''}">${esc(AVAILABILITY_LABEL[v.availability])}</span>`;
+}
+function previewDrafts() {
+  try {
+    return sessionStorage.getItem('vs-admin-session') && sessionStorage.getItem('vs-preview-drafts') === '1';
+  } catch {
+    return false;
+  }
+}
+const pub = () => catalog({ drafts: previewDrafts() });
+
+// ---------------------------------------------------------------- layout
+function renderChrome() {
+  const idx = catalog();
+  const cats = idx.commercialCategories();
+  const route = location.hash.slice(1);
+  const wa = whatsappStatus();
+  const nav = [
+    ...cats.map((c) => ({ href: `#${c.slug}`, label: c.name, on: route === c.slug })),
+    { href: '#sleep-match', label: 'Sleep Match', on: route === 'sleep-match' },
+    { href: '#showroom', label: 'Showroom', on: route === 'showroom' },
+  ];
+  const msgs = [`Spedizione ${store.db.settings.shipping_note || ''}`, 'Produciamo materassi a Casoria dal 1986', 'Fuori misura e altezze personalizzate su richiesta', 'A Napoli consegna al piano gratuita', 'Showroom aperto lun–ven 9–18, sabato 10–14'];
+  const run = msgs.map((m) => `<span>${esc(m)}</span>`).join('');
+  $('#topbar').innerHTML = `<div class="wrap">
+      <div class="ticker" aria-hidden="true"><div class="ticker__track">${run}${run}</div></div><span class="sr-only">${esc(msgs[0])}</span>
+      <span class="topbar__preview"><span class="topbar__label">Anteprima concept</span>${!wa.check.ok ? ' <span class="topbar__flag">WhatsApp da configurare</span>' : ''}${previewDrafts() ? ' <span class="topbar__flag">Bozze visibili</span>' : ''}<a href="#admin">Admin</a></span>
+    </div>`;
+  $('#nav').innerHTML = nav.map((n) => `<a href="${n.href}" ${n.on ? 'aria-current="page"' : ''}>${esc(n.label)}</a>`).join('');
+  $('#drawer-links').innerHTML = `<a href="#">Home</a>` + nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('') + `<a href="#confronto">Confronta i materassi</a><a href="#guida-misure">Guida alle misure</a><a href="#fuori-misura">Fuori misura</a><a href="#carrello">Carrello (${cart.count()})</a>`;
+  const n = cart.count();
+  $('#cart-link').innerHTML = `${icon('cart')}<span class="sr-only">Carrello, ${n} articoli</span>${n ? `<span class="badge-count" aria-hidden="true">${n}</span>` : ''}`;
+  $('#foot-cats').innerHTML = cats.map((c) => `<li><a href="#${c.slug}">${esc(c.name)}</a></li>`).join('');
+}
+
+// ---------------------------------------------------------------- router
+const routes = [
+  [/^$/, viewHome],
+  [/^prodotto-(.+)$/, (m) => viewProduct(m[1])],
+  [/^sleep-match$/, viewSleepMatch],
+  [/^confronto$/, viewCompare],
+  [/^guida-misure$/, viewSizes],
+  [/^fuori-misura$/, viewQuote],
+  [/^showroom$/, viewShowroom],
+  [/^carrello$/, viewCart],
+  [/^riepilogo$/, viewReview],
+  [/^admin.*$/, async () => (await Promise.resolve(__req("admin.js"))).render(app)],
+];
+async function route() {
+  const r = decodeURIComponent(location.hash.slice(1));
+  const render = async () => {
+    closeDrawer();
+    document.body.classList.remove('has-sticky');
+    $('.compare-bar')?.remove();
+    const isAdmin = r.startsWith('admin');
+    document.body.classList.toggle('is-admin', isAdmin);
+    let done = false;
+    for (const [re, fn] of routes) {
+      const m = re.exec(r);
+      if (m) {
+        await fn(m);
+        done = true;
+        break;
+      }
+    }
+    if (!done) {
+      const idx = pub();
+      const c = idx.snap.categories.find((x) => x.slug === r);
+      if (c) viewCategory(c);
+      else viewNotFound();
+    }
+    document.body.classList.toggle('on-hero', !!$('#app > .hero'));
+    document.body.classList.toggle('on-dark', !!$('#app > .page-hero'));
+    renderChrome();
+    if (state.lastRoute !== r) {
+      window.scrollTo(0, 0);
+      const h1 = $('#app h1');
+      if (h1 && state.lastRoute !== undefined && !isAdmin) {
+        h1.setAttribute('tabindex', '-1');
+        h1.focus({ preventScroll: true });
+      }
+    }
+    enhance(app);
+    // la barra di confronto compare solo dove si selezionano i modelli
+    if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
+  };
+  const first = state.lastRoute === undefined;
+  if (!first && document.startViewTransition && !reducedMotion() && state.lastRoute !== r) {
+    try {
+      const vt = document.startViewTransition(render);
+      await vt.updateCallbackDone;
+    } catch {
+      await render();
+    }
+  } else await render();
+  $$('[style*="view-transition-name"]').forEach((el) => {
+    if (!el.classList.contains('gallery__main')) el.style.viewTransitionName = '';
+  });
+  state.lastRoute = r;
+}
+
+// ---------------------------------------------------------------- HOME
+function productCard(idx, p, { compare = false, d = 0 } = {}) {
+  const kind = idx.kind(p);
+  const vs = idx.purchasableVariants(p);
+  const heights = idx.purchasableHeights(p);
+  const feats = [
+    ...(kind === 'materasso' && heights.length ? [heights.map((h) => 'H' + h).join(' · ')] : []),
+    ...(p.removable_cover ? ['Sfoderabile'] : []),
+    ...(p.summer_winter ? ['Estate e inverno'] : []),
+    ...(kind !== 'materasso' ? (p.highlights || []).slice(0, 2) : []),
+  ].slice(0, 3);
+  const cover = coverFor(idx, p);
+  return `<article class="card rv" style="--d:${d}" data-pid="${esc(p.id)}">
+    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}<span class="card__note">${cover?.illustrative ? 'Render illustrativo' : cover ? '' : 'Schema illustrativo'}</span></div>
+    <div class="card__body">
+      <span class="card__tech">${esc(p.technical_name)}</span>
+      <h3><a href="${href.product(p)}" data-act="to-product">${esc(p.name)}</a></h3>
+      <ul class="card__feats">${feats.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
+      ${availabilityHtml(vs[0])}
+      <div class="card__foot">
+        <div>${priceFrom(idx, p)}</div>
+        ${compare ? `<label class="compare-toggle"><input type="checkbox" data-act="compare" value="${esc(p.id)}" ${state.compare.has(p.id) ? 'checked' : ''}> Confronta</label>` : `<span class="small muted">IVA inclusa</span>`}
+      </div>
+    </div>
+  </article>`;
+}
+
+// Profilo dell'ombra del Vesuvio nella foto della hero (coordinate dell'immagine 1536×1024)
+const RIDGE = 'M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390';
+
+function heroHtml() {
+  return `<section class="hero" aria-labelledby="hero-title">
+    <div class="hero__visual">
+      <div class="hero__par">
+        <div class="hero__art">
+          <img src="img/hero-vesuvio-1536.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 180vw, 100vw" width="1536" height="1024" alt="Materasso trapuntato su una base blu, in una stanza luminosa dove il sole proietta sul muro l'ombra del Vesuvio" fetchpriority="high">
+          <svg class="stitch-svg" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs><mask id="sew"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
+            <path class="thread" d="${RIDGE}" mask="url(#sew)"/>
+            <circle class="needle" r="7" style="offset-path: path('${RIDGE}')"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hero__scrim"></div>
+      <span class="hero__badge">Ambientazione illustrativa</span>
+    </div>
+    <div class="hero__content">
+      <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
+      <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
+      <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+      </div>
+    </div>
+    <ul class="hero__strip" aria-label="In breve">
+      <li><strong>Dal 1986</strong>Produzione a Casoria</li>
+      <li><strong>Prezzo di fabbrica</strong>Senza intermediari</li>
+      <li><strong>Su misura</strong>Misure e altezze a richiesta</li>
+      <li><strong>Spedizione gratuita</strong>In Italia, isole comprese</li>
+    </ul>
+  </section>`;
+}
+
+function layersHtml(idx, p) {
+  const m = mediaFor(idx, p).find((x) => x.slot === 'exploded' && x.hotspots?.length);
+  if (!m) return '';
+  const src = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw' });
+  if (!src) return '';
+  return `<div class="layers" data-layers>
+    <figure class="layers__fig">${src}
+      ${m.hotspots.map((h, i) => `<button class="hot" style="left:${h.x}%;top:${h.y}%" data-act="layer" data-i="${i}" aria-pressed="${i === 0}" aria-label="${esc(h.title)}">${i + 1}</button>`).join('')}
+      <figcaption class="small muted" style="margin-top:8px">${esc(m.caption || 'Vista illustrativa')}: numero e spessore degli strati possono differire dal prodotto.</figcaption>
+    </figure>
+    <ol class="layers__list">${m.hotspots
+      .map((h, i) => `<li><button data-act="layer" data-i="${i}" aria-pressed="${i === 0}"><span class="n" aria-hidden="true">${i + 1}</span><span><strong>${esc(h.title)}</strong><span class="d">${esc(h.text)}</span></span></button></li>`)
+      .join('')}</ol>
+  </div>`;
+}
+
+const SW = { cover: '#fbf9f4', memory: '#a9d0ea', foam: '#f3ead6', springs: '#e9eef2', base: '#2a6f8f' };
+function labHtml(idx) {
+  const models = idx.publicProducts('materasso').filter((p) => layersFor(p));
+  if (!models.length) return '';
+  const cur = models.find((p) => p.id === state.labModel) ?? models[models.length - 1];
+  state.labModel = cur.id;
+  const ls = layersFor(cur);
+  return `<div class="lab">
+    <div class="lab__stage" id="lab-stage" data-autoexplode style="--ex:0">
+      <span class="lab__note">Schema illustrativo, non in scala</span>
+      ${productIllustration(cur, 'materasso', { gap: 34 })}
+      <label class="lab__slider">Chiuso <input type="range" min="0" max="100" value="0" data-act="lab-ex" aria-label="Apri gli strati"> Aperto</label>
+    </div>
+    <div>
+      <h2 id="lab-title">Apri il materasso, strato per strato</h2>
+      <p class="muted">Scegli un modello e trascina il cursore: vedi come è composto, dal rivestimento alla base.</p>
+      <div class="lab__models chips" role="group" aria-label="Modello">${models
+        .map((p) => `<button class="chip" data-act="lab-model" data-id="${esc(p.id)}" aria-pressed="${p.id === cur.id}">${esc(p.name.replace('Vesuvio ', ''))}</button>`)
+        .join('')}</div>
+      <ol class="lab__legend">${ls
+        .map((l, i) => `<li><button data-act="lab-layer" data-i="${ls.length - 1 - i}" aria-pressed="false"><span class="sw" style="background:${SW[l.k]}" aria-hidden="true"></span><span><strong>${esc(l.label)}</strong><span class="d">${esc(l.note)}</span></span></button></li>`)
+        .join('')}</ol>
+      <div class="btn-row"><a class="btn btn--primary" href="${href.product(cur)}" data-act="to-product">Scopri ${esc(cur.name.replace('Vesuvio ', ''))}</a><span class="price" style="align-self:center">${priceFrom(idx, cur)}</span></div>
+    </div>
+  </div>`;
+}
+
+function openStatus() {
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+    const wd = parts.find((x) => x.type === 'weekday').value;
+    const mins = Number(parts.find((x) => x.type === 'hour').value) * 60 + Number(parts.find((x) => x.type === 'minute').value);
+    const open = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(wd) ? mins >= 540 && mins < 1080 : wd === 'Sat' ? mins >= 600 && mins < 840 : false;
+    return open ? '<span class="open-now is-open">Aperto ora</span>' : '<span class="open-now is-closed">Ora chiuso: controlla gli orari</span>';
+  } catch {
+    return '';
+  }
+}
+
+function showroomHtml(compact = false) {
+  const dest = encodeURIComponent('Via Raffaele Salierno 38, 80026 Casoria NA');
+  return `<div class="showroom">
+    <div class="rv">
+      ${compact ? '<h2>Vieni a provarli in fabbrica</h2>' : ''}
+      ${openStatus()}
+      <p class="lead">Fabbrica, esposizione e showroom sono nello stesso posto: puoi provare i materassi e parlare con chi li produce.</p>
+      <address style="font-style:normal;margin-bottom:16px"><strong>Vesuvio Sleep</strong><br>Via Raffaele Salierno 38<br>80026 Casoria (NA)</address>
+      <dl class="hours"><dt>Lunedì–venerdì</dt><dd>09:00–18:00</dd><dt>Sabato</dt><dd>10:00–14:00</dd><dt>Domenica</dt><dd>Chiuso</dd></dl>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="https://www.google.com/maps/dir/?api=1&destination=${dest}" target="_blank" rel="noopener">${icon('pin', 20)} Indicazioni stradali</a>
+        <a class="btn btn--ghost" href="https://maps.apple.com/?daddr=${dest}" target="_blank" rel="noopener">Apri in Mappe</a>
+      </div>
+    </div>
+    <div class="map-card rv" style="--d:1">
+      <svg class="mapbg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="400" height="300" fill="#e3eef3"/>
+        <g fill="none" stroke="#fffcf7" stroke-width="12" stroke-linecap="round"><path d="M-10 210 C80 190 160 200 240 160 S360 90 420 80"/><path d="M120 -10 C130 80 150 160 140 320"/></g>
+        <g fill="none" stroke="#f6f1e8" stroke-width="5"><path d="M-10 90 L420 130"/><path d="M260 -10 L300 320"/><path d="M40 320 L200 -10"/><path d="M-10 260 L420 250"/></g>
+        <path d="M250 300 C270 230 300 215 330 170 C350 150 370 160 400 140" fill="none" stroke="#c8785b" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
+      </svg>
+      <span class="pin-dot" aria-hidden="true"></span>
+      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 4px"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
+        <p class="small muted" style="margin:0">${CFG.mapEmbed ? '' : 'La mappa interattiva si attiva sul sito pubblicato, dopo il consenso ai cookie.'}</p></div>
+    </div>
+  </div>`;
+}
+
+function viewHome() {
+  const idx = pub();
+  const cats = idx.commercialCategories();
+  if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
+  const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
+  setMeta('', '', [localBusinessJsonLd()]);
+  app.innerHTML = `${heroHtml()}
+
+  <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
+    <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
+    <div class="num rv" style="--d:1"><b data-count="1986" data-from="1950">1986</b><span>l'anno in cui abbiamo iniziato</span></div>
+    <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
+    <div class="num rv" style="--d:3"><b data-count="8" data-from="0">8</b><span>misure standard, più il su misura</span></div>
+  </div></section>
+
+  <section class="section" aria-labelledby="cat-title">
+    <div class="wrap">
+      <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi IVA inclusa per la misura e l'altezza che scegli. Passa sopra un materasso per aprirne gli strati.</p></div>
+        <a class="btn btn--ghost btn--sm" href="#confronto">Confronta i materassi</a></div>
+      <div class="seg-tabs" role="tablist" aria-label="Categorie">${cats
+        .map((c) => `<button class="tab" role="tab" id="tab-${c.kind}" aria-selected="${c.kind === state.homeKind}" aria-controls="home-grid" data-act="home-tab" data-kind="${c.kind}" tabindex="${c.kind === state.homeKind ? 0 : -1}">${esc(c.name)}<small>${idx.publicProducts(c.kind).length}</small></button>`)
+        .join('')}<span class="seg-tabs__thumb" aria-hidden="true"></span></div>
+      <div id="home-grid" role="tabpanel" aria-labelledby="tab-${state.homeKind}">${homeGrid(idx)}</div>
+    </div>
+  </section>
+
+  <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
+
+  <section class="factory-band" aria-labelledby="fab-title">
+    <div class="factory-band__img"><img src="img/lavorazione-1600.webp" srcset="img/lavorazione-900.webp 900w, img/lavorazione-1600.webp 1600w" sizes="100vw" width="1600" height="631" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi con il Vesuvio sullo sfondo"></div>
+    <span class="factory-band__credit">Scena illustrativa, non una foto della fabbrica</span>
+    <span class="factory-band__year" aria-hidden="true">1986</span>
+    <div class="wrap factory-band__body">
+      <h2 id="fab-title" class="rv">Siamo una fabbrica, non un rivenditore.</h2>
+      <p class="rv" style="--d:1">Tagliamo, assembliamo e cuciamo i materassi nel nostro stabilimento di Casoria, poi li vendiamo direttamente a te. Made in Italy.</p>
+      <dl>
+        <div class="rv" style="--d:2"><dt>Produzione diretta</dt><dd>Circa 2 giorni di lavorazione prima della spedizione.</dd></div>
+        <div class="rv" style="--d:3"><dt>Su misura, se serve</dt><dd>Fuori misura e altezze personalizzate, su preventivo.</dd></div>
+        <div class="rv" style="--d:4"><dt>Hotel e B&amp;B</dt><dd>Forniture anche in grandi quantità. <a href="#fuori-misura">Richiedi un preventivo</a>.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  ${pocket ? `<section class="section" aria-labelledby="inside-title"><div class="wrap">
+      <div class="sec-head rv"><div><h2 id="inside-title">Dentro il ${esc(pocket.name.replace('Vesuvio ', ''))}</h2><p>Il nostro Hybrid: tocca i numeri per vedere i componenti.</p></div>
+      <a class="btn btn--ghost btn--sm" href="${href.product(pocket)}">Vai alla scheda</a></div>
+      <div class="rv">${layersHtml(idx, pocket)}</div>
+  </div></section>` : ''}
+
+  <section class="section--tight"><div class="wrap">
+    <div class="match2 rv">
+      <div class="match2__text">
+        <h2>Non sai quale scegliere?</h2>
+        <p>Sleep Match ti fa qualche domanda su come dormi e ti propone un solo materasso del nostro catalogo, con il perché. Non chiediamo il budget e non salviamo le risposte.</p>
+        <p class="match2__q" id="mq">Iniziamo: come dormi di solito?</p>
+        <div class="chips" role="group" aria-labelledby="mq">${[['fianco', 'Sul fianco'], ['schiena', 'Sulla schiena'], ['pancia', 'A pancia in giù'], ['mista', 'Cambio spesso']]
+          .map(([v, l]) => `<button class="chip" data-act="sm-start" data-v="${v}">${l}</button>`)
+          .join('')}</div>
+      </div>
+      <div class="match2__img"><img src="img/hero-960.webp" srcset="img/hero-960.webp 960w, img/hero-1672.webp 1672w" sizes="(max-width: 860px) 100vw, 45vw" width="960" height="540" loading="lazy" alt="Camera mediterranea con un materasso trapuntato e una coperta blu"></div>
+    </div>
+  </div></section>
+
+  <section class="section" aria-labelledby="ship-title"><div class="wrap">
+    <div class="sec-head rv"><div><h2 id="ship-title">Dalla fabbrica a casa tua</h2></div></div>
+    <div class="ship">
+      <div class="ship__card rv"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 70 C50 20 110 80 170 20"/></svg>
+        <div class="ship__big">0 €</div><h3>Spedizione in tutta Italia</h3><p class="muted">Isole comprese, con corriere e tracking.</p>
+        <ul><li>${icon('check', 20)}Nessun supplemento per le isole</li><li>${icon('check', 20)}Tracking del corriere</li><li>${icon('check', 20)}Circa 2 giorni di produzione per i materassi</li></ul></div>
+      <div class="ship__card ship__card--deep rv" style="--d:1"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 40 C60 80 100 10 170 60"/></svg>
+        <div class="ship__big">Napoli</div><h3>Con il nostro furgone</h3><p class="muted">Consegniamo noi, con qualche servizio in più.</p>
+        <ul><li>${icon('check', 20)}Consegna al piano gratuita</li><li>${icon('check', 20)}Ritiro del vecchio materasso</li><li>${icon('check', 20)}Montaggio delle reti</li></ul></div>
+    </div>
+  </div></section>
+
+  <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
+  requestAnimationFrame(moveThumb);
+  bindLab();
+}
+function homeGrid(idx) {
+  const items = idx.publicProducts(state.homeKind);
+  return `<div class="grid grid--stagger">${items.map((p, i) => productCard(idx, p, { compare: state.homeKind === 'materasso', d: i })).join('')}</div>
+    <p style="margin-top:22px"><a href="#${idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
+}
+function moveThumb() {
+  const th = $('.seg-tabs__thumb');
+  const t = $('.seg-tabs .tab[aria-selected="true"]');
+  if (!th || !t) return;
+  th.style.width = t.offsetWidth + 'px';
+  th.style.transform = `translateX(${t.offsetLeft}px)`;
+}
+function bindLab() {
+  const st = $('#lab-stage');
+  if (!st) return;
+  st.addEventListener('vs:visible', () => explode(st, 0.8, 1400), { once: true });
+}
+
+/** Testata scura e trapuntata per le pagine interne. */
+function pageHero(items, title, lead = '', art = '') {
+  return `<header class="page-hero">${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}</header>`;
+}
+
+// ---------------------------------------------------------------- CATEGORIA
+function viewCategory(c) {
+  const idx = pub();
+  const all = idx.publicProducts(c.kind);
+  const f = state.filters;
+  const isM = c.kind === 'materasso';
+  setMeta(c.seo_title || `${c.name} di fabbrica`, c.seo_description || c.description, [
+    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }]),
+  ]);
+  const body = () => {
+    let list = all.slice();
+    if (isM) {
+      if (f.tech !== 'all') list = list.filter((p) => p.match?.tech === f.tech);
+      if (f.removable) list = list.filter((p) => p.removable_cover);
+      if (f.height) list = list.filter((p) => idx.purchasableHeights(p).includes(f.height));
+    }
+    if (f.sort === 'asc') list.sort((a, b) => idx.minPrice(a) - idx.minPrice(b));
+    if (f.sort === 'desc') list.sort((a, b) => idx.minPrice(b) - idx.minPrice(a));
+    if (!all.length)
+      return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="#fuori-misura">Chiedi un preventivo</a></div>`;
+    if (!list.length)
+      return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
+    return `<p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+  };
+  const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
+  const artP = all[all.length - 1];
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '')}
+  <div class="wrap" style="padding-top:28px">
+    <div class="toolbar">
+      ${isM ? `<div class="chips" role="group" aria-label="Tecnologia">${chip('tech', 'all', 'Tutti')}${chip('tech', 'foam', 'Poliuretano')}${chip('tech', 'memory', 'Memory Foam')}${chip('tech', 'molle', 'Molle')}</div>
+      <div class="chips" role="group" aria-label="Altezza e rivestimento">${[20, 25, 30].map((h) => chip('height', h, 'H' + h)).join('')}<button class="chip" data-act="filter" data-k="removable" data-v="toggle" aria-pressed="${f.removable}">Sfoderabile</button></div>` : '<span></span>'}
+      <label><span class="sr-only">Ordina</span><select class="select" data-act="sort">
+        <option value="reco" ${f.sort === 'reco' ? 'selected' : ''}>Ordine consigliato</option>
+        <option value="asc" ${f.sort === 'asc' ? 'selected' : ''}>Prezzo crescente</option>
+        <option value="desc" ${f.sort === 'desc' ? 'selected' : ''}>Prezzo decrescente</option></select></label>
+    </div>
+    <div id="cat-body">${body()}</div>
+    ${isM ? `<p style="margin-top:28px" class="muted">Cerchi una misura o un'altezza diversa? <a href="#fuori-misura">Chiedi un preventivo fuori misura</a>.</p>` : ''}
+  </div>`;
+  state.catBody = body;
+}
+
+// ---------------------------------------------------------------- SCHEDA
+function getSel(idx, p) {
+  const s = state.sel[p.id] ?? {};
+  const pv = idx.purchasableVariants(p);
+  const sizes = idx.sizesOf(p);
+  const heights = idx.heightsOf(p);
+  let size = s.size ?? (sizes.includes('160x190') && pv.some((v) => v.size === '160x190') ? '160x190' : pv[0]?.size ?? sizes[0] ?? null);
+  let height = s.height ?? (pv.some((v) => v.height_cm === 25 && v.size === size) ? 25 : pv.find((v) => v.size === size)?.height_cm ?? heights[0] ?? null);
+  if (!heights.length) height = idx.variantsOf(p)[0]?.height_cm ?? null;
+  return (state.sel[p.id] = { size, height, qty: s.qty ?? 1 });
+}
+
+function viewProduct(slug) {
+  const idx = pub();
+  const p = idx.snap.products.find((x) => x.slug === slug && x.status === 'published');
+  const c = p && idx.category(p);
+  if (!p || !c || c.status !== 'published') return viewNotFound();
+  const kind = c.kind;
+  const ms = mediaFor(idx, p);
+  const gallery = ms.length ? ms : [];
+  const urlImgs = gallery.map((m) => media.resolve(m)).filter((u) => u && !u.startsWith('blob:'));
+  setMeta(p.seo_title || p.name, p.seo_description || p.short, [
+    productJsonLd(idx, p, { images: urlImgs }),
+    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }, { name: p.name }]),
+  ].filter(Boolean));
+  const purchasable = idx.isProductPurchasable(p);
+  const showClaims = store.db.settings.show_claims && p.claims?.length;
+  const factsRows = [
+    ['Tecnologia', p.technical_name],
+    ['Composizione', p.composition],
+    kind === 'materasso' ? ['Altezze', idx.heightsOf(p).map((h) => `H${h}`).join(', ')] : null,
+    kind === 'guanciale' ? ['Altezza', idx.variantsOf(p)[0]?.height_cm ? idx.variantsOf(p)[0].height_cm + ' cm' : null] : null,
+    p.removable_cover !== null && kind !== 'rete' ? ['Rivestimento', p.removable_cover ? 'Sfoderabile, lavaggio secondo le indicazioni in etichetta' : 'Non sfoderabile'] : null,
+    p.summer_winter ? ['Lati', 'Reversibile: lato invernale e lato estivo'] : null,
+    p.firmness_display ? ['Rigidità indicativa', p.firmness_display] : null,
+    showClaims ? ['Tessuto', p.claims.join(', ')] : null,
+    p.lead_time ? ['Produzione', p.lead_time] : null,
+  ].filter((r) => r && r[1]);
+
+  app.innerHTML = `${crumbs([{ name: 'Home', href: '#' }, { name: c.name, href: `#${c.slug}` }, { name: p.name }])}
+  <div class="wrap" style="padding-top:22px">
+    <div class="pdp">
+      <div class="gallery" data-gallery>${galleryHtml(idx, p, gallery, 0)}</div>
+      <div class="buy" id="buy"></div>
+    </div>
+    <div class="two-col section--tight" style="padding-top:8px">
+      <div><h2 style="font-size:1.6rem">Com'è fatto</h2><p>${esc(p.description)}</p>
+        ${p.hybrid ? '<p class="small muted">Chiamiamo Hybrid i materassi che uniscono molle insacchettate e Memory Foam.</p>' : ''}</div>
+      <div><h2 class="sr-only">Caratteristiche</h2><dl class="facts-list">${factsRows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+    </div>
+    ${layersHtml(idx, p) ? `<section class="section--tight" aria-labelledby="layers-t"><h2 id="layers-t" style="font-size:1.6rem">Strato per strato</h2>${layersHtml(idx, p)}</section>` : ''}
+    <section class="section--tight" id="pairings" aria-labelledby="pair-t"></section>
+    <section class="section--tight"><div class="delivery">
+      <div><h3>${icon('truck')} Consegna</h3><ul><li>Spedizione ${esc(store.db.settings.shipping_note)}</li><li>A Napoli consegna al piano, ritiro dell'usato${kind === 'rete' ? ' e montaggio' : ''}</li></ul></div>
+      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
+    </div></section>
+  </div>
+  ${purchasable ? `<div class="sticky-buy" id="sticky-buy" aria-hidden="true"></div>` : ''}`;
+  renderBuy(idx, p);
+  $('#gal-stage')?.addEventListener('vs:visible', (e) => explode(e.currentTarget, 0.6, 1300), { once: true });
+  if (purchasable) {
+    document.body.classList.add('has-sticky');
+    // controllo sulla posizione (non IntersectionObserver: uno scroll veloce può saltare l'incrocio)
+    const sb = $('#sticky-buy');
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const btn = $('#add-btn');
+      if (!btn || !sb.isConnected) return window.removeEventListener('scroll', onScroll);
+      const show = btn.getBoundingClientRect().bottom < 0;
+      if (sb.classList.contains('is-visible') === show) return;
+      sb.classList.toggle('is-visible', show);
+      sb.setAttribute('aria-hidden', String(!show));
+      $$('button,a', sb).forEach((b) => (b.tabIndex = show ? 0 : -1));
+    };
+    const onScroll = () => (raf ||= requestAnimationFrame(update));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+  }
+}
+
+function galleryHtml(idx, p, gallery, i) {
+  if (!gallery.length) {
+    const kind = idx.kind(p);
+    const layered = kind === 'materasso' || kind === 'topper';
+    return `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
+      <span class="gallery__label" style="top:14px;bottom:auto">Schema illustrativo, non in scala</span>
+      ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>
+      <p class="small muted" style="margin-top:10px">Le foto del prodotto saranno pubblicate appena disponibili.</p>`;
+  }
+  const m = gallery[i] ?? gallery[0];
+  const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
+  return `<div class="gallery__main">${tag || fallbackHtml(idx.kind(p))}
+      ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${i}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
+      ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>
+    ${gallery.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${gallery
+      .map((g, j) => `<button class="thumb" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="Mostra immagine ${j + 1}: ${esc(g.alt)}">${imgTag(g, { sizes: '80px' }) || ''}</button>`)
+      .join('')}</div>` : ''}`;
+}
+
+function renderBuy(idx, p) {
+  const kind = idx.kind(p);
+  const sel = getSel(idx, p);
+  const sizes = idx.sizesOf(p);
+  const heights = idx.heightsOf(p);
+  const pv = idx.purchasableVariants(p);
+  const v = idx.findVariant(p, sel.size, kind === 'materasso' || kind === 'topper' ? sel.height : idx.variantsOf(p)[0]?.height_cm ?? null) ?? (sizes.length ? undefined : idx.variantsOf(p)[0]);
+  const ok = v && pv.includes(v);
+  const sizeOk = (s) => pv.some((x) => x.size === s && (!heights.length || kind !== 'materasso' || x.height_cm === sel.height));
+  const heightOk = (h) => pv.some((x) => x.height_cm === h);
+  const blockedHeights = heights.filter((h) => !heightOk(h));
+  const selectable = kind === 'materasso' && heights.length > 1;
+  $('#buy').innerHTML = `
+    <span class="buy__tech">${esc(p.technical_name)}</span>
+    <h1>${esc(p.name)}</h1>
+    <p>${esc(p.short)}</p>
+    <div class="buy__price" aria-live="polite">${ok ? `<span class="price"><span class="price-flip ${state.lastPrice?.[p.id] !== undefined && state.lastPrice[p.id] !== v.price_cents ? 'is-new' : ''}">${formatCents(v.price_cents)}</span></span><span class="small muted">IVA inclusa${sel.size ? `, ${formatSize(sel.size)}` : ''}${v.height_cm && kind === 'materasso' ? ` H${v.height_cm}` : ''}</span>` : `<span class="small">Questa configurazione non è acquistabile online.</span>`}</div>
+    ${ok ? availabilityHtml(v) : ''}
+    ${selectable ? `<fieldset class="opt"><legend>Altezza</legend><div class="seg seg--h">${heights
+      .map((h) => `<input type="radio" name="h" id="h${h}" value="${h}" data-act="pick-h" ${sel.height === h ? 'checked' : ''} ${heightOk(h) ? '' : 'disabled'}><label for="h${h}">H${h}${heightOk(h) ? '' : '<small>non online</small>'}</label>`)
+      .join('')}</div>${blockedHeights.length ? `<p class="small muted" style="margin:8px 0 0">H${blockedHeights.join(', H')}: non ancora acquistabile online. <a href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a>.</p>` : ''}</fieldset>` : ''}
+    ${sizes.length ? `<fieldset class="opt"><legend>Misura <button type="button" class="link-btn" data-act="size-guide">Confronta due misure</button></legend><div class="seg">${sizes
+      .map((s) => `<input type="radio" name="s" id="s${s}" value="${s}" data-act="pick-s" ${sel.size === s ? 'checked' : ''} ${sizeOk(s) ? '' : 'disabled'}><label for="s${s}">${formatSize(s)}</label>`)
+      .join('')}</div>${footprint(sel.size)}</fieldset>` : ''}
+    ${v ? `<p class="sku">SKU <span>${esc(v.sku)}</span></p>` : ''}
+    <div class="buy__actions">
+      <div class="qty" role="group" aria-label="Quantità"><button type="button" data-act="qty" data-d="-1" aria-label="Diminuisci">${icon('minus', 18)}</button><output aria-live="polite">${sel.qty}</output><button type="button" data-act="qty" data-d="1" aria-label="Aumenta">${icon('plus', 18)}</button></div>
+      <button class="btn btn--primary" id="add-btn" data-act="add" ${ok ? '' : 'disabled'}>Aggiungi al carrello</button>
+    </div>
+    <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
+    <div class="buy__extra">
+      <a href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
+      ${kind === 'materasso' ? `<a href="#confronto" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
+    </div>`;
+  state.lastPrice = { ...(state.lastPrice ?? {}), [p.id]: ok ? v.price_cents : null };
+  const fp = $('.footprint__box span');
+  if (fp && state.prevFoot) {
+    const [w, h] = [fp.style.width, fp.style.height];
+    fp.style.width = state.prevFoot[0];
+    fp.style.height = state.prevFoot[1];
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fp.style.width = w;
+      fp.style.height = h;
+    }));
+  }
+  if (fp) state.prevFoot = [fp.style.width, fp.style.height];
+  const sb = $('#sticky-buy');
+  if (sb)
+    sb.innerHTML = ok
+      ? `<div><div class="price">${formatCents(v.price_cents)}</div><div class="meta">${sel.size ? formatSize(sel.size) : ''}${v.height_cm && kind === 'materasso' ? ` · H${v.height_cm}` : ''}</div></div><button class="btn btn--primary" data-act="add">Aggiungi al carrello</button>`
+      : `<div class="meta">Configurazione non acquistabile online</div><a class="btn btn--ghost btn--sm" href="#buy">Cambia</a>`;
+  renderPairings(idx, p, sel.size);
+}
+
+function footprint(size) {
+  const d = size && parseSize(size);
+  if (!d) return '';
+  const k = 64 / 220;
+  return `<div class="footprint" aria-hidden="true"><div class="footprint__box"><span style="width:${(d.w * k).toFixed(1)}px;height:${(d.l * k).toFixed(1)}px"></span></div><span>Ingombro ${d.w} × ${d.l} cm, in scala con le altre misure</span></div>`;
+}
+
+function renderPairings(idx, p, size) {
+  const el = $('#pairings');
+  if (!el) return;
+  const kind = idx.kind(p);
+  const groups = pairingsFor(idx, p, kind === 'guanciale' ? null : size);
+  if (!groups.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = `<h2 id="pair-t" style="font-size:1.6rem">${kind === 'materasso' ? 'Completa il letto' : kind === 'rete' ? 'Il materasso per questa rete' : 'Si abbina bene con'}</h2>
+    ${size && kind !== 'guanciale' ? `<p class="muted small">Ti proponiamo solo articoli nella misura ${formatSize(size)}.</p>` : ''}
+    ${groups.map((g) => `<h3 style="font-size:1rem;margin:18px 0 10px">${esc(KIND_PLURAL[g.kind])}</h3><div class="pair-row">${g.items.map((it) => pairHtml(idx, it)).join('')}</div>`).join('')}`;
+}
+function pairHtml(idx, it) {
+  const p = it.product;
+  const v = it.variant;
+  const spec = v ? [v.size ? formatSize(v.size) : '', v.height_cm && idx.kind(p) === 'materasso' ? `H${v.height_cm}` : ''].filter(Boolean).join(' · ') : '';
+  return `<div class="pair"><div class="pair__img">${coverHtml(idx, p, { sizes: '80px' })}</div>
+    <div><h4><a href="${href.product(p)}">${esc(p.name)}</a></h4><div class="meta">${esc(spec || p.technical_name)}</div>
+      <div class="row"><strong>${v ? '' : '<small class="muted">da </small>'}${formatCents(it.fromPrice)}</strong>
+      ${v ? `<button class="btn btn--ghost btn--sm" data-act="add-variant" data-id="${esc(v.id)}">Aggiungi</button>` : `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Scegli</a>`}</div></div></div>`;
+}
+
+// ---------------------------------------------------------------- SLEEP MATCH
+const SM_STEPS = (a) => [
+  { k: 'sleepers', q: 'Dormi da solo o in due?', o: [['single', 'Da solo', ''], ['couple', 'In due', 'Ti chiederemo qualcosa anche sull\'altra persona']] },
+  { k: 'position', q: 'In che posizione dormi di solito?', o: [['fianco', 'Sul fianco', ''], ['schiena', 'Sulla schiena', ''], ['pancia', 'A pancia in giù', ''], ['mista', 'Cambio spesso', '']] },
+  { k: 'me.weight', q: a.sleepers === 'couple' ? 'Fascia di peso: la tua' : 'In che fascia di peso sei?', o: [['lt60', 'Meno di 60 kg', ''], ['60-85', '60–85 kg', ''], ['85-110', '85–110 kg', ''], ['gt110', 'Oltre 110 kg', '']] },
+  { k: 'me.feel', q: a.sleepers === 'couple' ? 'Che sensazione preferisci tu?' : 'Che sensazione preferisci?', o: [['accogliente', 'Più accogliente', 'Ti piace sentire il materasso che ti avvolge'], ['equilibrato', 'Equilibrata', 'Una via di mezzo'], ['sostenuto', 'Più sostenuta', 'Ti piace un piano deciso']] },
+  ...(a.sleepers === 'couple'
+    ? [
+        { k: 'partner.weight', q: "Fascia di peso dell'altra persona", o: [['lt60', 'Meno di 60 kg', ''], ['60-85', '60–85 kg', ''], ['85-110', '85–110 kg', ''], ['gt110', 'Oltre 110 kg', '']] },
+        { k: 'partner.feel', q: "E l'altra persona che sensazione preferisce?", o: [['accogliente', 'Più accogliente', ''], ['equilibrato', 'Equilibrata', ''], ['sostenuto', 'Più sostenuta', '']] },
+        { k: 'partnerMotion', q: 'Ti dà fastidio sentire i movimenti di chi dorme accanto?', o: [['importante', 'Sì, molto', ''], ['poco', 'Non particolarmente', '']] },
+      ]
+    : []),
+  { k: 'focus', q: 'Dove vuoi sentire più comfort?', o: [['spalle', 'Su spalle e fianchi', 'Un piano che accoglie'], ['schiena', 'Sotto la schiena', 'Un sostegno che non cede'], ['equilibrio', 'Nessuna preferenza', '']] },
+  { k: 'heat', q: 'Di notte senti caldo?', o: [['spesso', 'Spesso', ''], ['a-volte', 'A volte', ''], ['raramente', 'Raramente', '']] },
+  { k: 'tech', q: 'Hai già una preferenza sulla tecnologia?', o: [['non-so', 'Non saprei', 'Va benissimo'], ['foam', 'Poliuretano', ''], ['memory', 'Memory Foam', ''], ['molle', 'Molle insacchettate', '']] },
+  { k: 'removable', q: 'Ti serve il rivestimento sfoderabile?', o: [['true', 'Sì, è importante', ''], ['false', 'Non è decisivo', '']] },
+];
+const getK = (o, k) => k.split('.').reduce((a, x) => a?.[x], o);
+function setK(o, k, v) {
+  const parts = k.split('.');
+  let cur = o;
+  while (parts.length > 1) {
+    const x = parts.shift();
+    cur = cur[x] ??= {};
+  }
+  cur[parts[0]] = v;
+}
+function viewSleepMatch() {
+  setMeta('Sleep Match: trova il tuo materasso', 'Qualche domanda su come dormi e ti proponiamo un solo materasso Vesuvio Sleep, con il perché. Senza budget e senza salvare le risposte.');
+  state.sm ??= { step: 0, a: { me: {} } };
+  renderSM();
+}
+function renderSM(animate = false) {
+  const sm = state.sm;
+  const steps = SM_STEPS(sm.a);
+  const done = sm.step >= steps.length;
+  let inner;
+  if (!done) {
+    const s = steps[sm.step];
+    const cur = getK(sm.a, s.k);
+    inner = `<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${steps.length}" aria-valuenow="${sm.step}" aria-label="Avanzamento"><span style="width:${(sm.step / steps.length) * 100}%"></span></div>
+      <p class="small muted">Domanda ${sm.step + 1} di ${steps.length}</p>
+      <fieldset class="opts" style="display:block"><legend class="q-title" style="font:800 clamp(1.5rem,3vw,2.1rem)/1.15 var(--f-display);color:var(--deep);margin-bottom:16px">${esc(s.q)}</legend>
+      <div class="opts" style="margin:0">${s.o
+        .map(([v, l, d], i) => `<div><input type="radio" name="sm" id="sm${i}" value="${v}" data-act="sm-pick" data-k="${s.k}" ${String(cur) === v ? 'checked' : ''}><label for="sm${i}"><strong>${esc(l)}</strong>${d ? `<span>${esc(d)}</span>` : ''}</label></div>`)
+        .join('')}</div></fieldset>
+      <div class="btn-row">${sm.step > 0 ? '<button class="btn btn--ghost" data-act="sm-back">Indietro</button>' : ''}<button class="btn btn--primary" data-act="sm-next" ${cur === undefined ? 'disabled' : ''}>${sm.step === steps.length - 1 ? 'Vedi il risultato' : 'Avanti'}</button></div>`;
+  } else {
+    const a = { ...sm.a, removable: sm.a.removable === 'true' || sm.a.removable === true };
+    if (a.sleepers !== 'couple') delete a.partner;
+    const idx = pub();
+    const r = sleepMatch(idx, a);
+    if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="#showroom">Contatti e showroom</a></div>`;
+    else {
+      state.sel[r.product.id] = { ...(state.sel[r.product.id] ?? {}), height: r.height };
+      inner = `<p class="small muted">Il tuo risultato</p><div class="result">
+        <div class="result__img">${coverHtml(idx, r.product, { sizes: '(max-width:860px) 92vw, 40vw', eager: true })}</div>
+        <div><span class="buy__tech">${esc(r.product.technical_name)}</span><h2>${esc(r.product.name)}</h2>
+          <ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+          ${r.heightReason ? `<p class="note">${esc(r.heightReason)}</p>` : ''}
+          <p>${priceFrom(idx, r.product)} <span class="small muted">IVA inclusa</span></p>
+          <div class="btn-row"><a class="btn btn--primary" href="${href.product(r.product)}">Configura il tuo materasso</a><button class="btn btn--ghost" data-act="sm-restart">Ricomincia</button></div>
+          <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
+    }
+  }
+  const html = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Sleep Match' }], 'Sleep Match', 'Rispondi a qualche domanda: ti proponiamo un solo materasso, con il perché.')}<div class="wrap section--tight"><div class="quiz" id="quiz">${inner}</div></div>`;
+  if (animate && $('#quiz')) {
+    swap($('#quiz'), inner);
+    $('#quiz input, #quiz h2, #quiz button')?.focus({ preventScroll: true });
+  } else app.innerHTML = html;
+}
+
+// ---------------------------------------------------------------- CONFRONTO
+function viewCompare() {
+  const idx = pub();
+  const all = idx.publicProducts('materasso');
+  if (state.compare.size === 0) all.slice(0, 3).forEach((p) => state.compare.add(p.id));
+  const chosen = all.filter((p) => state.compare.has(p.id)).slice(0, 3);
+  setMeta('Confronta i materassi', 'Confronto tra i materassi Vesuvio Sleep: tecnologia, composizione, altezze, prezzi e rivestimento.');
+  const yes = (b) => (b === true ? 'Sì' : b === false ? 'No' : '—');
+  const rows = [
+    ['Tecnologia', (p) => esc(p.technical_name)],
+    ['Composizione', (p) => esc(p.composition)],
+    ['Prezzo', (p) => `da <strong>${formatCents(idx.minPrice(p))}</strong>`],
+    ['Altezze acquistabili', (p) => idx.purchasableHeights(p).map((h) => 'H' + h).join(', ')],
+    ['Sfoderabile', (p) => yes(p.removable_cover)],
+    ['Lato estivo e invernale', (p) => yes(!!p.summer_winter)],
+    ['Fascia 3D traspirante', (p) => yes(!!p.match?.ventilation)],
+    ['Molle indipendenti', (p) => yes(!!p.match?.independent_springs)],
+    ['Rigidità indicativa', (p) => esc(p.firmness_display ?? '—')],
+    ['', (p) => `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Vai alla scheda</a>`],
+  ];
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Confronto' }], 'Confronta i materassi', 'Solo dati confermati dalla fabbrica, senza punteggi. Scegli fino a tre modelli.')}
+  <div class="wrap" style="padding-top:28px">
+    <div class="chips" role="group" aria-label="Modelli da confrontare" style="margin-bottom:20px">${all
+      .map((p) => `<button class="chip" data-act="cmp-toggle" data-id="${esc(p.id)}" aria-pressed="${state.compare.has(p.id)}">${esc(p.name.replace('Vesuvio ', ''))}</button>`)
+      .join('')}</div>
+    ${chosen.length < 2 ? '<div class="empty"><p>Seleziona almeno due modelli per vedere il confronto.</p></div>' : `<div class="cmp" style="--n:${chosen.length}" role="table" aria-label="Confronto materassi">
+      <div class="cmp__row cmp__row--head" role="row"><div class="k" role="columnheader"><span class="sr-only">Caratteristica</span></div>${chosen.map((p) => `<div role="columnheader">${esc(p.name.replace('Vesuvio ', ''))}</div>`).join('')}</div>
+      ${rows.map(([k, f]) => `<div class="cmp__row" role="row">${k ? `<div class="k" role="rowheader">${esc(k)}</div>` : '<div class="k" role="rowheader"><span class="sr-only">Scheda</span></div>'}${chosen.map((p) => `<div role="cell">${f(p)}</div>`).join('')}</div>`).join('')}
+    </div>`}
+    <p class="small muted" style="margin-top:14px">La rigidità è un'indicazione da verificare provando il materasso in showroom.</p>
+  </div>`;
+}
+function showCompareBar() {
+  const n = state.compare.size;
+  const bar = document.createElement('div');
+  bar.className = 'compare-bar';
+  bar.innerHTML = `<span>${n} ${n === 1 ? 'modello' : 'modelli'} da confrontare</span><a class="btn btn--sm" href="#confronto">Confronta</a><button class="icon-btn" style="color:#fff" data-act="cmp-clear" aria-label="Svuota il confronto">${icon('close', 18)}</button>`;
+  document.body.append(bar);
+}
+
+// ---------------------------------------------------------------- MISURE
+const SIZE_NAMES = { '80x190': 'Singolo', '90x200': 'Singolo lungo', '120x190': 'Una piazza e mezza', '140x190': 'Francese', '160x190': 'Matrimoniale', '165x190': 'Matrimoniale', '170x200': 'Matrimoniale grande', '180x200': 'Matrimoniale grande' };
+function sizesSvg(a, b) {
+  const A = parseSize(a);
+  const B = parseSize(b);
+  const W = Math.max(A.w, B.w);
+  const L = Math.max(A.l, B.l);
+  const pad = 46;
+  const vw = W + pad * 2;
+  const vh = L + pad * 2;
+  const rect = (s, c, stroke, dash) =>
+    `<rect x="${pad}" y="${pad + (L - s.l)}" width="${s.w}" height="${s.l}" rx="6" fill="${c}" stroke="${stroke}" stroke-width="2.5" ${dash ? 'stroke-dasharray="8 6"' : ''}/>`;
+  const big = A.w * A.l >= B.w * B.l ? [A, B, a, b] : [B, A, b, a];
+  return `<svg viewBox="0 0 ${vw} ${vh}" role="img" aria-label="Confronto in scala tra ${formatSize(a)} e ${formatSize(b)} centimetri">
+    ${rect(big[0], 'rgba(32,103,134,.12)', '#206786')}${rect(big[1], 'rgba(200,120,91,.16)', '#9a4f33', true)}
+    <g font-family="Manrope, sans-serif" font-weight="700" fill="#0e3444" font-size="22">
+      <text x="${pad + W / 2}" y="${pad - 14}" text-anchor="middle">${W} cm</text>
+      <text x="${pad - 14}" y="${pad + L / 2}" text-anchor="middle" transform="rotate(-90 ${pad - 14} ${pad + L / 2})">${L} cm</text>
+    </g></svg>`;
+}
+function viewSizes() {
+  setMeta('Guida alle misure dei materassi', 'Le misure standard dei materassi Vesuvio Sleep a confronto in scala: singolo, piazza e mezza, matrimoniale. Fuori misura su richiesta.');
+  const [a, b] = state.sizes;
+  const opt = (sel) => STANDARD_SIZES.map((s) => `<option value="${s}" ${s === sel ? 'selected' : ''}>${formatSize(s)} – ${SIZE_NAMES[s]}</option>`).join('');
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Guida alle misure' }], 'Guida alle misure', "Metti a confronto due misure in scala, vista dall'alto. La selezione resta quando torni alla scheda.")}
+  <div class="wrap two-col" style="padding-top:28px">
+    <div class="sizes-fig">
+      <div class="row-2" style="margin-bottom:12px">
+        <div class="field"><label for="sz-a">Prima misura</label><select id="sz-a" data-act="size-a">${opt(a)}</select></div>
+        <div class="field"><label for="sz-b">Seconda misura</label><select id="sz-b" data-act="size-b">${opt(b)}</select></div>
+      </div>
+      <div id="sizes-svg">${sizesSvg(a, b)}</div>
+      <div class="size-legend"><span style="--c:rgba(32,103,134,.12);--b:#206786">${formatSize(parseSize(a).w * parseSize(a).l >= parseSize(b).w * parseSize(b).l ? a : b)}</span><span style="--c:rgba(200,120,91,.16);--b:#9a4f33">${formatSize(parseSize(a).w * parseSize(a).l >= parseSize(b).w * parseSize(b).l ? b : a)}</span></div>
+      <p class="small muted" style="margin:10px 0 0">Differenza: ${Math.abs(parseSize(a).w - parseSize(b).w)} cm in larghezza, ${Math.abs(parseSize(a).l - parseSize(b).l)} cm in lunghezza.</p>
+    </div>
+    <div><table class="size-table"><thead><tr><th>Misura (cm)</th><th>Formato</th></tr></thead><tbody>${STANDARD_SIZES.map((s) => `<tr><td><strong>${formatSize(s)}</strong></td><td>${SIZE_NAMES[s]}</td></tr>`).join('')}</tbody></table>
+      <p style="margin-top:18px">Il materasso va scelto sulla misura interna del letto o della rete. Se non corrisponde a una misura standard, <a href="#fuori-misura">chiedi un preventivo fuori misura</a>.</p></div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------- FUORI MISURA
+function viewQuote() {
+  const idx = pub();
+  setMeta('Materassi su misura e fuori misura', 'Richiedi un preventivo per un materasso fuori misura o con altezza personalizzata: ti rispondiamo su WhatsApp, senza pagamenti anticipati.');
+  const prods = [...idx.publicProducts('materasso'), ...idx.publicProducts('rete'), ...idx.publicProducts('topper')];
+  const pre = state.quoteFor && prods.find((p) => p.id === state.quoteFor);
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Fuori misura' }], 'Fuori misura e altezze personalizzate', 'Indica prodotto e misure. Ti mandiamo il prezzo su WhatsApp: niente pagamento online, la conferma avviene con noi.')}
+  <div class="wrap two-col" style="padding-top:28px">
+    <form class="form" id="quote-form" novalidate>
+      <div class="field"><label for="q-prod">Prodotto</label><select id="q-prod" name="product" required>${prods.map((p) => `<option value="${esc(p.id)}" ${pre?.id === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}<option value="altro">Altro / non so ancora</option></select></div>
+      <div class="row-2">
+        <div class="field"><label for="q-w">Larghezza (cm)</label><input class="input" id="q-w" name="w" inputmode="numeric" required></div>
+        <div class="field"><label for="q-l">Lunghezza (cm)</label><input class="input" id="q-l" name="l" inputmode="numeric" required></div>
+        <div class="field"><label for="q-h">Altezza (cm)</label><input class="input" id="q-h" name="h" inputmode="numeric" placeholder="Facoltativa"></div>
+      </div>
+      <label class="check"><input type="checkbox" name="b2b" id="q-b2b"> È per un hotel, un B&amp;B o una struttura ricettiva</label>
+      <div class="row-2" id="b2b-fields" hidden>
+        <div class="field"><label for="q-rooms">Camere o posti letto</label><input class="input" id="q-rooms" name="rooms" inputmode="numeric"></div>
+        <div class="field"><label for="q-qty">Quantità di materassi</label><input class="input" id="q-qty" name="qty" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label for="q-notes">Note</label><textarea class="textarea" id="q-notes" name="notes" maxlength="500" aria-describedby="q-notes-h"></textarea><span class="hint" id="q-notes-h">Forma particolare, angoli smussati, scadenze. Non inserire indirizzi o altri dati personali: li concorderemo su WhatsApp.</span></div>
+      <div id="q-err" class="err-msg" role="alert"></div>
+      <div><button class="btn btn--primary" type="submit">Prepara la richiesta</button></div>
+    </form>
+    <div id="quote-out"><div class="note"><strong>Come funziona</strong><ol style="margin:8px 0 0;padding-left:18px"><li>Prepari la richiesta qui.</li><li>La invii su WhatsApp, oppure copi il testo.</li><li>Ti rispondiamo con prezzo e tempi.</li><li>Confermi con noi su WhatsApp.</li></ol></div></div>
+  </div>`;
+  state.quoteFor = null;
+}
+
+function waBlock(plan, ref, kind) {
+  const wa = whatsappStatus();
+  return `<div class="form">
+    ${plan.url
+      ? `<a class="btn btn--wa" href="${esc(plan.url)}" target="_blank" rel="noopener" data-act="wa-open" data-ref="${esc(ref)}">${icon('wa', 20)} Invia la richiesta su WhatsApp</a>`
+      : `<div class="note note--warn" role="status"><strong>Invio su WhatsApp non ancora attivo.</strong> Copia il riepilogo e invialo a Vesuvio Sleep; il numero per le richieste sarà pubblicato a breve.${CFG.preview ? `<br><span class="small">Anteprima: configura il numero da Admin › Impostazioni (${esc(wa.check.ok ? '' : wa.check.reason)})</span>` : ''}</div>`}
+    <button class="btn btn--ghost" data-act="copy-summary" data-ref="${esc(ref)}">${icon('copy', 20)} Copia il riepilogo</button>
+    <textarea class="textarea" id="copy-fallback" hidden readonly aria-label="Riepilogo da copiare"></textarea>
+    ${plan.short ? `<p class="small muted">Il carrello è lungo: su WhatsApp si apre un messaggio breve con il riferimento ${esc(ref)}. Incolla sotto il riepilogo completo che hai copiato.</p>` : ''}
+    <p class="small muted">${kind === 'quote' ? 'Ti risponderemo con prezzo e tempi.' : 'Aprire WhatsApp non conferma l\'ordine: la conferma arriva da Vesuvio Sleep su WhatsApp, dopo aver verificato disponibilità e consegna.'} Puoi modificare il messaggio prima di inviarlo.</p>
+  </div>`;
+}
+
+// ---------------------------------------------------------------- CARRELLO
+function viewCart() {
+  const v = api.validateCart(cart.items);
+  const idx = catalog();
+  setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep.');
+  if (!cart.items.length) {
+    app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
+    <div class="wrap section--tight"><div class="empty"><h3>Il carrello è vuoto</h3><p>Scegli un materasso e la misura: troverai qui il riepilogo da inviare su WhatsApp.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="#materassi">Esplora i materassi</a><a class="btn btn--ghost" href="#sleep-match">Trova il tuo materasso</a></div></div></div>`;
+    return;
+  }
+  // funzione extra: rete della stessa misura se nel carrello c'è un materasso senza rete
+  const cartSizes = new Set(v.lines.filter((l) => l.product && idx.kind(l.product) === 'materasso').map((l) => l.variant.size));
+  const reteSizes = new Set(v.lines.filter((l) => l.product && idx.kind(l.product) === 'rete').map((l) => l.variant.size));
+  const missing = [...cartSizes].filter((s) => !reteSizes.has(s));
+  const reteSugg = missing.length
+    ? idx.publicProducts('rete').map((p) => ({ p, v: idx.cheapestAtSize(p, missing[0]) })).filter((x) => x.v)
+    : [];
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
+  <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li aria-current="step">Carrello</li><li>Verifica</li><li>WhatsApp</li></ol></div>
+  <div class="wrap cart">
+    <div>
+      ${v.lines.map((l) => cartLine(idx, l)).join('')}
+      ${reteSugg.length ? `<section class="section--tight"><h2 style="font-size:1.3rem">Una rete della stessa misura</h2><p class="small muted">Hai un materasso ${formatSize(missing[0])}: queste reti sono nella stessa misura.</p><div class="pair-row">${reteSugg.map(({ p, v: rv }) => pairHtml(idx, { product: p, variant: rv, fromPrice: rv.price_cents })).join('')}</div></section>` : ''}
+    </div>
+    <aside class="summary" aria-label="Totale">
+      <dl><dt>Articoli</dt><dd>${cart.count()}</dd><dt>Spedizione</dt><dd>Gratuita in Italia</dd><div class="tot" style="display:contents"><dt>Totale</dt><dd>${formatCents(v.total_cents)}</dd></div></dl>
+      <p class="small muted">IVA inclusa. Nessun pagamento online: invii il riepilogo su WhatsApp e confermi con noi.</p>
+      ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
+      <a class="btn btn--primary" style="width:100%" href="#riepilogo" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
+      <p style="margin:12px 0 0;text-align:center"><a href="#materassi" class="small">Continua a scegliere</a></p>
+    </aside>
+  </div>`;
+}
+function cartLine(idx, l) {
+  const p = l.product;
+  const v = l.variant;
+  const name = p ? p.name : 'Articolo non disponibile';
+  const spec = v ? [v.size ? formatSize(v.size) : '', v.height_cm && idx.kind(p) === 'materasso' ? `H${v.height_cm}` : ''].filter(Boolean).join(' · ') : '';
+  return `<div class="line">
+    <div class="line__img">${p ? coverHtml(idx, p, { sizes: '92px' }) : fallbackHtml('materasso')}</div>
+    <div><h3>${p ? `<a href="${href.product(p)}">${esc(name)}</a>` : esc(name)}</h3>
+      <div class="meta">${esc(spec)}${v ? ` · SKU ${esc(v.sku)}` : ''}</div>
+      ${l.message ? `<p class="note ${l.status === 'price_changed' ? 'note--warn' : 'note--err'}" style="margin:8px 0 0">${esc(l.message)}${l.status === 'price_changed' ? ` Nuovo prezzo: <strong>${formatCents(l.unit_cents)}</strong> <button class="link-btn" data-act="accept-price" data-id="${esc(l.item.variant_id)}">Accetta il nuovo prezzo</button>` : ''}</p>` : ''}
+      <div class="line__row">
+        <div class="qty" role="group" aria-label="Quantità di ${esc(name)}"><button data-act="cart-qty" data-id="${esc(l.item.variant_id)}" data-d="-1" aria-label="Diminuisci">${icon('minus', 18)}</button><output>${l.item.qty}</output><button data-act="cart-qty" data-id="${esc(l.item.variant_id)}" data-d="1" aria-label="Aumenta" ${l.item.qty >= MAX_QTY || l.status !== 'ok' ? 'disabled' : ''}>${icon('plus', 18)}</button></div>
+        <strong>${l.status === 'ok' ? formatCents(l.unit_cents * l.item.qty) : ''}</strong>
+        <button class="link-btn small" data-act="cart-remove" data-id="${esc(l.item.variant_id)}">Rimuovi</button>
+      </div></div></div>`;
+}
+
+// ---------------------------------------------------------------- RIEPILOGO + WHATSAPP
+function cartSignature(items) {
+  return items.map((i) => `${i.variant_id}:${i.qty}:${i.seen_price_cents}`).sort().join('|');
+}
+function viewReview() {
+  setMeta('Verifica il riepilogo', 'Controlla il riepilogo e invialo a Vesuvio Sleep su WhatsApp.');
+  if (!cart.items.length) {
+    location.hash = 'carrello';
+    return;
+  }
+  const v = api.validateCart(cart.items); // ricontrollo "lato server"
+  const head = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello', href: '#carrello' }, { name: 'Verifica' }], 'Verifica il riepilogo')}
+    <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
+  if (!v.canSubmit) {
+    app.innerHTML = `${head}<div class="wrap"><div class="note note--warn" role="alert"><strong>Abbiamo ricontrollato il carrello e qualcosa è cambiato.</strong> Correggi gli articoli segnalati e riprova.</div>
+      <div>${v.lines.map((l) => cartLine(catalog(), l)).join('')}</div><p style="margin-top:20px"><a class="btn btn--ghost" href="#carrello">Torna al carrello</a></p></div>`;
+    return;
+  }
+  const sig = cartSignature(cart.items);
+  let ref;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('vs-review') || 'null');
+    if (saved?.sig === sig && store.db.requests.some((r) => r.ref === saved.ref)) ref = saved.ref;
+  } catch {
+    /* sessionStorage non disponibile */
+  }
+  const req = ref ? store.db.requests.find((r) => r.ref === ref) : api.createCartRequest(v);
+  try {
+    sessionStorage.setItem('vs-review', JSON.stringify({ sig, ref: req.ref }));
+  } catch {
+    /* ignora */
+  }
+  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note };
+  const plan = planWhatsApp(whatsappStatus().raw, summary);
+  state.lastSummary = plan.fullText;
+  app.innerHTML = `${head}<div class="wrap cart">
+    <div>
+      <table class="size-table" aria-label="Articoli"><thead><tr><th>Articolo</th><th>Q.tà</th><th style="text-align:right">Prezzo</th></tr></thead><tbody>
+      ${summary.lines.map((l) => `<tr><td><strong>${esc(l.name)}</strong><br><span class="small muted">${[l.size ? formatSize(l.size) : '', l.height_cm && l.size ? 'H' + l.height_cm : ''].filter(Boolean).join(' · ')}${l.size ? ' · ' : ''}SKU ${esc(l.sku)}</span></td><td>${l.qty}</td><td style="text-align:right">${formatCents(l.unit_cents * l.qty)}</td></tr>`).join('')}
+      </tbody></table>
+      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
+      <h2 style="font-size:1.2rem;margin-top:28px">Il messaggio che invierai</h2>
+      <pre class="msg-preview" aria-label="Anteprima del messaggio">${esc(plan.text)}</pre>
+      <p class="small muted">Il messaggio contiene solo articoli, prezzi e riferimento: nessun dato personale.</p>
+    </div>
+    <aside class="summary" aria-label="Invio">
+      <h2 style="font-size:1.2rem">Invia la richiesta</h2>
+      <div id="wa-status" aria-live="polite">${req.status === 'in_attesa_contatto' ? sentNote() : ''}</div>
+      ${waBlock(plan, req.ref, 'cart')}
+      <p class="small" style="margin-top:14px"><a href="#carrello">Modifica il carrello</a></p>
+    </aside></div>`;
+}
+function sentNote() {
+  return `<div class="note note--ok" style="margin-bottom:12px">Hai aperto WhatsApp. Se hai inviato il messaggio, Vesuvio Sleep ti risponderà lì per confermare. Il carrello resta salvato finché non lo svuoti. <button class="link-btn" data-act="cart-clear">Svuota il carrello</button></div>`;
+}
+
+// ---------------------------------------------------------------- ALTRE
+function viewShowroom() {
+  setMeta('Showroom e fabbrica a Casoria', 'Vesuvio Sleep, Via Raffaele Salierno 38, Casoria (NA). Orari dello showroom e indicazioni stradali.', [localBusinessJsonLd()]);
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
+}
+function viewNotFound() {
+  setMeta('Pagina non trovata', '');
+  app.innerHTML = `<div class="wrap section"><h1>Questa pagina non c'è</h1><p class="lead">Il prodotto potrebbe non essere più in catalogo o il link è incompleto.</p><div class="btn-row"><a class="btn btn--primary" href="#materassi">Vai ai materassi</a><a class="btn btn--ghost" href="#">Torna alla home</a></div></div>`;
+}
+
+// ---------------------------------------------------------------- EVENTI
+function closeDrawer() {
+  $('#drawer')?.classList.remove('is-open');
+  $('#menu-btn')?.setAttribute('aria-expanded', 'false');
+}
+function currentProduct() {
+  const m = /^prodotto-(.+)$/.exec(location.hash.slice(1));
+  if (!m) return null;
+  const idx = pub();
+  return { idx, p: idx.snap.products.find((x) => x.slug === m[1]) };
+}
+function addVariant(v, qty = 1) {
+  cart.set(addToCart(cart.items, v, qty));
+  bump($('#cart-link'));
+  toast('Aggiunto al carrello');
+}
+
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act;
+  if (document.body.classList.contains('is-admin') && !['wa-open'].includes(act)) return; // gli eventi admin li gestisce admin.js
+  switch (act) {
+    case 'home-tab': {
+      state.homeKind = t.dataset.kind;
+      $$('.seg-tabs .tab').forEach((b) => {
+        const on = b === t;
+        b.setAttribute('aria-selected', on);
+        b.tabIndex = on ? 0 : -1;
+      });
+      $('#home-grid').setAttribute('aria-labelledby', t.id);
+      moveThumb();
+      const hg = $('#home-grid');
+      hg.innerHTML = homeGrid(pub());
+      $$('.rv', hg).forEach((x) => x.classList.add('in'));
+      $('.grid', hg).classList.add('is-entering');
+      break;
+    }
+    case 'lab-model': {
+      state.labModel = t.dataset.id;
+      const sec = $('#lab-stage').closest('.wrap');
+      sec.innerHTML = labHtml(pub());
+      $$('.rv', sec).forEach((x) => x.classList.add('in'));
+      const st = $('#lab-stage');
+      st.style.setProperty('--ex', '0');
+      explode(st, 0.8, 1000);
+      $(`[data-act="lab-model"][data-id="${CSS.escape(t.dataset.id)}"]`)?.focus();
+      break;
+    }
+    case 'lab-layer': {
+      const st = $('#lab-stage');
+      const on = t.getAttribute('aria-pressed') !== 'true';
+      $$('[data-act="lab-layer"]').forEach((b) => b.setAttribute('aria-pressed', String(on && b === t)));
+      $$('.mx .ly', st).forEach((g) => g.classList.toggle('is-focus', on && g.style.getPropertyValue('--i') === t.dataset.i));
+      if (on) {
+        st.dataset.focus = t.dataset.i;
+        if ((Number(st.style.getPropertyValue('--ex')) || 0) < 0.5) explode(st, 0.8, 700);
+      } else delete st.dataset.focus;
+      break;
+    }
+    case 'sm-start':
+      state.sm = { step: 0, a: { me: {}, position: t.dataset.v } };
+      location.hash = 'sleep-match';
+      break;
+    case 'to-product': {
+      // morph della card nella galleria della scheda (View Transitions)
+      const card = t.closest('.card, .lab');
+      const mediaEl = card?.querySelector('.card__media, .lab__stage');
+      if (mediaEl && document.startViewTransition && !reducedMotion()) mediaEl.style.viewTransitionName = 'prod-media';
+      break;
+    }
+    case 'filter': {
+      const k = t.dataset.k;
+      const f = state.filters;
+      if (k === 'removable') f.removable = !f.removable;
+      else if (k === 'height') f.height = f.height === Number(t.dataset.v) ? 0 : Number(t.dataset.v);
+      else f[k] = t.dataset.v;
+      $$('[data-act="filter"]').forEach((b) =>
+        b.setAttribute('aria-pressed', b.dataset.k === 'removable' ? String(f.removable) : String(String(f[b.dataset.k]) === b.dataset.v)),
+      );
+      swap($('#cat-body'), state.catBody());
+      break;
+    }
+    case 'reset-filters':
+      Object.assign(state.filters, { tech: 'all', removable: false, height: 0 });
+      route();
+      break;
+    case 'compare': {
+      t.checked ? state.compare.add(t.value) : state.compare.delete(t.value);
+      if (state.compare.size > 3) {
+        state.compare.delete(t.value);
+        t.checked = false;
+        toast('Puoi confrontare al massimo tre modelli');
+      }
+      $('.compare-bar')?.remove();
+      if (state.compare.size) showCompareBar();
+      break;
+    }
+    case 'cmp-toggle': {
+      const id = t.dataset.id;
+      if (state.compare.has(id)) state.compare.delete(id);
+      else if (state.compare.size >= 3) return toast('Puoi confrontare al massimo tre modelli');
+      else state.compare.add(id);
+      const y = window.scrollY;
+      viewCompare();
+      window.scrollTo(0, y);
+      $(`[data-act="cmp-toggle"][data-id="${CSS.escape(id)}"]`)?.focus();
+      break;
+    }
+    case 'cmp-clear':
+      state.compare.clear();
+      $('.compare-bar')?.remove();
+      $$('[data-act="compare"]').forEach((c) => (c.checked = false));
+      break;
+    case 'compare-with': {
+      const cp = currentProduct();
+      if (cp?.p) state.compare.add(cp.p.id);
+      break;
+    }
+    case 'quote-for':
+      state.quoteFor = t.dataset.id;
+      if (location.hash === '#fuori-misura') viewQuote();
+      break;
+    case 'layer': {
+      const box = t.closest('[data-layers]');
+      const i = t.dataset.i;
+      $$('[data-act="layer"]', box).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.i === i)));
+      break;
+    }
+    case 'thumb': {
+      const cp = currentProduct();
+      const g = mediaFor(cp.idx, cp.p);
+      $('[data-gallery]').innerHTML = galleryHtml(cp.idx, cp.p, g, Number(t.dataset.i));
+      $(`[data-act="thumb"][data-i="${t.dataset.i}"]`)?.focus();
+      break;
+    }
+    case 'zoom': {
+      const cp = currentProduct();
+      const m = mediaFor(cp.idx, cp.p)[Number(t.dataset.i)];
+      const src = media.resolve(m);
+      const big = m.srcset ? m.srcset.split(',').pop().trim().split(' ')[0] : src;
+      const d = openDialog({
+        title: cp.p.name,
+        wide: true,
+        body: `<div class="btn-row" style="margin-bottom:10px" role="group" aria-label="Livello di zoom">${[1, 2, 3].map((z) => `<button class="chip" data-z="${z}" aria-pressed="${z === 1}">${z === 1 ? 'Adatta' : z + '×'}</button>`).join('')}</div>
+          <div class="zoom-stage" tabindex="0" aria-label="Immagine ingrandita: scorri per spostarti"><img src="${esc(big)}" alt="${esc(m.alt)}"></div>${m.caption ? `<p class="small muted" style="margin:8px 0 0">${esc(m.caption)}</p>` : ''}`,
+      });
+      d.el.addEventListener('click', (ev) => {
+        const z = ev.target.closest('[data-z]');
+        if (!z) return;
+        $$('[data-z]', d.el).forEach((b) => b.setAttribute('aria-pressed', String(b === z)));
+        $('.zoom-stage', d.el).style.setProperty('--z', z.dataset.z);
+      });
+      break;
+    }
+    case 'size-guide': {
+      const cp = currentProduct();
+      const s = state.sel[cp.p.id]?.size;
+      if (s) state.sizes = [s, s === '180x200' ? '160x190' : '180x200'];
+      location.hash = 'guida-misure';
+      break;
+    }
+    case 'qty': {
+      const cp = currentProduct();
+      const sel = state.sel[cp.p.id];
+      sel.qty = Math.max(1, Math.min(MAX_QTY, sel.qty + Number(t.dataset.d)));
+      $('.buy .qty output').textContent = sel.qty;
+      break;
+    }
+    case 'add': {
+      const cp = currentProduct();
+      const sel = getSel(cp.idx, cp.p);
+      const kind = cp.idx.kind(cp.p);
+      const v = cp.idx.findVariant(cp.p, sel.size, kind === 'materasso' || kind === 'topper' ? sel.height : cp.idx.variantsOf(cp.p)[0]?.height_cm ?? null);
+      if (!v || !cp.idx.purchasableVariants(cp.p).includes(v)) return toast('Questa configurazione non è acquistabile online');
+      addVariant(v, sel.qty);
+      $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="#carrello">Vai al carrello</a></p>`;
+      break;
+    }
+    case 'add-variant': {
+      const idx = catalog();
+      const v = idx.variants.get(t.dataset.id);
+      const p = v && idx.products.get(v.product_id);
+      if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
+      addVariant(v, 1);
+      if (location.hash === '#carrello') viewCart();
+      break;
+    }
+    case 'sm-next':
+      state.sm.step++;
+      renderSM(true);
+      break;
+    case 'sm-back':
+      state.sm.step = Math.max(0, state.sm.step - 1);
+      renderSM(true);
+      break;
+    case 'sm-restart':
+      state.sm = { step: 0, a: { me: {} } };
+      renderSM(true);
+      break;
+    case 'cart-qty': {
+      const items = cart.items.map((i) => (i.variant_id === t.dataset.id ? { ...i, qty: Math.max(0, Math.min(MAX_QTY, i.qty + Number(t.dataset.d))) } : i));
+      cart.set(items);
+      viewCart();
+      $(`[data-act="cart-qty"][data-id="${CSS.escape(t.dataset.id)}"][data-d="${t.dataset.d}"]`)?.focus();
+      break;
+    }
+    case 'cart-remove':
+      cart.set(cart.items.filter((i) => i.variant_id !== t.dataset.id));
+      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      toast('Articolo rimosso');
+      break;
+    case 'accept-price': {
+      const v = catalog().variants.get(t.dataset.id);
+      cart.set(cart.items.map((i) => (i.variant_id === t.dataset.id ? { ...i, seen_price_cents: v.price_cents } : i)));
+      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      break;
+    }
+    case 'blocked':
+      e.preventDefault();
+      toast('Correggi prima gli articoli segnalati');
+      break;
+    case 'wa-open':
+      api.markWaiting(t.dataset.ref);
+      if ($('#wa-status')) $('#wa-status').innerHTML = sentNote();
+      break;
+    case 'copy-summary':
+      await copyText(state.lastSummary || '', $('#copy-fallback'));
+      break;
+    case 'cart-clear':
+      cart.clear();
+      try {
+        sessionStorage.removeItem('vs-review');
+      } catch {
+        /* ignora */
+      }
+      toast('Carrello svuotato');
+      location.hash = '';
+      break;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  if (document.body.classList.contains('is-admin')) return;
+  const t = e.target;
+  const act = t.dataset?.act;
+  if (act === 'pick-s' || act === 'pick-h') {
+    const cp = currentProduct();
+    const sel = getSel(cp.idx, cp.p);
+    if (act === 'pick-s') sel.size = t.value;
+    else {
+      sel.height = Number(t.value);
+      const pv = cp.idx.purchasableVariants(cp.p);
+      if (!pv.some((v) => v.size === sel.size && v.height_cm === sel.height)) sel.size = pv.find((v) => v.height_cm === sel.height)?.size ?? sel.size;
+    }
+    renderBuy(cp.idx, cp.p);
+    $(`#${act === 'pick-s' ? 's' : 'h'}${CSS.escape(t.value)}`)?.focus();
+  }
+  if (act === 'sort') {
+    state.filters.sort = t.value;
+    swap($('#cat-body'), state.catBody());
+  }
+  if (act === 'sm-pick') {
+    setK(state.sm.a, t.dataset.k, t.value);
+    $('[data-act="sm-next"]').disabled = false;
+  }
+  if (act === 'size-a' || act === 'size-b') {
+    state.sizes[act === 'size-a' ? 0 : 1] = t.value;
+    const y = window.scrollY;
+    viewSizes();
+    window.scrollTo(0, y);
+    $('#' + (act === 'size-a' ? 'sz-a' : 'sz-b')).focus();
+  }
+  if (t.id === 'q-b2b') $('#b2b-fields').hidden = !t.checked;
+});
+
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset?.act === 'lab-ex' || t.dataset?.act === 'gal-ex') {
+    t.closest('#lab-stage, #gal-stage')?.style.setProperty('--ex', String(Number(t.value) / 100));
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  // frecce tra le tab categorie
+  const tab = e.target.closest?.('.seg-tabs .tab');
+  if (tab && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+    const tabs = $$('.seg-tabs .tab');
+    const i = tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : -1);
+    const n = tabs[(i + tabs.length) % tabs.length];
+    n.focus();
+    n.click();
+  }
+  if (e.key === 'Escape') closeDrawer();
+});
+
+document.addEventListener('submit', (e) => {
+  if (e.target.id !== 'quote-form') return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const num = (k) => (String(fd.get(k) || '').trim() === '' ? null : Number(String(fd.get(k)).replace(',', '.')));
+  const w = num('w');
+  const l = num('l');
+  const h = num('h');
+  const errs = [];
+  $$('#quote-form .input').forEach((i) => i.removeAttribute('aria-invalid'));
+  const bad = (id, msg) => {
+    errs.push(msg);
+    $('#' + id).setAttribute('aria-invalid', 'true');
+  };
+  if (!w || w < 40 || w > 250) bad('q-w', 'Larghezza: inserisci un valore tra 40 e 250 cm.');
+  if (!l || l < 100 || l > 250) bad('q-l', 'Lunghezza: inserisci un valore tra 100 e 250 cm.');
+  if (h !== null && (h < 5 || h > 45)) bad('q-h', 'Altezza: inserisci un valore tra 5 e 45 cm, oppure lascia vuoto.');
+  $('#q-err').textContent = errs.join(' ');
+  if (errs.length) return $('[aria-invalid="true"]')?.focus();
+  const idx = pub();
+  const pid = fd.get('product');
+  const p = idx.products.get(pid);
+  const b2b = fd.get('b2b') === 'on';
+  const notesExtra = b2b ? [num('rooms') ? `Camere/posti letto: ${num('rooms')}` : '', num('qty') ? `Quantità: ${num('qty')}` : ''].filter(Boolean).join('. ') : '';
+  const notes = [notesExtra, String(fd.get('notes') || '').slice(0, 500)].filter(Boolean).join('. ');
+  const r = api.createQuoteRequest({ product_id: p?.id ?? null, product: p?.name ?? 'Da definire con il cliente', width_cm: w, length_cm: l, height_cm: h, notes, b2b });
+  const text = buildQuoteMessage({ ref: r.ref, product: (b2b ? '[Struttura ricettiva] ' : '') + (p?.name ?? 'Da definire'), width_cm: w, length_cm: l, height_cm: h, notes });
+  state.lastSummary = text;
+  const n = normalizeWhatsAppNumber(whatsappStatus().raw);
+  const plan = { url: n.ok ? `https://wa.me/${n.digits}?text=${encodeURIComponent(text)}` : null, text, short: false };
+  $('#quote-out').innerHTML = `<h2 style="font-size:1.3rem">Richiesta pronta: ${esc(r.ref)}</h2><pre class="msg-preview">${esc(text)}</pre><div id="wa-status" aria-live="polite"></div>${waBlock(plan, r.ref, 'quote')}`;
+  $('#quote-out h2').setAttribute('tabindex', '-1');
+  $('#quote-out h2').focus();
+});
+
+// ---------------------------------------------------------------- AVVIO
+$('#menu-btn').addEventListener('click', () => {
+  const d = $('#drawer');
+  d.classList.add('is-open');
+  $('#menu-btn').setAttribute('aria-expanded', 'true');
+  $('#drawer a')?.focus();
+});
+$('#drawer .drawer__scrim').addEventListener('click', closeDrawer);
+$('#drawer-close').addEventListener('click', closeDrawer);
+window.addEventListener('hashchange', route);
+window.addEventListener('resize', () => requestAnimationFrame(moveThumb));
+store.subscribe((why) => {
+  if (why === 'cart' || why === 'settings' || why === 'catalog') renderChrome();
+});
+window.addEventListener('vs:rerender', route);
+(async () => {
+  await media.init();
+  if (!store.storageOk) toast('Il browser blocca il salvataggio locale: carrello e admin non verranno ricordati');
+  route();
+})();
+
+
+__exp.route = route;
+});
+__req("app.js");
+})();

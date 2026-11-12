@@ -1,5 +1,14 @@
 # Changelog
 
+## Revisione estetica (12/11/2026, sera)
+- **Causa della pagina "vuota":** nel visualizzatore degli artifact, che gira in un frame isolato, gli script caricati come moduli ES venivano bloccati e restavano visibili solo intestazione e footer. Ora `scripts/bundle.py` unisce tutto in uno script classico (`js/bundle.js`); un test e2e verifica il rendering in un iframe con origine opaca.
+- Nuova hero a tutto schermo con `hero-alternativa` (ambientazione illustrativa): un punto a filo animato ricalca l'ombra del Vesuvio sul muro. Il titolo entra a righe e il fondo resta leggero sul puntatore; l'header è trasparente sopra la foto.
+- Topbar con messaggi che scorrono, fascia trapuntata con contatori, catalogo con tab a pillola e card che entrano in sequenza.
+- Illustrazioni schematiche a strati per i prodotti senza foto (materassi, reti, guanciali). Gli strati si aprono al passaggio del puntatore, nella scheda con un cursore e nel nuovo «Laboratorio» della home.
+- Fabbrica a tutta larghezza con «1986» in grande, Sleep Match con prima domanda direttamente in home, consegna, stato «Aperto ora» dello showroom e slogan nel footer.
+- Testate trapuntate per le pagine interne, transizioni tra pagine (View Transitions), ingombro della misura animato nella scheda.
+- Texture materica su tutto il sito; con movimento ridotto restano fermi l'entrata della hero, il ticker e le rivelazioni allo scorrimento.
+
 ## Checkpoint 4 — QA e rifinitura (12/11/2026)
 - 68 test end-to-end Playwright, 8 test unitari, 39 controlli SQL.
 - Barra d'acquisto mobile basata sulla posizione: con IntersectionObserver uno scroll veloce poteva saltarla.

@@ -13,8 +13,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap">
-  <link rel="preload" as="image" href="img/hero-960.webp" imagesrcset="img/hero-960.webp 960w, img/hero-1672.webp 1672w" imagesizes="(max-width: 860px) 100vw, 58vw">
+  <link rel="preload" as="image" href="img/hero-vesuvio-1536.webp" imagesrcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" imagesizes="(max-width: 860px) 180vw, 100vw">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/home.css">
   <link rel="stylesheet" href="css/admin.css">
   <script src="js/config.js"></script>
   <script type="application/ld+json" id="ld">{}</script>
@@ -48,6 +49,7 @@
 
   <footer class="footer">
     <div class="wrap">
+      <div class="footer__slogan"><p>L'eruzione del <span>sonno perfetto.</span></p></div>
       <div class="footer__grid">
         <div>
           <span class="footer__logo"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep" loading="lazy"></span>
@@ -61,6 +63,6 @@
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/app.js"></script>
+  <script src="js/bundle.js" defer></script>
 </body>
 </html>

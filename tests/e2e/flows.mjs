@@ -27,7 +27,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, '', 900);
   ok(await p.locator('h1').isVisible(), 'home: titolo visibile subito (movimento ridotto)');
   ok((await p.locator('.hero .btn', { hasText: 'Esplora i materassi' }).count()) === 1 && (await p.locator('.hero .btn', { hasText: 'Trova il tuo materasso' }).count()) === 1, 'home: due CTA della hero');
-  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.hero__img')).animationDuration) === '1e-06s' || true, 'home: animazioni ridotte');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.hero h1 .ln > span')).animationName === 'none' && getComputedStyle(document.querySelector('.ticker__track')).animationDuration !== '38s'), 'home: con movimento ridotto niente entrata animata né ticker');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.rv')].every((el) => getComputedStyle(el).opacity === '1')), 'movimento ridotto: nessun contenuto attenuato in attesa di animazione');
   ok((await p.locator('meta[name="robots"]').getAttribute('content')).includes('noindex'), 'preview non indicizzabile (noindex)');
   ok((await p.locator('link[rel="canonical"]').count()) === 0, 'preview senza canonical verso il dominio reale');
   const navText = await p.locator('#drawer-links').innerText();
@@ -98,6 +99,17 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     }
     ok(true, `nessuno scroll orizzontale a ${w}px (10 pagine)`);
   }
+  await ctx.close();
+}
+
+// ---------- pagina dentro un frame isolato (come il visualizzatore degli artifact)
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 800 } });
+  await p.setContent(`<iframe src="${BASE}index.html#" sandbox="allow-scripts allow-popups allow-forms" style="width:1200px;height:760px;border:0"></iframe>`);
+  await p.waitForTimeout(2500);
+  const f = p.frames()[1];
+  ok((await f.evaluate(() => document.querySelector('#app').innerHTML.length)) > 1000, 'frame isolato (origine opaca): la pagina si disegna comunque');
+  ok((await f.evaluate(() => document.querySelectorAll('.card').length)) >= 4, 'frame isolato: catalogo visibile senza localStorage');
   await ctx.close();
 }
 
