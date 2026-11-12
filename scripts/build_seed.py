@@ -208,15 +208,17 @@ out = ['-- Seed idempotente generato da scripts/build_seed.py. Rieseguibile: non
 for c in categories:
     out.append(f"insert into public.categories (id, slug, kind, name, description, sort, status) values ({q(c['id'])}, {q(c['slug'])}, {q(c['kind'])}, {q(c['name'])}, {q(c['description'])}, {c['sort']}, {q(c['status'])}) on conflict (id) do nothing;")
 for p in products:
-    out.append("insert into public.products (id, slug, category_id, name, technical_name, short, description, composition, highlights, claims, removable_cover, reversible, summer_winter, hybrid, firmness_display, line_code, status, sort, lead_time, match, internal_notes) values ("
+    out.append("insert into public.products (id, slug, category_id, name, technical_name, short, description, composition, highlights, claims, removable_cover, reversible, summer_winter, hybrid, firmness_display, line_code, status, sort, lead_time, match) values ("
                + ', '.join(q(p[k]) for k in ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition']) + ', '
                + f"{q(p['highlights'])}, {q(p['claims'])}, "
                + ', '.join(q(p[k]) for k in ['removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time'])
-               + f", {q(p['match'])}, {q(p['internal_notes'])}) on conflict (id) do nothing;")
+               + f", {q(p['match'])}) on conflict (id) do nothing;")
+    if p['internal_notes']:
+        out.append(f"insert into public.product_private (product_id, internal_notes) values ({q(p['id'])}, {q(p['internal_notes'])}) on conflict (product_id) do nothing;")
 for v in variants:
     out.append(f"insert into public.variants (id, product_id, sku, size, height_cm, price_cents, availability, active, sort) values ({q(v['id'])}, {q(v['product_id'])}, {q(v['sku'])}, {q(v['size'])}, {q(v['height_cm'])}, {q(v['price_cents'])}, {q(v['availability'])}, {q(v['active'])}, {v['sort']}) on conflict (id) do nothing;")
 for m in media:
-    out.append(f"insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height) values ({q(m['id'])}, {q(m['product_id'])}, {q(m['slot'])}, {q('seed/' + os.path.basename(m['src']))}, {q(m['alt'])}, {q(m['caption'])}, {q(m['illustrative'])}, {q(m['is_cover'])}, {q(m['published'])}, {m['sort']}, {m['focal_x']}, {m['focal_y']}, {m['width']}, {m['height']}) on conflict (id) do nothing;")
+    out.append(f"insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots) values ({q(m['id'])}, {q(m['product_id'])}, {q(m['slot'])}, {q('seed/' + os.path.basename(m['src']))}, {q(m['alt'])}, {q(m['caption'])}, {q(m['illustrative'])}, {q(m['is_cover'])}, {q(m['published'])}, {m['sort']}, {m['focal_x']}, {m['focal_y']}, {m['width']}, {m['height']}, {q(m.get('hotspots'))}) on conflict (id) do nothing;")
 for k, v in settings.items():
     pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number') else 'false'
     out.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")
