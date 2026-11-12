@@ -490,10 +490,65 @@ body.is-scrolled .brand img {
   color: #fff;
 }
 
+/* Strati che si aprono sull'immagine all'ingresso (solo trasformazioni, non bloccano nulla) */
+.hero__sheets {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+}
+.hero__sheets i {
+  position: absolute;
+  inset: 0;
+  transform-origin: 100% 50%;
+  transform: scaleX(0);
+}
+.hero__sheets i:nth-child(1) {
+  background: var(--deep);
+}
+.hero__sheets i:nth-child(2) {
+  background: var(--vesuvio);
+}
+.hero__sheets i:nth-child(3) {
+  background: var(--ice);
+}
+.hero__sheets i:nth-child(4) {
+  background: var(--ivory);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero__sheets {
+    display: block;
+  }
+  .hero__sheets i {
+    animation: sheet 1.05s cubic-bezier(0.7, 0, 0.2, 1) both;
+  }
+  .hero__sheets i:nth-child(1) {
+    animation-delay: 0.32s;
+  }
+  .hero__sheets i:nth-child(2) {
+    animation-delay: 0.22s;
+  }
+  .hero__sheets i:nth-child(3) {
+    animation-delay: 0.12s;
+  }
+  .hero__sheets i:nth-child(4) {
+    animation-delay: 0s;
+  }
+}
+@keyframes sheet {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Sequenza d'entrata: un solo momento orchestrato */
 @media (prefers-reduced-motion: no-preference) {
   .hero__art img {
-    animation: hero-settle 2.2s var(--ease) both;
+    animation: hero-settle 2.6s 0.2s var(--ease) both;
   }
   .hero h1 .ln > span {
     animation: line-up 1s var(--ease) both;
@@ -524,11 +579,11 @@ body.is-scrolled .brand img {
   .stitch-svg .reveal {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation: sew-path 2.4s 0.55s cubic-bezier(0.6, 0.05, 0.25, 1) forwards;
+    animation: sew-path 2.4s 1.15s cubic-bezier(0.6, 0.05, 0.25, 1) forwards;
   }
   .stitch-svg .needle {
     offset-rotate: 0deg;
-    animation: needle 2.4s 0.55s cubic-bezier(0.6, 0.05, 0.25, 1) both;
+    animation: needle 2.4s 1.15s cubic-bezier(0.6, 0.05, 0.25, 1) both;
   }
 }
 @keyframes hero-settle {

@@ -18,11 +18,29 @@
   <link rel="stylesheet" href="css/home.css">
   <link rel="stylesheet" href="css/admin.css">
   <script src="js/config.js"></script>
+  <script>
+    // Anteprima: se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
+    (function () {
+      function show(msg) {
+        var b = document.getElementById('vs-err');
+        if (!b) {
+          b = document.createElement('div');
+          b.id = 'vs-err';
+          b.setAttribute('role', 'alert');
+          b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:999;background:#9b2c2c;color:#fff;font:14px/1.4 system-ui;padding:10px 14px;border-radius:12px';
+          (document.body || document.documentElement).appendChild(b);
+        }
+        b.textContent = 'Errore dell\'anteprima: ' + msg;
+      }
+      window.addEventListener('error', function (e) { if (e.message) show(e.message); });
+      window.addEventListener('unhandledrejection', function (e) { show(String((e.reason && e.reason.message) || e.reason)); });
+    })();
+  </script>
   <script type="application/ld+json" id="ld">{}</script>
 </head>
-<body>
+<body class="on-hero">
   <a class="skip" href="#app">Vai al contenuto</a>
-  <div class="topbar" id="topbar"></div>
+  <div class="topbar" id="topbar"><div class="wrap"><div class="ticker" aria-hidden="true"><div class="ticker__track"><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span></div></div></div></div>
   <header class="header">
     <div class="wrap">
       <a class="brand" href="#" aria-label="Vesuvio Sleep, home"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep"></a>
@@ -45,7 +63,40 @@
     </nav>
   </div>
 
-  <main id="app" tabindex="-1"></main>
+  <main id="app" tabindex="-1">
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero__visual">
+      <div class="hero__par">
+        <div class="hero__art">
+          <img src="img/hero-vesuvio-1536.webp" srcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" sizes="(max-width: 860px) 180vw, 100vw" width="1536" height="1024" alt="Materasso trapuntato su una base blu, in una stanza luminosa dove il sole proietta sul muro l'ombra del Vesuvio" fetchpriority="high">
+          <svg class="stitch-svg" viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs><mask id="sew"><path class="reveal" pathLength="1" d="M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390"/></mask></defs>
+            <path class="thread" d="M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390" mask="url(#sew)"/>
+            <circle class="needle" r="7" style="offset-path: path('M 420 318 C 480 296, 530 276, 590 252 C 640 248, 690 250, 712 242 C 735 232, 752 226, 768 227 C 790 228, 805 242, 828 256 C 900 294, 1000 340, 1160 390')"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hero__scrim"></div>
+      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <span class="hero__badge">Ambientazione illustrativa</span>
+    </div>
+    <div class="hero__content">
+      <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
+      <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
+      <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+      </div>
+    </div>
+    <ul class="hero__strip" aria-label="In breve">
+      <li><strong>Dal 1986</strong>Produzione a Casoria</li>
+      <li><strong>Prezzo di fabbrica</strong>Senza intermediari</li>
+      <li><strong>Su misura</strong>Misure e altezze a richiesta</li>
+      <li><strong>Spedizione gratuita</strong>In Italia, isole comprese</li>
+    </ul>
+  </section>
+  </main>
 
   <footer class="footer">
     <div class="wrap">

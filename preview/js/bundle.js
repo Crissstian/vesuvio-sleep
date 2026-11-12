@@ -2366,6 +2366,7 @@ const blobUrls = new Map();
 let idb = null;
 function openIdb() {
   return new Promise((res) => {
+    setTimeout(() => res(null), 1200);
     try {
       const r = indexedDB.open('vs-preview-media', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('blobs');
@@ -4239,6 +4240,7 @@ function heroHtml() {
         </div>
       </div>
       <div class="hero__scrim"></div>
+      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <span class="hero__badge">Ambientazione illustrativa</span>
     </div>
     <div class="hero__content">
@@ -4348,7 +4350,8 @@ function viewHome() {
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
   setMeta('', '', [localBusinessJsonLd()]);
-  app.innerHTML = `${heroHtml()}
+  const staticHero = state.lastRoute === undefined ? $('#app > .hero') : null;
+  app.innerHTML = `${staticHero ? '' : heroHtml()}
 
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
@@ -4418,6 +4421,7 @@ function viewHome() {
   </div></section>
 
   <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
+  if (staticHero) app.prepend(staticHero);
   requestAnimationFrame(moveThumb);
   bindLab();
 }
@@ -5327,10 +5331,14 @@ store.subscribe((why) => {
   if (why === 'cart' || why === 'settings' || why === 'catalog') renderChrome();
 });
 window.addEventListener('vs:rerender', route);
+// Avvio: si disegna SUBITO. Le foto caricate dall'admin (IndexedDB) arrivano dopo,
+// con un tempo massimo: in alcuni frame isolati IndexedDB non risponde mai.
+route();
 (async () => {
-  await media.init();
+  const hasLocalPhotos = store.db.media.some((m) => m.src.startsWith('idb:'));
+  await Promise.race([media.init(), new Promise((r) => setTimeout(r, 1500))]);
+  if (hasLocalPhotos) route();
   if (!store.storageOk) toast('Il browser blocca il salvataggio locale: carrello e admin non verranno ricordati');
-  route();
 })();
 
 

@@ -83,6 +83,7 @@ const blobUrls = new Map();
 let idb = null;
 function openIdb() {
   return new Promise((res) => {
+    setTimeout(() => res(null), 1200);
     try {
       const r = indexedDB.open('vs-preview-media', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('blobs');
