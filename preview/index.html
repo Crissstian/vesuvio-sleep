@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Vesuvio Sleep | Materassi di fabbrica a Napoli, dal 1986</title>
+  <meta name="description" content="Materassi prodotti a Casoria (Napoli) dal 1986 e venduti a prezzo di fabbrica: Memory Foam, poliuretano e molle insacchettate, reti e guanciali. Misure su richiesta.">
+  <!-- Preview: mai indicizzata, nessun canonical verso il dominio reale -->
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0E3444">
+  <link rel="icon" href="img/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap">
+  <link rel="preload" as="image" href="img/hero-960.webp" imagesrcset="img/hero-960.webp 960w, img/hero-1672.webp 1672w" imagesizes="(max-width: 860px) 100vw, 58vw">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="js/config.js"></script>
+  <script type="application/ld+json" id="ld">{}</script>
+</head>
+<body>
+  <a class="skip" href="#app">Vai al contenuto</a>
+  <div class="topbar" id="topbar"></div>
+  <header class="header">
+    <div class="wrap">
+      <a class="brand" href="#" aria-label="Vesuvio Sleep, home"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep"></a>
+      <nav class="nav" id="nav" aria-label="Principale"></nav>
+      <div class="header__tools">
+        <a class="icon-btn" id="cart-link" href="#carrello"></a>
+        <button class="icon-btn menu-btn" id="menu-btn" aria-label="Apri il menu" aria-expanded="false" aria-controls="drawer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="drawer" id="drawer">
+    <div class="drawer__scrim"></div>
+    <nav class="drawer__panel" aria-label="Menu">
+      <button class="icon-btn" id="drawer-close" aria-label="Chiudi il menu" style="align-self:flex-end">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div id="drawer-links" style="display:contents"></div>
+    </nav>
+  </div>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer__grid">
+        <div>
+          <span class="footer__logo"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep" loading="lazy"></span>
+          <p style="margin-top:14px">Materassi di fabbrica dal 1986. Made in Italy.</p>
+        </div>
+        <div><h3>Catalogo</h3><ul id="foot-cats"></ul></div>
+        <div><h3>Scegliere</h3><ul><li><a href="#sleep-match">Sleep Match</a></li><li><a href="#confronto">Confronta i materassi</a></li><li><a href="#guida-misure">Guida alle misure</a></li><li><a href="#fuori-misura">Fuori misura e hotel</a></li></ul></div>
+        <div><h3>Showroom</h3><p style="margin:0">Via Raffaele Salierno 38<br>80026 Casoria (NA)</p><p>Lun–ven 09:00–18:00<br>Sab 10:00–14:00</p></div>
+      </div>
+      <div class="footer__legal">MATERASSI D'AUTORE A.V. S.R.L.S. · P.IVA 10456501211 · REA NA-1107535 · Via Raffaele Salierno 38, 80026 Casoria (NA)</div>
+    </div>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

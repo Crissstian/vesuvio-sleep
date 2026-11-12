@@ -1,0 +1,478 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-09-17",
+  "brand": {
+    "public_name": "Vesuvio Sleep",
+    "legal_name": "MATERASSI D'AUTORE A.V. - SOCIETA' A RESPONSABILITA' LIMITATA SEMPLIFICATA",
+    "vat_tax_id": "10456501211",
+    "rea": "NA-1107535",
+    "address": "Via Raffaele Salierno 38, 80026 Casoria (NA), Italia",
+    "site_type": [
+      "fabbrica",
+      "esposizione",
+      "showroom"
+    ],
+    "production_since": 1986,
+    "slogan": "L’eruzione del sonno perfetto",
+    "domain_preferred": "vesuviosleep.it",
+    "domain_alias_optional": "vesuviosleep.com",
+    "phone": null,
+    "contact_email": null,
+    "opening_hours": {
+      "mon_fri": "09:00-18:00",
+      "sat": "10:00-14:00",
+      "sun": "closed"
+    },
+    "languages": [
+      "it",
+      "en"
+    ]
+  },
+  "catalog_rules": {
+    "prices_include_vat": true,
+    "shipping_free_italy": true,
+    "islands_surcharge": false,
+    "production_days": 2,
+    "custom_sizes": true,
+    "custom_heights": true,
+    "fake_stock_counts_forbidden": true
+  },
+  "products": [
+    {
+      "id": "essential-foam",
+      "name": "Vesuvio Essential Foam",
+      "technical_name": "Poliuretano espanso",
+      "status": "active",
+      "heights_cm": [
+        20,
+        25,
+        30
+      ],
+      "removable_cover": false,
+      "reversible": false,
+      "firmness_display": "Medio-rigido",
+      "firmness_internal": 7,
+      "firmness_status": "provisional_research",
+      "claims": [
+        "antiacaro",
+        "ipoallergenico",
+        "Free Humidity"
+      ],
+      "certifications": [],
+      "composition_public": "Anima monoblocco in poliuretano ad alta densità e alta portanza.",
+      "variants": []
+    },
+    {
+      "id": "memory-duo",
+      "name": "Vesuvio Memory Duo",
+      "technical_name": "Memory Foam 2 strati",
+      "status": "active",
+      "heights_cm": [
+        25,
+        30
+      ],
+      "removable_cover": true,
+      "reversible": true,
+      "summer_winter": true,
+      "firmness_display": "Medio-rigido e accogliente",
+      "firmness_internal": 8,
+      "firmness_status": "provisional_research",
+      "claims": [
+        "antiacaro",
+        "ipoallergenico",
+        "Free Humidity"
+      ],
+      "certifications": [],
+      "composition_public": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
+      "provisional_layer_note": "Memory ~5 cm come riferimento visual/copy; non pubblicare lo spessore dei singoli strati finché non verificato.",
+      "variants": []
+    },
+    {
+      "id": "memory-air-3d",
+      "name": "Vesuvio Memory Air 3D",
+      "technical_name": "Memory Foam 2 strati con fascia 3D",
+      "status": "active",
+      "heights_cm": [
+        25,
+        30
+      ],
+      "removable_cover": true,
+      "reversible": true,
+      "summer_winter": true,
+      "firmness_display": "Medio-rigido",
+      "firmness_internal": 8,
+      "firmness_status": "provisional_research",
+      "claims": [
+        "antiacaro",
+        "ipoallergenico",
+        "Free Humidity",
+        "fascia 3D traspirante"
+      ],
+      "certifications": [],
+      "composition_public": "Memory Foam premium + poliuretano ad alta densità + fascia perimetrale 3D traspirante.",
+      "variants": []
+    },
+    {
+      "id": "pocket-2400-elite",
+      "name": "Vesuvio Pocket 2400 Elite",
+      "technical_name": "2400 molle insacchettate + Memory",
+      "status": "partial",
+      "heights_cm": [
+        25,
+        30
+      ],
+      "active_heights_cm": [
+        25
+      ],
+      "removable_cover": true,
+      "firmness_display": "Sostenuto / medio-rigido",
+      "firmness_internal": 8,
+      "firmness_status": "provisional_research",
+      "claims": [
+        "antiacaro",
+        "ipoallergenico",
+        "Free Humidity"
+      ],
+      "certifications": [],
+      "spring_count_reference": {
+        "count": 2400,
+        "size": "160x190",
+        "other_sizes": "proportional_do_not_publish_exact_until_verified"
+      },
+      "composition_public": "Molle indipendenti insacchettate + Memory Foam + elementi in poliuretano ad alta densità per stabilizzazione e supporto.",
+      "variants": []
+    },
+    {
+      "id": "pocket-1600",
+      "name": "Vesuvio Pocket 1600",
+      "status": "pending",
+      "reason": "foto/prezzi/spec"
+    },
+    {
+      "id": "bonnell-classic",
+      "name": "Vesuvio Bonnell Classic",
+      "status": "pending",
+      "reason": "foto/prezzi/spec"
+    },
+    {
+      "id": "topper-memory-cloud-5",
+      "name": "Vesuvio Topper Memory Cloud 5",
+      "status": "partial",
+      "height_cm": 5,
+      "removable_cover": true,
+      "standard_sizes": true,
+      "price_status": "pending"
+    }
+  ],
+  "standard_sizes": [
+    "80x190",
+    "90x200",
+    "120x190",
+    "140x190",
+    "160x190",
+    "165x190",
+    "170x200",
+    "180x200"
+  ],
+  "mattress_prices_eur": {
+    "essential-foam": {
+      "20": {
+        "80x190": 90,
+        "90x200": 100,
+        "120x190": 130,
+        "140x190": 150,
+        "160x190": 170,
+        "165x190": 180,
+        "170x200": 230,
+        "180x200": 260
+      },
+      "25": {
+        "80x190": 110,
+        "90x200": 120,
+        "120x190": 160,
+        "140x190": 180,
+        "160x190": 200,
+        "165x190": 210,
+        "170x200": 240,
+        "180x200": 270
+      },
+      "30": {
+        "80x190": 140,
+        "90x200": 160,
+        "120x190": 190,
+        "140x190": 220,
+        "160x190": 220,
+        "165x190": 220,
+        "170x200": 250,
+        "180x200": 280
+      }
+    },
+    "memory-duo": {
+      "25": {
+        "80x190": 120,
+        "90x200": 140,
+        "120x190": 180,
+        "140x190": 200,
+        "160x190": 220,
+        "165x190": 240,
+        "170x200": 260,
+        "180x200": 300
+      },
+      "30": {
+        "80x190": 140,
+        "90x200": 160,
+        "120x190": 200,
+        "140x190": 220,
+        "160x190": 240,
+        "165x190": 260,
+        "170x200": 280,
+        "180x200": 320
+      }
+    },
+    "memory-air-3d": {
+      "25": {
+        "80x190": 170,
+        "90x200": 200,
+        "120x190": 250,
+        "140x190": 275,
+        "160x190": 300,
+        "165x190": 320,
+        "170x200": 340,
+        "180x200": 360
+      },
+      "30": {
+        "80x190": 200,
+        "90x200": 220,
+        "120x190": 300,
+        "140x190": 350,
+        "160x190": 370,
+        "165x190": 390,
+        "170x200": 410,
+        "180x200": 450
+      }
+    },
+    "pocket-2400-elite": {
+      "25": {
+        "80x190": 220,
+        "90x200": 240,
+        "120x190": 320,
+        "140x190": 340,
+        "160x190": 370,
+        "165x190": 380,
+        "170x200": 420,
+        "180x200": 450
+      },
+      "30": {
+        "80x190": null,
+        "90x200": null,
+        "120x190": null,
+        "140x190": null,
+        "160x190": null,
+        "165x190": null,
+        "170x200": null,
+        "180x200": null
+      }
+    }
+  },
+  "price_conflicts": [
+    {
+      "product": "memory-duo",
+      "height_cm": 25,
+      "size": "160x190",
+      "latest_list_price_eur": 220,
+      "previous_chat_price_eur": 250,
+      "build_rule": "use_latest_list_220_but_flag_prelaunch"
+    }
+  ],
+  "bases": [
+    {
+      "id": "rete-flex",
+      "name": "Vesuvio Rete Flex",
+      "technical_name": "Rete a doghe",
+      "material": "acciaio + legno",
+      "legs_included": true,
+      "prices_eur": {
+        "80x190": 90,
+        "90x200": 110,
+        "120x190": 140,
+        "140x190": 160,
+        "160x190": 170,
+        "165x190": 180,
+        "170x200": 190,
+        "180x200": 210
+      },
+      "max_load": null
+    },
+    {
+      "id": "rete-strong",
+      "name": "Vesuvio Rete Strong",
+      "technical_name": "Rete Strong",
+      "material": "acciaio rinforzato + legno",
+      "legs_included": true,
+      "prices_eur": {
+        "80x190": 110,
+        "90x200": 130,
+        "120x190": 160,
+        "140x190": 180,
+        "160x190": 200,
+        "165x190": 210,
+        "170x200": 230,
+        "180x200": 250
+      },
+      "max_load": null
+    }
+  ],
+  "pillows": [
+    {
+      "id": "piuma",
+      "name": "Vesuvio Piuma",
+      "height_cm": 12,
+      "price_eur": 50,
+      "size": null
+    },
+    {
+      "id": "memory-flakes",
+      "name": "Vesuvio Memory Flakes",
+      "height_cm": 12,
+      "price_eur": 35,
+      "size": null
+    },
+    {
+      "id": "memory-classic",
+      "name": "Vesuvio Memory Classic",
+      "height_cm": 15,
+      "price_eur": 40,
+      "size": null
+    },
+    {
+      "id": "memory-cervical",
+      "name": "Vesuvio Memory Cervical",
+      "height_cm": 12,
+      "price_eur": 40,
+      "size": null,
+      "material": "Memory Foam"
+    }
+  ],
+  "bunk_bed": {
+    "name": "Vesuvio Castello Steel",
+    "material": "acciaio",
+    "sizes": null,
+    "without_mattresses_price": null,
+    "with_mattresses_price": null,
+    "included_mattresses": {
+      "material": "poliuretano",
+      "height_cm": 20
+    }
+  },
+  "shipping": {
+    "italy_free": true,
+    "islands_surcharge": false,
+    "naples_delivery": "company_van",
+    "rest_of_italy": "courier",
+    "floor_delivery_free_areas": [
+      "Napoli"
+    ],
+    "old_mattress_pickup_areas": [
+      "Napoli"
+    ],
+    "base_assembly_areas": [
+      "Napoli"
+    ],
+    "tracking_automatic": true
+  },
+  "payments": {
+    "launch": [
+      "cards",
+      "apple_pay",
+      "google_pay",
+      "paypal",
+      "klarna"
+    ],
+    "disabled_launch": [
+      "bank_transfer",
+      "cash_on_delivery"
+    ],
+    "cash_on_delivery_future": true,
+    "delivery_cash_only_when_enabled": true,
+    "stripe_account_exists": false,
+    "paypal_business_exists": false
+  },
+  "checkout": {
+    "guest_checkout": true,
+    "customer_account": true,
+    "email_required": true,
+    "phone_required": true,
+    "delivery_notes": true,
+    "invoice_request": false,
+    "order_status_notifications": [
+      "received",
+      "preparing",
+      "shipped",
+      "delivered"
+    ]
+  },
+  "custom_order_flow": {
+    "payment_on_request_submission": false,
+    "admin_quote_required": true,
+    "private_checkout_link": true,
+    "supports_custom_size": true,
+    "supports_custom_height": true
+  },
+  "sleep_match": {
+    "result_count": 1,
+    "ask_budget": false,
+    "ask_partner_weight": true,
+    "medical_advice": false
+  },
+  "b2b": {
+    "enabled": true,
+    "segments": [
+      "hotel",
+      "B&B",
+      "strutture ricettive"
+    ],
+    "public_prices": false,
+    "cta": "Richiedi preventivo"
+  },
+  "marketing": {
+    "ga4": true,
+    "search_console": true,
+    "meta_pixel": true,
+    "tiktok_pixel": true,
+    "newsletter": true,
+    "abandoned_cart": true,
+    "social_feed_visible": false,
+    "social_links": null
+  },
+  "privacy": {
+    "provider": "iubenda",
+    "cmp": true,
+    "consent_required_for_nonessential_tracking": true
+  },
+  "returns": {
+    "legal_guarantee_years": 2,
+    "standard_online_withdrawal_days": 14,
+    "custom_goods_withdrawal": "excluded_when_made_to_customer_specifications_except_defects",
+    "voluntary_return_shipping": "customer_if_disclosed_before_purchase",
+    "defect_return_shipping": "seller",
+    "mattress_unsealed_auto_exclusion": false,
+    "legal_review_required": true
+  },
+  "pending": [
+    "public_phone",
+    "contact_email",
+    "bunk_bed_sizes_and_prices",
+    "pocket_1600_assets_prices_specs",
+    "bonnell_assets_prices_specs",
+    "pocket_2400_h30_prices",
+    "topper_prices",
+    "pillow_sizes",
+    "real_base_load_capacity",
+    "social_links",
+    "testimonials",
+    "stripe_credentials",
+    "paypal_business_setup",
+    "klarna_setup",
+    "iubenda_setup"
+  ]
+}
