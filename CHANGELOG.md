@@ -1,5 +1,13 @@
 # Changelog
 
+## Foto e apertura animata (13/11/2026)
+- Integrate 23 foto generate (render illustrativi) in WebP responsive: Memory Air 3D (3/4, sezione, tessuto), tessuto del Pocket, reti Flex e Strong con dettagli, quattro guanciali, fabbrica, showroom, camera, consegna e testate delle categorie. Tutte etichettate «Render illustrativo» o «Immagine illustrativa».
+- Nuova apertura: strati blu che scorrono via mentre si disegna il profilo cucito del Vesuvio, poi una presentazione di foto con zoom lento, cambio a «telo» con cucitura che corre, pallini di avanzamento, pausa e swipe. Si ferma quando non è visibile; con movimento ridotto non parte da sola.
+- Nastro fotografico «Dentro la fabbrica» che scorre (si ferma al passaggio del puntatore), fascia della fabbrica con foto e zoom, consegna con foto del furgone, Sleep Match con foto dei guanciali, testate delle categorie con foto, card con leggera inclinazione 3D, dissolvenza nella galleria.
+- Il seed si aggiorna senza perdere le modifiche fatte dall'admin (si aggiungono solo gli elementi nuovi). Migrazione `media.fit`.
+- Corretto un conflitto: i contatori animati leggevano anche l'attributo della presentazione.
+- 80 test end-to-end, 39 controlli SQL, 8 test unitari.
+
 ## Apertura su Napoli e segnaposto foto (12/11/2026, notte)
 - Corretto il blocco all'avvio: IndexedDB non fermava più il primo disegno della pagina. Hero e ticker sono già nell'HTML; in caso di errore compare un avviso visibile.
 - Apertura con un panorama illustrato del Golfo di Napoli (Vesuvio, lungomare, Castel dell'Ovo, pino di Posillipo) e un ingresso a strati: il mare luccica, le barche ondeggiano, le nuvole scorrono e la cucitura ricalca il profilo del Vesuvio. È un segnaposto dichiarato: la foto reale si carica in Admin › Immagini del sito.

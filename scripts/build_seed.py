@@ -183,6 +183,35 @@ media += [
          ]),
 ]
 
+# Foto generate (render illustrativi) consegnate il 13/11/2026: input-vesuvio/asset/foto-generate
+from PIL import Image as _Img
+_FOTO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'preview/img/foto')
+def foto(name):
+    big = _Img.open(os.path.join(_FOTO, f'{name}-1600.webp')) if os.path.exists(os.path.join(_FOTO, f'{name}-1600.webp')) else None
+    small_name = f'{name}-900.webp' if big else f'{name}-600.webp'
+    big_name = f'{name}-1600.webp' if big else f'{name}-900.webp'
+    b = _Img.open(os.path.join(_FOTO, big_name)); sm = _Img.open(os.path.join(_FOTO, small_name))
+    return dict(src=f'img/foto/{big_name}', srcset=f'img/foto/{small_name} {sm.width}w, img/foto/{big_name} {b.width}w', width=b.width, height=b.height)
+def pid(slug):
+    return next(p['id'] for p in products if p['slug'] == slug)
+NEW_MEDIA = [
+    ('memory-air-3d', 'memory-air-3d-34', 'hero', True, 'Vesuvio Memory Air 3D in prospettiva, con la fascia perimetrale 3D traspirante sul lato'),
+    ('memory-air-3d', 'memory-air-3d-sezione', 'exploded', False, 'Vesuvio Memory Air 3D con un angolo aperto: Memory Foam azzurro sopra la base in poliuretano'),
+    ('memory-air-3d', 'memory-air-3d-tessuto', 'fabric', False, 'Dettaglio della fascia 3D a rete traspirante e del bordino blu'),
+    ('pocket-2400-elite', 'pocket-2400-elite-tessuto', 'fabric', False, 'Dettaglio del rivestimento trapuntato con bordino blu e cerniera laterale'),
+    ('rete-flex', 'rete-flex-34', 'hero', True, 'Rete Vesuvio Flex con telaio in acciaio scuro, doghe in legno chiaro e piedi'),
+    ('rete-flex', 'rete-flex-dettaglio', 'extra', False, "Dettaglio dell'angolo della rete Flex: doghe fissate al telaio e piede"),
+    ('rete-strong', 'rete-strong-34', 'hero', True, 'Rete Vesuvio Strong con telaio rinforzato in acciaio e doghe in legno'),
+    ('rete-strong', 'rete-strong-dettaglio', 'extra', False, 'Dettaglio del telaio rinforzato della rete Strong'),
+    ('guanciale-piuma', 'guanciale-piuma', 'hero', True, 'Guanciale in piuma con fodera bianca'),
+    ('guanciale-memory-flakes', 'guanciale-memory-flakes', 'hero', True, 'Guanciale Memory Flakes con fodera trapuntata e bordino blu'),
+    ('guanciale-memory-classic', 'guanciale-memory-classic', 'hero', True, 'Guanciale Memory Classic rettangolare con fodera trapuntata'),
+    ('guanciale-memory-cervical', 'guanciale-memory-cervical', 'hero', True, 'Guanciale cervicale in Memory con profilo a onda'),
+]
+for i, (slug, name, slot, cover, alt) in enumerate(NEW_MEDIA):
+    media.append(dict(id=uid('media', 'foto', name), product_id=pid(slug), slot=slot, alt=alt, caption='Render illustrativo',
+                      illustrative=True, fit='cover', is_cover=cover, published=True, sort=10 + i, focal_x=50, focal_y=50, **foto(name)))
+
 settings = dict(
     whatsapp_number='',
     shipping_note='gratuita in tutta Italia, isole comprese',
@@ -190,7 +219,7 @@ settings = dict(
     payments=dict(stripe=False, paypal=False, klarna=False),
 )
 
-seed = dict(version='seed-2026-11-12', categories=categories, products=products, variants=variants, media=media, settings=settings)
+seed = dict(version='seed-2026-11-13', categories=categories, products=products, variants=variants, media=media, settings=settings)
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
 with open(os.path.join(root, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
@@ -218,7 +247,7 @@ for p in products:
 for v in variants:
     out.append(f"insert into public.variants (id, product_id, sku, size, height_cm, price_cents, availability, active, sort) values ({q(v['id'])}, {q(v['product_id'])}, {q(v['sku'])}, {q(v['size'])}, {q(v['height_cm'])}, {q(v['price_cents'])}, {q(v['availability'])}, {q(v['active'])}, {v['sort']}) on conflict (id) do nothing;")
 for m in media:
-    out.append(f"insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots) values ({q(m['id'])}, {q(m['product_id'])}, {q(m['slot'])}, {q('seed/' + os.path.basename(m['src']))}, {q(m['alt'])}, {q(m['caption'])}, {q(m['illustrative'])}, {q(m['is_cover'])}, {q(m['published'])}, {m['sort']}, {m['focal_x']}, {m['focal_y']}, {m['width']}, {m['height']}, {q(m.get('hotspots'))}) on conflict (id) do nothing;")
+    out.append(f"insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots, fit) values ({q(m['id'])}, {q(m['product_id'])}, {q(m['slot'])}, {q('seed/' + os.path.basename(m['src']))}, {q(m['alt'])}, {q(m['caption'])}, {q(m['illustrative'])}, {q(m['is_cover'])}, {q(m['published'])}, {m['sort']}, {m['focal_x']}, {m['focal_y']}, {m['width']}, {m['height']}, {q(m.get('hotspots'))}, {q(m.get('fit', 'contain'))}) on conflict (id) do nothing;")
 for k, v in settings.items():
     pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number') else 'false'
     out.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")

@@ -47,7 +47,7 @@ function countUp(el) {
 /** Da chiamare dopo ogni render di pagina. */
 export function enhance(root = document) {
   const obs = revealObserver();
-  root.querySelectorAll('.rv, [data-count], [data-autoexplode]').forEach((el) => {
+  root.querySelectorAll('.rv, .kb, [data-count], [data-autoexplode]').forEach((el) => {
     if (obs) obs.observe(el);
     else {
       el.classList.add('in');

@@ -27,7 +27,7 @@ set request.jwt.claim.sub = '';
 select pg_temp.check((select count(*) from public.products) = 10, 'anon vede solo i 10 prodotti pubblicati');
 select pg_temp.check(not exists (select 1 from public.products where slug in ('topper-memory-cloud-5','pocket-1600','castello-steel')), 'anon non vede le bozze');
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
-select pg_temp.check((select count(*) from public.media) = 2, 'anon vede solo le foto pubblicate');
+select pg_temp.check((select count(*) from public.media) = 14, 'anon vede solo le foto pubblicate (14, non la bozza)');
 select pg_temp.check((select count(*) from storage.objects) = 1, 'anon scarica solo file di foto pubblicate');
 select pg_temp.check((select count(*) from public.settings) = 3, 'anon legge solo le impostazioni pubbliche');
 select pg_temp.expect_error('select * from public.requests', 'anon non legge le richieste');

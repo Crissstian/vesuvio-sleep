@@ -20,7 +20,8 @@ import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, s
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
 import { productIllustration, layersFor } from './illustrations.js';
 import { heroHtml } from './hero.js';
-import { SITE_SLOTS, PRODUCT_SLOTS } from './slots.js';
+import { SITE_SLOTS, PRODUCT_SLOTS, HERO_SLIDES, HERO_CAPTIONS } from './slots.js';
+import { initHero, tiltCards } from './heroctl.js';
 import { enhance, bump, explode } from './motion.js';
 
 const CFG = window.VS_CONFIG ?? {};
@@ -57,9 +58,11 @@ function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls
   return `<img src="${esc(src)}" ${m.srcset ? `srcset="${esc(m.srcset)}" sizes="${esc(sizes)}"` : ''} alt="${esc(m.alt)}" ${m.width ? `width="${m.width}" height="${m.height}"` : ''} loading="${eager ? 'eager' : 'lazy'}" decoding="async" class="${cls}" style="${focal}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',innerHTML:window.__fb||''}))">`;
 }
 window.__fb = FALLBACK.materasso;
+/** Le foto con sfondo pieno riempiono il riquadro; i render scontornati restano "contenuti". */
+const fitCls = (m) => (m.fit === 'cover' || !m.illustrative ? 'is-cover' : '');
 function coverHtml(idx, p, opts = {}) {
   const m = coverFor(idx, p);
-  return (m && imgTag(m, { ...opts, cls: m.illustrative ? '' : 'is-cover' })) || productIllustration(p, idx.kind(p));
+  return (m && imgTag(m, { ...opts, cls: fitCls(m) })) || productIllustration(p, idx.kind(p));
 }
 
 // ---------------------------------------------------------------- helpers
@@ -168,6 +171,7 @@ async function route() {
       }
     }
     enhance(app);
+    tiltCards(app);
     // la barra di confronto compare solo dove si selezionano i modelli
     if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
   };
@@ -224,7 +228,8 @@ function placeholderHtml(def, { cls = '' } = {}) {
 function slotHtml(key, opts = {}) {
   const def = SITE_SLOTS.find((x) => x.key === key);
   const img = siteImage(key);
-  if (img) return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${def.ratio}"><img src="${esc(img.src)}" alt="${esc(img.alt)}" loading="lazy" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%"></figure>`;
+  if (img)
+    return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${opts.ratio ?? def.ratio}"><img src="${esc(img.src)}" ${img.srcset ? `srcset="${esc(img.srcset)}" sizes="${opts.sizes ?? '(max-width: 860px) 90vw, 33vw'}"` : ''} alt="${esc(img.alt)}" loading="lazy" decoding="async" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%">${!img.uploaded && img.caption ? `<figcaption class="ph__cap">${esc(img.caption)}</figcaption>` : ''}${opts.label ? `<span class="ph__label">${esc(opts.label)}</span>` : ''}</figure>`;
   return placeholderHtml(def, opts);
 }
 
@@ -336,9 +341,9 @@ function viewHome() {
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
   setMeta('', '', [localBusinessJsonLd()]);
-  const heroPhoto = siteImage('hero_napoli');
-  const staticHero = state.lastRoute === undefined && !heroPhoto ? $('#app > .hero') : null;
-  app.innerHTML = `${staticHero ? '' : heroHtml(heroPhoto)}
+  const slides = heroSlides();
+  const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
+  app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
 
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
@@ -363,8 +368,12 @@ function viewHome() {
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
   <section class="factory-band" aria-labelledby="fab-title">
-    <div class="factory-band__img"><img src="img/lavorazione-1600.webp" srcset="img/lavorazione-900.webp 900w, img/lavorazione-1600.webp 1600w" sizes="100vw" width="1600" height="631" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi con il Vesuvio sullo sfondo"></div>
-    <span class="factory-band__credit">Scena illustrativa, non una foto della fabbrica</span>
+    ${(() => {
+      const fbi = siteImage('fabbrica_panoramica');
+      return fbi
+        ? `<div class="factory-band__img kb"><img src="${esc(fbi.src)}" ${fbi.srcset ? `srcset="${esc(fbi.srcset)}" sizes="100vw"` : ''} loading="lazy" decoding="async" alt="${esc(fbi.alt)}"></div>${fbi.uploaded ? '' : '<span class="factory-band__credit">Immagine illustrativa, non una foto della fabbrica</span>'}`
+        : `<div class="factory-band__img"><img src="img/lavorazione-1600.webp" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi"></div><span class="factory-band__credit">Scena illustrativa</span>`;
+    })()}
     <span class="factory-band__year" aria-hidden="true">1986</span>
     <div class="wrap factory-band__body">
       <h2 id="fab-title" class="rv">Siamo una fabbrica, non un rivenditore.</h2>
@@ -376,9 +385,7 @@ function viewHome() {
       </dl>
     </div>
   </section>
-  <section class="section--tight" aria-label="Foto della fabbrica"><div class="wrap">
-    <div class="ph-row">${['fabbrica_cucito', 'fabbrica_taglio', 'fabbrica_materiali'].map((k, i) => `<div class="rv" style="--d:${i}">${slotHtml(k)}</div>`).join('')}</div>
-  </div></section>
+  ${filmstripHtml()}
 
   ${pocket ? `<section class="section" aria-labelledby="inside-title"><div class="wrap">
       <div class="sec-head rv"><div><h2 id="inside-title">Dentro il ${esc(pocket.name.replace('Vesuvio ', ''))}</h2><p>Il nostro Hybrid: tocca i numeri per vedere i componenti.</p></div>
@@ -396,7 +403,10 @@ function viewHome() {
           .map(([v, l]) => `<button class="chip" data-act="sm-start" data-v="${v}">${l}</button>`)
           .join('')}</div>
       </div>
-      <div class="match2__img"><img src="img/hero-960.webp" srcset="img/hero-960.webp 960w, img/hero-1672.webp 1672w" sizes="(max-width: 860px) 100vw, 45vw" width="960" height="540" loading="lazy" alt="Camera mediterranea con un materasso trapuntato e una coperta blu"></div>
+      <div class="match2__img kb">${(() => {
+        const g = siteImage('guanciali_ambiente');
+        return g ? `<img src="${esc(g.src)}" ${g.srcset ? `srcset="${esc(g.srcset)}" sizes="(max-width: 860px) 100vw, 45vw"` : ''} loading="lazy" decoding="async" alt="${esc(g.alt)}">` : '';
+      })()}</div>
     </div>
   </div></section>
 
@@ -406,7 +416,7 @@ function viewHome() {
       <div class="ship__card rv"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 70 C50 20 110 80 170 20"/></svg>
         <div class="ship__big">0 €</div><h3>Spedizione in tutta Italia</h3><p class="muted">Isole comprese, con corriere e tracking.</p>
         <ul><li>${icon('check', 20)}Nessun supplemento per le isole</li><li>${icon('check', 20)}Tracking del corriere</li><li>${icon('check', 20)}Circa 2 giorni di produzione per i materassi</li></ul></div>
-      <div class="ship__card ship__card--deep rv" style="--d:1"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 40 C60 80 100 10 170 60"/></svg>
+      <div class="ship__card ship__card--deep ship__card--photo rv" style="--d:1">${slotHtml('consegna', { cls: 'ship__photo kb', ratio: '16 / 9', sizes: '(max-width: 860px) 92vw, 45vw' })}
         <div class="ship__big">Napoli</div><h3>Con il nostro furgone</h3><p class="muted">Consegniamo noi, con qualche servizio in più.</p>
         <ul><li>${icon('check', 20)}Consegna al piano gratuita</li><li>${icon('check', 20)}Ritiro del vecchio materasso</li><li>${icon('check', 20)}Montaggio delle reti</li></ul></div>
     </div>
@@ -414,8 +424,17 @@ function viewHome() {
 
   <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
   if (staticHero) app.prepend(staticHero);
+  else $('#app > .hero')?.classList.remove('is-intro');
+  initHero($('#app > .hero'));
+  tiltCards(app);
   requestAnimationFrame(moveThumb);
   bindLab();
+}
+function heroSlides() {
+  return HERO_SLIDES.map((key) => {
+    const img = siteImage(key);
+    return img ? { key, ...img, caption: HERO_CAPTIONS[key], illustrative: !img.uploaded } : null;
+  }).filter(Boolean);
 }
 function homeGrid(idx) {
   const items = idx.publicProducts(state.homeKind);
@@ -435,9 +454,26 @@ function bindLab() {
   st.addEventListener('vs:visible', () => explode(st, 0.8, 1400), { once: true });
 }
 
-/** Testata scura e trapuntata per le pagine interne. */
-function pageHero(items, title, lead = '', art = '') {
-  return `<header class="page-hero">${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}</header>`;
+/** Nastro fotografico che scorre: la fabbrica in movimento. */
+function filmstripHtml() {
+  const items = [
+    ['fabbrica_cucito', 'Il cucito della fascia'],
+    ['fabbrica_taglio', 'Il taglio delle lastre'],
+    ['testata_materasso', 'La trapuntatura'],
+    ['fabbrica_materiali', 'I materiali'],
+    ['showroom', 'Lo showroom'],
+    ['testata_rete', 'Le reti a doghe'],
+  ];
+  const tiles = items.map(([k, l]) => `<li class="film__item">${slotHtml(k, { ratio: '4 / 5', label: l, sizes: '300px' })}</li>`).join('');
+  return `<section class="film" aria-labelledby="film-title">
+    <div class="wrap sec-head rv"><div><h2 id="film-title">Dentro la fabbrica</h2><p>Dal taglio delle lastre al bordino cucito a mano: ogni materasso passa da queste mani.</p></div></div>
+    <div class="film__viewport"><ul class="film__track">${tiles}</ul><ul class="film__track" aria-hidden="true">${tiles}</ul></div>
+  </section>`;
+}
+
+/** Testata scura e trapuntata per le pagine interne, con foto quando c'è. */
+function pageHero(items, title, lead = '', art = '', photo = null) {
+  return `<header class="page-hero${photo ? ' page-hero--photo' : ''}">${photo ? `<div class="page-hero__bg kb"><img src="${esc(photo.src)}" ${photo.srcset ? `srcset="${esc(photo.srcset)}" sizes="100vw"` : ''} alt="" decoding="async"></div>` : ''}${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art && !photo ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}${photo && !photo.uploaded ? '<span class="page-hero__credit">Immagine illustrativa</span>' : ''}</header>`;
 }
 
 // ---------------------------------------------------------------- CATEGORIA
@@ -466,7 +502,8 @@ function viewCategory(c) {
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '')}
+  const head = siteImage({ materasso: 'testata_materasso', rete: 'testata_rete', guanciale: 'testata_guanciale' }[c.kind]);
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
   <div class="wrap" style="padding-top:28px">
     <div class="toolbar">
       ${isM ? `<div class="chips" role="group" aria-label="Tecnologia">${chip('tech', 'all', 'Tutti')}${chip('tech', 'foam', 'Poliuretano')}${chip('tech', 'memory', 'Memory Foam')}${chip('tech', 'molle', 'Molle')}</div>
@@ -568,7 +605,7 @@ function galleryItems(idx, p, gallery) {
   const items = gallery.map((m) => ({ type: 'media', m }));
   if (!items.length) items.push({ type: 'illus' });
   const have = new Set(gallery.map((m) => m.slot));
-  const slots = kind === 'guanciale' || kind === 'rete' ? PRODUCT_SLOTS.filter((x) => x.slot !== 'exploded') : PRODUCT_SLOTS;
+  const slots = PRODUCT_SLOTS[kind] ?? PRODUCT_SLOTS.materasso;
   for (const def of slots) if (!have.has(def.slot)) items.push({ type: 'ph', def });
   return items;
 }
@@ -586,7 +623,7 @@ function galleryHtml(idx, p, gallery, i) {
     main = `<div class="gallery__main gallery__main--ph">${placeholderHtml({ ...it.def, ratio: '3 / 2' }, { cls: 'ph--fill' })}</div>`;
   } else {
     const m = it.m;
-    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
+    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: fitCls(m) });
     main = `<div class="gallery__main">${tag || fallbackHtml(kind)}
       ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${gallery.indexOf(m)}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
       ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>`;
@@ -1031,6 +1068,7 @@ document.addEventListener('click', async (e) => {
       hg.innerHTML = homeGrid(pub());
       $$('.rv', hg).forEach((x) => x.classList.add('in'));
       $('.grid', hg).classList.add('is-entering');
+      tiltCards(hg);
       break;
     }
     case 'lab-model': {
@@ -1128,6 +1166,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const g = mediaFor(cp.idx, cp.p);
       $('[data-gallery]').innerHTML = galleryHtml(cp.idx, cp.p, g, Number(t.dataset.i));
+      $('[data-gallery] .gallery__main')?.classList.add('is-fade');
       if ($('#gal-stage')) explode($('#gal-stage'), 0.6, 700);
       $(`[data-act="thumb"][data-i="${t.dataset.i}"]`)?.focus();
       break;

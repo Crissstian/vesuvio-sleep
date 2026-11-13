@@ -344,11 +344,11 @@ function viewSiteImages() {
     <p class="small muted">Ogni spazio mostra un segnaposto finché non carichi e pubblichi una foto. Le foto restano in bozza fino alla pubblicazione; il testo alternativo è obbligatorio.</p>
     <div class="adm-slots">${SITE_SLOTS.map((def) => {
       const m = list.find((x) => x.slot === def.key);
-      const src = m && media.resolve(m);
+      const src = (m && media.resolve(m)) || def.default?.src;
       return `<section class="adm-card adm-slot" data-slot="${def.key}">
         <h2 class="adm-h2" style="margin:0">${esc(def.label)}</h2>
         <figure class="ph ${src ? 'ph--photo' : ''}" style="--ratio:${def.ratio}">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph__inner">${icon('image', 26)}<span>${esc(def.hint)}</span></div>`}</figure>
-        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : '<span class="st st--archived">Segnaposto</span>'}</p>
+        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : def.default ? '<span class="st">Predefinita: immagine illustrativa</span>' : '<span class="st st--archived">Segnaposto</span>'}</p>
         ${m ? `<label class="field"><span class="lbl small">Testo alternativo</span><input class="input" data-sf="alt" value="${esc(m.alt)}" placeholder="Descrivi cosa si vede"></label>` : ''}
         <div class="btn-row">
           <label class="btn btn--ghost btn--sm">${m ? 'Sostituisci' : 'Carica foto'}<input type="file" accept="image/jpeg,image/png,image/webp" data-adm-sitefile="${def.key}" hidden></label>

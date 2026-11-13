@@ -648,7 +648,7 @@ Object.assign(__exp, __req("core/payments.js"));
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py a partire da Vesuvio_Sleep_Site_Data_v1.0.json. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-12",
+ "version": "seed-2026-11-13",
  "categories": [
   {
    "slug": "materassi",
@@ -2264,6 +2264,222 @@ const SEED = {
      "text": "Elementi in poliuretano ad alta densità che contengono il molleggio."
     }
    ]
+  },
+  {
+   "id": "d5d97404-eec6-5ea0-9a23-fec5b4dc703c",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "slot": "hero",
+   "alt": "Vesuvio Memory Air 3D in prospettiva, con la fascia perimetrale 3D traspirante sul lato",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 10,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/memory-air-3d-34-1600.webp",
+   "srcset": "img/foto/memory-air-3d-34-900.webp 900w, img/foto/memory-air-3d-34-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "888cb0f9-0832-50b4-9ab8-4f10286d86fe",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "slot": "exploded",
+   "alt": "Vesuvio Memory Air 3D con un angolo aperto: Memory Foam azzurro sopra la base in poliuretano",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": false,
+   "published": true,
+   "sort": 11,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/memory-air-3d-sezione-1600.webp",
+   "srcset": "img/foto/memory-air-3d-sezione-900.webp 900w, img/foto/memory-air-3d-sezione-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "45af4665-59dd-55ac-bef3-36d418f4ec6b",
+   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
+   "slot": "fabric",
+   "alt": "Dettaglio della fascia 3D a rete traspirante e del bordino blu",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": false,
+   "published": true,
+   "sort": 12,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/memory-air-3d-tessuto-1600.webp",
+   "srcset": "img/foto/memory-air-3d-tessuto-900.webp 900w, img/foto/memory-air-3d-tessuto-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "5326e85c-b441-5578-8d5f-af0cd91a5cfb",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "slot": "fabric",
+   "alt": "Dettaglio del rivestimento trapuntato con bordino blu e cerniera laterale",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": false,
+   "published": true,
+   "sort": 13,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/pocket-2400-elite-tessuto-1600.webp",
+   "srcset": "img/foto/pocket-2400-elite-tessuto-900.webp 900w, img/foto/pocket-2400-elite-tessuto-1600.webp 1254w",
+   "width": 1254,
+   "height": 1254
+  },
+  {
+   "id": "a0a75bd2-ab56-569f-a5c1-3f67039a9033",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "slot": "hero",
+   "alt": "Rete Vesuvio Flex con telaio in acciaio scuro, doghe in legno chiaro e piedi",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 14,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/rete-flex-34-1600.webp",
+   "srcset": "img/foto/rete-flex-34-900.webp 900w, img/foto/rete-flex-34-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "fc454eb4-1f4b-5508-a1eb-5b9e02e5ad1f",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "slot": "extra",
+   "alt": "Dettaglio dell'angolo della rete Flex: doghe fissate al telaio e piede",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": false,
+   "published": true,
+   "sort": 15,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/rete-flex-dettaglio-1600.webp",
+   "srcset": "img/foto/rete-flex-dettaglio-900.webp 900w, img/foto/rete-flex-dettaglio-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "0865576d-fb74-5aae-b876-b7342a54f3fe",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "slot": "hero",
+   "alt": "Rete Vesuvio Strong con telaio rinforzato in acciaio e doghe in legno",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 16,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/rete-strong-34-1600.webp",
+   "srcset": "img/foto/rete-strong-34-900.webp 900w, img/foto/rete-strong-34-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "37df2d56-21ed-5fe7-99d6-9770fe1e200c",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "slot": "extra",
+   "alt": "Dettaglio del telaio rinforzato della rete Strong",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": false,
+   "published": true,
+   "sort": 17,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/rete-strong-dettaglio-1600.webp",
+   "srcset": "img/foto/rete-strong-dettaglio-900.webp 900w, img/foto/rete-strong-dettaglio-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "fe586ae1-bdc8-5bb0-bad0-0e7224cd66d2",
+   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "slot": "hero",
+   "alt": "Guanciale in piuma con fodera bianca",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 18,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-piuma-1600.webp",
+   "srcset": "img/foto/guanciale-piuma-900.webp 900w, img/foto/guanciale-piuma-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "599584e8-0018-50de-ae44-121deef9a264",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "slot": "hero",
+   "alt": "Guanciale Memory Flakes con fodera trapuntata e bordino blu",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 19,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-flakes-1600.webp",
+   "srcset": "img/foto/guanciale-memory-flakes-900.webp 900w, img/foto/guanciale-memory-flakes-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "aa3b9e01-d012-5886-9fb0-9dd35a29dee4",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "slot": "hero",
+   "alt": "Guanciale Memory Classic rettangolare con fodera trapuntata",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 20,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-classic-1600.webp",
+   "srcset": "img/foto/guanciale-memory-classic-900.webp 900w, img/foto/guanciale-memory-classic-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "8fdbe388-b19b-572f-bb22-f4b5022e443e",
+   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "slot": "hero",
+   "alt": "Guanciale cervicale in Memory con profilo a onda",
+   "caption": "Render illustrativo",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 21,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-cervical-1600.webp",
+   "srcset": "img/foto/guanciale-memory-cervical-900.webp 900w, img/foto/guanciale-memory-cervical-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
   }
  ],
  "settings": {
@@ -2280,6 +2496,68 @@ const SEED = {
 
 __exp.SEED = SEED;
 });
+__def("slots.js", function (__exp) {
+// Spazi immagine del sito (non legati a un prodotto). Ogni spazio mostra, in
+// ordine: la foto caricata e pubblicata dall'admin, l'immagine predefinita
+// (render illustrativo consegnato il 13/11/2026), oppure un segnaposto dichiarato.
+const f = (name, alt, { portrait = false } = {}) => ({
+  src: `img/foto/${name}-${portrait ? 900 : 1600}.webp`,
+  srcset: portrait ? `img/foto/${name}-600.webp 600w, img/foto/${name}-900.webp 900w` : `img/foto/${name}-900.webp 900w, img/foto/${name}-1600.webp 1536w`,
+  alt,
+  caption: 'Immagine illustrativa',
+});
+
+const SITE_SLOTS = [
+  { key: 'hero_napoli', label: 'Apertura: Napoli', hint: 'Foto orizzontale del Golfo di Napoli con il Vesuvio, almeno 2400 px di larghezza', ratio: '16 / 9' },
+  { key: 'fabbrica_panoramica', label: 'Fabbrica: panoramica', hint: 'Il reparto visto d’insieme', ratio: '5 / 2', default: f('fabbrica-panoramica', 'Reparto di produzione con materassi impilati, rotoli di tessuto e macchine per la trapuntatura') },
+  { key: 'fabbrica_cucito', label: 'Fabbrica: reparto cucito', hint: 'Foto reale del reparto di Casoria, persone solo con consenso', ratio: '4 / 5', default: f('fabbrica-cucito', 'Mani che guidano la fascia di un materasso sotto una macchina da cucire industriale', { portrait: true }) },
+  { key: 'fabbrica_taglio', label: 'Fabbrica: taglio delle lastre', hint: 'Foto reale di lavorazione', ratio: '4 / 5', default: f('fabbrica-taglio', 'Taglio di una lastra di espanso con una lama verticale', { portrait: true }) },
+  { key: 'fabbrica_materiali', label: 'Fabbrica: materiali', hint: 'Dettaglio di Memory Foam, molle o tessuti', ratio: '4 / 5', default: f('fabbrica-materiali', 'Campioni di Memory Foam, poliuretano, molle insacchettate e tessuto trapuntato', { portrait: true }) },
+  { key: 'showroom', label: 'Showroom di Casoria', hint: 'Foto dell’esposizione o dell’ingresso', ratio: '4 / 3', default: f('showroom', 'Showroom luminoso con materassi esposti su basi imbottite') },
+  { key: 'camera', label: 'Camera ambientata', hint: 'Camera luminosa con un materasso', ratio: '3 / 2', default: f('camera-ambientata', 'Camera mediterranea con un materasso trapuntato e il Vesuvio sul mare oltre la finestra ad arco') },
+  { key: 'consegna', label: 'Consegna', hint: 'Furgone o consegna al piano', ratio: '3 / 2', default: f('consegna-furgone', 'Furgone bianco con le porte aperte e un materasso imballato, in una strada di Napoli con il Vesuvio sullo sfondo') },
+  { key: 'guanciali_ambiente', label: 'Guanciali sul letto', hint: 'Guanciali su un letto rifatto', ratio: '3 / 2', default: f('guanciali-gruppo', 'Quattro guanciali bianchi su un letto rifatto con lenzuola color avorio') },
+  { key: 'testata_materasso', label: 'Testata: materassi', hint: 'Dettaglio d’atmosfera, formato molto largo', ratio: '21 / 9', default: f('testata-materassi', 'Dettaglio della trapuntatura di un materasso con bordino blu') },
+  { key: 'testata_rete', label: 'Testata: reti', hint: 'Dettaglio d’atmosfera, formato molto largo', ratio: '21 / 9', default: f('testata-reti', 'Rete a doghe in legno con telaio scuro su un parquet') },
+  { key: 'testata_guanciale', label: 'Testata: guanciali', hint: 'Dettaglio d’atmosfera, formato molto largo', ratio: '21 / 9', default: f('testata-guanciali', 'Due guanciali trapuntati con bordino blu su un letto') },
+];
+
+/** Diapositive dell'apertura, in ordine. "hero_napoli" entra per prima quando viene caricata. */
+const HERO_SLIDES = ['hero_napoli', 'camera', 'consegna', 'fabbrica_panoramica', 'showroom'];
+const HERO_CAPTIONS = {
+  hero_napoli: 'Napoli e il suo golfo',
+  camera: 'Una camera con vista sul Vesuvio',
+  consegna: 'Dalla fabbrica a casa tua, anche a Napoli',
+  fabbrica_panoramica: 'Prodotti a Casoria dal 1986',
+  showroom: 'Vieni a provarli nel nostro showroom',
+};
+
+/** Spazi immagine dei prodotti, per categoria: cosa fotografare per ogni scheda. */
+const PRODUCT_SLOTS = {
+  materasso: [
+    { slot: 'hero', label: 'Prodotto in prospettiva 3/4', hint: 'Sfondo neutro, luce morbida' },
+    { slot: 'exploded', label: 'Vista esplosa o sezione', hint: 'Strati reali del modello' },
+    { slot: 'fabric', label: 'Dettaglio del tessuto', hint: 'Fascia, cuciture, cerniera' },
+  ],
+  rete: [
+    { slot: 'hero', label: 'Rete in prospettiva 3/4', hint: 'Sfondo neutro' },
+    { slot: 'extra', label: 'Dettaglio di doghe e piedi', hint: 'Angolo del telaio' },
+  ],
+  guanciale: [
+    { slot: 'hero', label: 'Guanciale in prospettiva', hint: 'Sfondo neutro' },
+    { slot: 'fabric', label: 'Dettaglio della fodera', hint: 'Tessuto e cuciture' },
+  ],
+  topper: [
+    { slot: 'hero', label: 'Topper in prospettiva', hint: 'Sfondo neutro' },
+    { slot: 'fabric', label: 'Dettaglio del rivestimento', hint: 'Cerniera e tessuto' },
+  ],
+};
+
+__exp.SITE_SLOTS = SITE_SLOTS;
+__exp.HERO_SLIDES = HERO_SLIDES;
+__exp.HERO_CAPTIONS = HERO_CAPTIONS;
+__exp.PRODUCT_SLOTS = PRODUCT_SLOTS;
+});
 __def("store.js", function (__exp) {
 // Livello dati della PREVIEW.
 // Simula il backend Supabase nel browser di chi la usa: localStorage per i dati,
@@ -2287,6 +2565,7 @@ __def("store.js", function (__exp) {
 // SQL in supabase/migrations/0003_functions.sql (validate_cart, create_request…).
 
 const {SEED} = __req("seed.js");
+const {SITE_SLOTS} = __req("slots.js");
 const {CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber} = __req("core/index.js");
 
 const DB_KEY = 'vs-preview-db-v1';
@@ -2319,9 +2598,27 @@ function freshDb() {
   return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [], site_media: [] };
 }
 
-let db = readLS(DB_KEY) ?? freshDb();
-if (!db.seed_version) db = freshDb();
+let db = readLS(DB_KEY);
+if (!db?.seed_version) {
+  db = freshDb();
+  writeLS(DB_KEY, db);
+}
 db.site_media ??= [];
+// Aggiornamento del seed senza perdere le modifiche fatte dall'admin:
+// si aggiungono solo gli elementi nuovi (per id), quelli esistenti non si toccano.
+if (db.seed_version !== SEED.version) {
+  for (const key of ['categories', 'products', 'variants', 'media']) {
+    const have = new Set(db[key].map((x) => x.id));
+    for (const item of SEED[key]) if (!have.has(item.id)) db[key].push(clone(item));
+  }
+  // una sola copertina per prodotto: se il seed nuovo ne porta una, prevale sulla vecchia del seed
+  for (const m of SEED.media.filter((x) => x.is_cover)) {
+    const others = db.media.filter((x) => x.product_id === m.product_id && x.is_cover && x.id !== m.id && !x.src.startsWith('idb:'));
+    if (others.length) others.forEach((x) => (x.is_cover = false));
+  }
+  db.seed_version = SEED.version;
+  writeLS(DB_KEY, db);
+}
 const listeners = new Set();
 
 const store = {
@@ -2445,9 +2742,10 @@ async function processUpload(file) {
 /** Foto pubblicata in uno spazio del sito, oppure null (si mostra il segnaposto). */
 function siteImage(key, { drafts = false } = {}) {
   const m = (db.site_media ?? []).find((x) => x.slot === key && (drafts || x.published));
-  if (!m) return null;
-  const src = media.resolve(m);
-  return src ? { ...m, src } : null;
+  const src = m && media.resolve(m);
+  if (src) return { ...m, src, uploaded: true };
+  const def = SITE_SLOTS.find((x) => x.key === key)?.default;
+  return def ? { ...def, focal_x: 50, focal_y: 50 } : null;
 }
 
 // ---------- Catalogo ----------
@@ -3107,23 +3405,49 @@ __exp.NAPLES_RIDGE = NAPLES_RIDGE;
 __exp.naplesSvg = naplesSvg;
 });
 __def("hero.js", function (__exp) {
-// Markup della hero, senza dipendenze dal DOM: usato dall'app e da
-// scripts/static_hero.mjs per scriverlo direttamente in index.html.
+// Markup dell'apertura, senza dipendenze dal DOM: usato dall'app e da
+// scripts/static_hero.mjs, che lo scrive direttamente in index.html.
 const {naplesSvg} = __req("naples.js");
+const {SITE_SLOTS, HERO_SLIDES, HERO_CAPTIONS} = __req("slots.js");
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-/** photo: { src, alt } caricata dall'admin nello spazio "hero_napoli"; senza, illustrazione. */
-function heroHtml(photo = null) {
-  const art = photo
-    ? `<img class="hero__photo" src="${esc(photo.src)}" alt="${esc(photo.alt)}" fetchpriority="high">`
-    : naplesSvg({ id: 'hn' });
-  return `<section class="hero hero--naples" aria-labelledby="hero-title">
+/** Diapositive predefinite (senza foto caricate dall'admin). */
+function defaultSlides() {
+  return HERO_SLIDES.map((key) => {
+    const d = SITE_SLOTS.find((x) => x.key === key)?.default;
+    return d ? { key, ...d, caption: HERO_CAPTIONS[key], illustrative: true } : null;
+  }).filter(Boolean);
+}
+
+// Marchio cucito: profilo del Vesuvio che si disegna durante l'ingresso
+const MARK = 'M10 74 C 30 66, 44 56, 58 44 C 64 38, 68 34, 74 34 C 79 34, 82 38, 86 40 C 90 30, 96 22, 104 22 C 112 22, 118 32, 124 42 C 138 56, 152 66, 170 74';
+
+function heroHtml(slides = defaultSlides()) {
+  const visual = slides.length
+    ? `<div class="hero__slides" data-slides="${slides.length}">${slides
+        .map(
+          (s, i) => `<figure class="slide${i === 0 ? ' is-active' : ''}" data-i="${i}" data-caption="${esc(s.caption)}" data-illustrative="${s.illustrative ? 1 : 0}" ${i === 0 ? '' : 'aria-hidden="true"'}>
+          <img src="${esc(s.src)}" ${s.srcset ? `srcset="${esc(s.srcset)}" sizes="100vw"` : ''} alt="${esc(s.alt)}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async"></figure>`,
+        )
+        .join('')}</div>`
+    : `<div class="hero__slides"><figure class="slide is-active">${naplesSvg({ id: 'hn' })}</figure></div>`;
+  const dots =
+    slides.length > 1
+      ? `<div class="hero__ctrl" role="group" aria-label="Immagini dell'apertura">
+        ${slides.map((s, i) => `<button class="hero__dot${i === 0 ? ' is-active' : ''}" data-act="hero-go" data-i="${i}" aria-label="Immagine ${i + 1}: ${esc(s.caption)}" aria-current="${i === 0}"><span></span></button>`).join('')}
+        <button class="hero__pause" data-act="hero-pause" aria-pressed="false" aria-label="Metti in pausa le immagini"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path class="i-pause" d="M3 2h3v10H3zM8 2h3v10H8z"/><path class="i-play" d="M3 2l9 5-9 5z"/></svg></button>
+      </div>`
+      : '';
+  return `<section class="hero hero--slides is-intro" aria-labelledby="hero-title" aria-roledescription="presentazione">
     <div class="hero__visual">
-      <div class="hero__par"><div class="hero__scene">${art}</div></div>
+      ${visual}
       <div class="hero__scrim"></div>
-      <div class="hero__sheets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <span class="hero__badge">${photo ? 'Napoli' : 'Illustrazione provvisoria: qui andrà la foto di Napoli'}</span>
+      <div class="hero__intro" aria-hidden="true"><i></i><i></i><i></i><i></i>
+        <svg class="hero__mark" viewBox="0 0 180 90"><path pathLength="1" d="${MARK}"/></svg>
+      </div>
+      ${dots}
+      <span class="hero__badge" id="hero-badge">${slides.length ? (slides[0].illustrative ? 'Immagine illustrativa' : '') : 'Illustrazione provvisoria: qui andrà la foto di Napoli'}</span>
     </div>
     <div class="hero__content">
       <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
@@ -3133,6 +3457,7 @@ function heroHtml(photo = null) {
         <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
         <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
       </div>
+      ${slides.length ? `<p class="hero__caption" id="hero-caption"><span>${esc(slides[0].caption)}</span></p>` : ''}
     </div>
     <ul class="hero__strip" aria-label="In breve">
       <li><strong>Dal 1986</strong>Produzione a Casoria</li>
@@ -3143,28 +3468,138 @@ function heroHtml(photo = null) {
   </section>`;
 }
 
+__exp.defaultSlides = defaultSlides;
 __exp.heroHtml = heroHtml;
 });
-__def("slots.js", function (__exp) {
-// Spazi immagine del sito (non legati a un prodotto). Finché non c'è una foto
-// approvata e pubblicata dall'admin, ogni spazio mostra un segnaposto dichiarato.
-const SITE_SLOTS = [
-  { key: 'hero_napoli', label: 'Apertura: Napoli', hint: 'Foto orizzontale del Golfo di Napoli con il Vesuvio, almeno 2400 px di larghezza', ratio: '16 / 9' },
-  { key: 'fabbrica_cucito', label: 'Fabbrica: reparto cucito', hint: 'Foto reale del reparto di Casoria, persone solo con consenso', ratio: '4 / 5' },
-  { key: 'fabbrica_taglio', label: 'Fabbrica: taglio delle lastre', hint: 'Foto reale di lavorazione', ratio: '4 / 5' },
-  { key: 'fabbrica_materiali', label: 'Fabbrica: materiali', hint: 'Dettaglio di Memory Foam, molle o tessuti', ratio: '4 / 5' },
-  { key: 'showroom', label: 'Showroom di Casoria', hint: "Foto dell'esposizione o dell'ingresso", ratio: '4 / 3' },
-];
+__def("heroctl.js", function (__exp) {
+// Regia dell'apertura: ingresso a strati, cambio immagine con "telo" che scorre,
+// zoom lento, avanzamento cucito sui pallini, pausa, swipe.
+// Il tempo di ogni immagine lo scandisce l'animazione CSS del pallino attivo:
+// in pausa (o con movimento ridotto) l'animazione si ferma e la presentazione pure.
 
-/** Spazi immagine dei prodotti: cosa fotografare per ogni scheda. */
-const PRODUCT_SLOTS = [
-  { slot: 'hero', label: 'Prodotto in prospettiva 3/4', hint: 'Sfondo neutro, luce morbida' },
-  { slot: 'exploded', label: 'Vista esplosa o sezione', hint: 'Strati reali del modello' },
-  { slot: 'fabric', label: 'Dettaglio del tessuto', hint: 'Fascia, cuciture, cerniera' },
-];
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-__exp.SITE_SLOTS = SITE_SLOTS;
-__exp.PRODUCT_SLOTS = PRODUCT_SLOTS;
+function initHero(hero) {
+  if (!hero || hero.dataset.ready) return;
+  hero.dataset.ready = '1';
+  const slides = [...hero.querySelectorAll('.slide')];
+  const dots = [...hero.querySelectorAll('.hero__dot')];
+  const caption = hero.querySelector('#hero-caption span');
+  const badge = hero.querySelector('#hero-badge');
+  const pauseBtn = hero.querySelector('.hero__pause');
+  // l'ingresso dura poco: dopo si toglie la classe, così non si ripete
+  setTimeout(() => hero.classList.remove('is-intro'), reduced() ? 0 : 2300);
+  if (slides.length < 2) return;
+
+  let i = 0;
+  let busy = false;
+  let userPaused = reduced();
+  const setPaused = () => {
+    const auto = hero.dataset.offscreen === '1' || document.hidden;
+    hero.classList.toggle('is-paused', userPaused || auto);
+    pauseBtn?.setAttribute('aria-pressed', String(userPaused));
+    pauseBtn?.setAttribute('aria-label', userPaused ? 'Riprendi le immagini' : 'Metti in pausa le immagini');
+  };
+  setPaused();
+
+  function go(n, dir = 1) {
+    if (busy || n === i) return;
+    busy = true;
+    const prev = slides[i];
+    const next = slides[(n + slides.length) % slides.length];
+    i = (n + slides.length) % slides.length;
+    next.classList.remove('dir-back');
+    if (dir < 0) next.classList.add('dir-back');
+    prev.classList.add('is-leaving');
+    next.classList.add('is-active', 'is-entering');
+    next.removeAttribute('aria-hidden');
+    const done = () => {
+      prev.classList.remove('is-active', 'is-leaving');
+      prev.setAttribute('aria-hidden', 'true');
+      next.classList.remove('is-entering');
+      busy = false;
+    };
+    setTimeout(done, reduced() ? 0 : 1250);
+    dots.forEach((d, k) => {
+      const on = k === i;
+      d.classList.toggle('is-active', on);
+      d.setAttribute('aria-current', String(on));
+    });
+    // riavvia l'avanzamento del pallino attivo
+    const bar = dots[i]?.querySelector('span');
+    if (bar) {
+      bar.style.animation = 'none';
+      void bar.offsetWidth;
+      bar.style.animation = '';
+    }
+    if (caption) {
+      caption.classList.remove('is-in');
+      void caption.offsetWidth;
+      caption.textContent = next.dataset.caption || '';
+      caption.classList.add('is-in');
+    }
+    if (badge) badge.textContent = next.dataset.illustrative === '1' ? 'Immagine illustrativa' : '';
+  }
+
+  dots.forEach((d) => {
+    d.addEventListener('click', () => go(Number(d.dataset.i), Number(d.dataset.i) > i ? 1 : -1));
+    d.querySelector('span')?.addEventListener('animationend', () => {
+      if (d.classList.contains('is-active') && !hero.classList.contains('is-paused')) go(i + 1);
+    });
+  });
+  pauseBtn?.addEventListener('click', () => {
+    userPaused = !userPaused;
+    setPaused();
+  });
+
+  // swipe orizzontale sull'immagine (mobile)
+  let x0 = null;
+  const vis = hero.querySelector('.hero__visual');
+  vis.addEventListener('pointerdown', (e) => (x0 = e.clientX), { passive: true });
+  vis.addEventListener(
+    'pointerup',
+    (e) => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0;
+      x0 = null;
+      if (Math.abs(dx) > 50) go(dx < 0 ? i + 1 : i - 1, dx < 0 ? 1 : -1);
+    },
+    { passive: true },
+  );
+
+  // pausa automatica quando l'apertura non si vede o la scheda è nascosta
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => {
+      hero.dataset.offscreen = e.isIntersecting ? '0' : '1';
+      setPaused();
+    }).observe(hero);
+  }
+  const onVis = () => (hero.isConnected ? setPaused() : document.removeEventListener('visibilitychange', onVis));
+  document.addEventListener('visibilitychange', onVis);
+}
+
+/** Leggera inclinazione 3D delle card al passaggio del puntatore (solo desktop). */
+function tiltCards(root) {
+  if (reduced() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  root.querySelectorAll('.card').forEach((c) => {
+    if (c.dataset.tilt) return;
+    c.dataset.tilt = '1';
+    c.addEventListener('pointermove', (e) => {
+      const r = c.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      c.style.setProperty('--rx', `${(-y * 5).toFixed(2)}deg`);
+      c.style.setProperty('--ry', `${(x * 6).toFixed(2)}deg`);
+    });
+    c.addEventListener('pointerleave', () => {
+      c.style.setProperty('--rx', '0deg');
+      c.style.setProperty('--ry', '0deg');
+    });
+  });
+}
+
+__exp.initHero = initHero;
+__exp.tiltCards = tiltCards;
 });
 __def("motion.js", function (__exp) {
 // Movimento e micro-interazioni. Tutto rispetta prefers-reduced-motion e il
@@ -3216,7 +3651,7 @@ function countUp(el) {
 /** Da chiamare dopo ogni render di pagina. */
 function enhance(root = document) {
   const obs = revealObserver();
-  root.querySelectorAll('.rv, [data-count], [data-autoexplode]').forEach((el) => {
+  root.querySelectorAll('.rv, .kb, [data-count], [data-autoexplode]').forEach((el) => {
     if (obs) obs.observe(el);
     else {
       el.classList.add('in');
@@ -3645,11 +4080,11 @@ function viewSiteImages() {
     <p class="small muted">Ogni spazio mostra un segnaposto finché non carichi e pubblichi una foto. Le foto restano in bozza fino alla pubblicazione; il testo alternativo è obbligatorio.</p>
     <div class="adm-slots">${SITE_SLOTS.map((def) => {
       const m = list.find((x) => x.slot === def.key);
-      const src = m && media.resolve(m);
+      const src = (m && media.resolve(m)) || def.default?.src;
       return `<section class="adm-card adm-slot" data-slot="${def.key}">
         <h2 class="adm-h2" style="margin:0">${esc(def.label)}</h2>
         <figure class="ph ${src ? 'ph--photo' : ''}" style="--ratio:${def.ratio}">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph__inner">${icon('image', 26)}<span>${esc(def.hint)}</span></div>`}</figure>
-        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : '<span class="st st--archived">Segnaposto</span>'}</p>
+        <p class="small" style="margin:0">${m ? `<span class="st ${m.published ? 'st--published' : 'st--draft'}">${m.published ? 'Pubblicata' : 'Bozza'}</span>` : def.default ? '<span class="st">Predefinita: immagine illustrativa</span>' : '<span class="st st--archived">Segnaposto</span>'}</p>
         ${m ? `<label class="field"><span class="lbl small">Testo alternativo</span><input class="input" data-sf="alt" value="${esc(m.alt)}" placeholder="Descrivi cosa si vede"></label>` : ''}
         <div class="btn-row">
           <label class="btn btn--ghost btn--sm">${m ? 'Sostituisci' : 'Carica foto'}<input type="file" accept="image/jpeg,image/png,image/webp" data-adm-sitefile="${def.key}" hidden></label>
@@ -4297,7 +4732,8 @@ const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, sit
 const {esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion} = __req("ui.js");
 const {productIllustration, layersFor} = __req("illustrations.js");
 const {heroHtml} = __req("hero.js");
-const {SITE_SLOTS, PRODUCT_SLOTS} = __req("slots.js");
+const {SITE_SLOTS, PRODUCT_SLOTS, HERO_SLIDES, HERO_CAPTIONS} = __req("slots.js");
+const {initHero, tiltCards} = __req("heroctl.js");
 const {enhance, bump, explode} = __req("motion.js");
 
 const CFG = window.VS_CONFIG ?? {};
@@ -4334,9 +4770,11 @@ function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls
   return `<img src="${esc(src)}" ${m.srcset ? `srcset="${esc(m.srcset)}" sizes="${esc(sizes)}"` : ''} alt="${esc(m.alt)}" ${m.width ? `width="${m.width}" height="${m.height}"` : ''} loading="${eager ? 'eager' : 'lazy'}" decoding="async" class="${cls}" style="${focal}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',innerHTML:window.__fb||''}))">`;
 }
 window.__fb = FALLBACK.materasso;
+/** Le foto con sfondo pieno riempiono il riquadro; i render scontornati restano "contenuti". */
+const fitCls = (m) => (m.fit === 'cover' || !m.illustrative ? 'is-cover' : '');
 function coverHtml(idx, p, opts = {}) {
   const m = coverFor(idx, p);
-  return (m && imgTag(m, { ...opts, cls: m.illustrative ? '' : 'is-cover' })) || productIllustration(p, idx.kind(p));
+  return (m && imgTag(m, { ...opts, cls: fitCls(m) })) || productIllustration(p, idx.kind(p));
 }
 
 // ---------------------------------------------------------------- helpers
@@ -4445,6 +4883,7 @@ async function route() {
       }
     }
     enhance(app);
+    tiltCards(app);
     // la barra di confronto compare solo dove si selezionano i modelli
     if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
   };
@@ -4501,7 +4940,8 @@ function placeholderHtml(def, { cls = '' } = {}) {
 function slotHtml(key, opts = {}) {
   const def = SITE_SLOTS.find((x) => x.key === key);
   const img = siteImage(key);
-  if (img) return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${def.ratio}"><img src="${esc(img.src)}" alt="${esc(img.alt)}" loading="lazy" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%"></figure>`;
+  if (img)
+    return `<figure class="ph ph--photo ${opts.cls ?? ''}" style="--ratio:${opts.ratio ?? def.ratio}"><img src="${esc(img.src)}" ${img.srcset ? `srcset="${esc(img.srcset)}" sizes="${opts.sizes ?? '(max-width: 860px) 90vw, 33vw'}"` : ''} alt="${esc(img.alt)}" loading="lazy" decoding="async" style="object-position:${img.focal_x ?? 50}% ${img.focal_y ?? 50}%">${!img.uploaded && img.caption ? `<figcaption class="ph__cap">${esc(img.caption)}</figcaption>` : ''}${opts.label ? `<span class="ph__label">${esc(opts.label)}</span>` : ''}</figure>`;
   return placeholderHtml(def, opts);
 }
 
@@ -4613,9 +5053,9 @@ function viewHome() {
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
   setMeta('', '', [localBusinessJsonLd()]);
-  const heroPhoto = siteImage('hero_napoli');
-  const staticHero = state.lastRoute === undefined && !heroPhoto ? $('#app > .hero') : null;
-  app.innerHTML = `${staticHero ? '' : heroHtml(heroPhoto)}
+  const slides = heroSlides();
+  const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
+  app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
 
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
@@ -4640,8 +5080,12 @@ function viewHome() {
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
   <section class="factory-band" aria-labelledby="fab-title">
-    <div class="factory-band__img"><img src="img/lavorazione-1600.webp" srcset="img/lavorazione-900.webp 900w, img/lavorazione-1600.webp 1600w" sizes="100vw" width="1600" height="631" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi con il Vesuvio sullo sfondo"></div>
-    <span class="factory-band__credit">Scena illustrativa, non una foto della fabbrica</span>
+    ${(() => {
+      const fbi = siteImage('fabbrica_panoramica');
+      return fbi
+        ? `<div class="factory-band__img kb"><img src="${esc(fbi.src)}" ${fbi.srcset ? `srcset="${esc(fbi.srcset)}" sizes="100vw"` : ''} loading="lazy" decoding="async" alt="${esc(fbi.alt)}"></div>${fbi.uploaded ? '' : '<span class="factory-band__credit">Immagine illustrativa, non una foto della fabbrica</span>'}`
+        : `<div class="factory-band__img"><img src="img/lavorazione-1600.webp" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi"></div><span class="factory-band__credit">Scena illustrativa</span>`;
+    })()}
     <span class="factory-band__year" aria-hidden="true">1986</span>
     <div class="wrap factory-band__body">
       <h2 id="fab-title" class="rv">Siamo una fabbrica, non un rivenditore.</h2>
@@ -4653,9 +5097,7 @@ function viewHome() {
       </dl>
     </div>
   </section>
-  <section class="section--tight" aria-label="Foto della fabbrica"><div class="wrap">
-    <div class="ph-row">${['fabbrica_cucito', 'fabbrica_taglio', 'fabbrica_materiali'].map((k, i) => `<div class="rv" style="--d:${i}">${slotHtml(k)}</div>`).join('')}</div>
-  </div></section>
+  ${filmstripHtml()}
 
   ${pocket ? `<section class="section" aria-labelledby="inside-title"><div class="wrap">
       <div class="sec-head rv"><div><h2 id="inside-title">Dentro il ${esc(pocket.name.replace('Vesuvio ', ''))}</h2><p>Il nostro Hybrid: tocca i numeri per vedere i componenti.</p></div>
@@ -4673,7 +5115,10 @@ function viewHome() {
           .map(([v, l]) => `<button class="chip" data-act="sm-start" data-v="${v}">${l}</button>`)
           .join('')}</div>
       </div>
-      <div class="match2__img"><img src="img/hero-960.webp" srcset="img/hero-960.webp 960w, img/hero-1672.webp 1672w" sizes="(max-width: 860px) 100vw, 45vw" width="960" height="540" loading="lazy" alt="Camera mediterranea con un materasso trapuntato e una coperta blu"></div>
+      <div class="match2__img kb">${(() => {
+        const g = siteImage('guanciali_ambiente');
+        return g ? `<img src="${esc(g.src)}" ${g.srcset ? `srcset="${esc(g.srcset)}" sizes="(max-width: 860px) 100vw, 45vw"` : ''} loading="lazy" decoding="async" alt="${esc(g.alt)}">` : '';
+      })()}</div>
     </div>
   </div></section>
 
@@ -4683,7 +5128,7 @@ function viewHome() {
       <div class="ship__card rv"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 70 C50 20 110 80 170 20"/></svg>
         <div class="ship__big">0 €</div><h3>Spedizione in tutta Italia</h3><p class="muted">Isole comprese, con corriere e tracking.</p>
         <ul><li>${icon('check', 20)}Nessun supplemento per le isole</li><li>${icon('check', 20)}Tracking del corriere</li><li>${icon('check', 20)}Circa 2 giorni di produzione per i materassi</li></ul></div>
-      <div class="ship__card ship__card--deep rv" style="--d:1"><svg class="ship__route" viewBox="0 0 180 90" aria-hidden="true"><path d="M10 40 C60 80 100 10 170 60"/></svg>
+      <div class="ship__card ship__card--deep ship__card--photo rv" style="--d:1">${slotHtml('consegna', { cls: 'ship__photo kb', ratio: '16 / 9', sizes: '(max-width: 860px) 92vw, 45vw' })}
         <div class="ship__big">Napoli</div><h3>Con il nostro furgone</h3><p class="muted">Consegniamo noi, con qualche servizio in più.</p>
         <ul><li>${icon('check', 20)}Consegna al piano gratuita</li><li>${icon('check', 20)}Ritiro del vecchio materasso</li><li>${icon('check', 20)}Montaggio delle reti</li></ul></div>
     </div>
@@ -4691,8 +5136,17 @@ function viewHome() {
 
   <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
   if (staticHero) app.prepend(staticHero);
+  else $('#app > .hero')?.classList.remove('is-intro');
+  initHero($('#app > .hero'));
+  tiltCards(app);
   requestAnimationFrame(moveThumb);
   bindLab();
+}
+function heroSlides() {
+  return HERO_SLIDES.map((key) => {
+    const img = siteImage(key);
+    return img ? { key, ...img, caption: HERO_CAPTIONS[key], illustrative: !img.uploaded } : null;
+  }).filter(Boolean);
 }
 function homeGrid(idx) {
   const items = idx.publicProducts(state.homeKind);
@@ -4712,9 +5166,26 @@ function bindLab() {
   st.addEventListener('vs:visible', () => explode(st, 0.8, 1400), { once: true });
 }
 
-/** Testata scura e trapuntata per le pagine interne. */
-function pageHero(items, title, lead = '', art = '') {
-  return `<header class="page-hero">${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}</header>`;
+/** Nastro fotografico che scorre: la fabbrica in movimento. */
+function filmstripHtml() {
+  const items = [
+    ['fabbrica_cucito', 'Il cucito della fascia'],
+    ['fabbrica_taglio', 'Il taglio delle lastre'],
+    ['testata_materasso', 'La trapuntatura'],
+    ['fabbrica_materiali', 'I materiali'],
+    ['showroom', 'Lo showroom'],
+    ['testata_rete', 'Le reti a doghe'],
+  ];
+  const tiles = items.map(([k, l]) => `<li class="film__item">${slotHtml(k, { ratio: '4 / 5', label: l, sizes: '300px' })}</li>`).join('');
+  return `<section class="film" aria-labelledby="film-title">
+    <div class="wrap sec-head rv"><div><h2 id="film-title">Dentro la fabbrica</h2><p>Dal taglio delle lastre al bordino cucito a mano: ogni materasso passa da queste mani.</p></div></div>
+    <div class="film__viewport"><ul class="film__track">${tiles}</ul><ul class="film__track" aria-hidden="true">${tiles}</ul></div>
+  </section>`;
+}
+
+/** Testata scura e trapuntata per le pagine interne, con foto quando c'è. */
+function pageHero(items, title, lead = '', art = '', photo = null) {
+  return `<header class="page-hero${photo ? ' page-hero--photo' : ''}">${photo ? `<div class="page-hero__bg kb"><img src="${esc(photo.src)}" ${photo.srcset ? `srcset="${esc(photo.srcset)}" sizes="100vw"` : ''} alt="" decoding="async"></div>` : ''}${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art && !photo ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}${photo && !photo.uploaded ? '<span class="page-hero__credit">Immagine illustrativa</span>' : ''}</header>`;
 }
 
 // ---------------------------------------------------------------- CATEGORIA
@@ -4743,7 +5214,8 @@ function viewCategory(c) {
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '')}
+  const head = siteImage({ materasso: 'testata_materasso', rete: 'testata_rete', guanciale: 'testata_guanciale' }[c.kind]);
+  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
   <div class="wrap" style="padding-top:28px">
     <div class="toolbar">
       ${isM ? `<div class="chips" role="group" aria-label="Tecnologia">${chip('tech', 'all', 'Tutti')}${chip('tech', 'foam', 'Poliuretano')}${chip('tech', 'memory', 'Memory Foam')}${chip('tech', 'molle', 'Molle')}</div>
@@ -4845,7 +5317,7 @@ function galleryItems(idx, p, gallery) {
   const items = gallery.map((m) => ({ type: 'media', m }));
   if (!items.length) items.push({ type: 'illus' });
   const have = new Set(gallery.map((m) => m.slot));
-  const slots = kind === 'guanciale' || kind === 'rete' ? PRODUCT_SLOTS.filter((x) => x.slot !== 'exploded') : PRODUCT_SLOTS;
+  const slots = PRODUCT_SLOTS[kind] ?? PRODUCT_SLOTS.materasso;
   for (const def of slots) if (!have.has(def.slot)) items.push({ type: 'ph', def });
   return items;
 }
@@ -4863,7 +5335,7 @@ function galleryHtml(idx, p, gallery, i) {
     main = `<div class="gallery__main gallery__main--ph">${placeholderHtml({ ...it.def, ratio: '3 / 2' }, { cls: 'ph--fill' })}</div>`;
   } else {
     const m = it.m;
-    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: m.illustrative ? '' : 'is-cover' });
+    const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: fitCls(m) });
     main = `<div class="gallery__main">${tag || fallbackHtml(kind)}
       ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${gallery.indexOf(m)}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
       ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>`;
@@ -5308,6 +5780,7 @@ document.addEventListener('click', async (e) => {
       hg.innerHTML = homeGrid(pub());
       $$('.rv', hg).forEach((x) => x.classList.add('in'));
       $('.grid', hg).classList.add('is-entering');
+      tiltCards(hg);
       break;
     }
     case 'lab-model': {
@@ -5405,6 +5878,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const g = mediaFor(cp.idx, cp.p);
       $('[data-gallery]').innerHTML = galleryHtml(cp.idx, cp.p, g, Number(t.dataset.i));
+      $('[data-gallery] .gallery__main')?.classList.add('is-fade');
       if ($('#gal-stage')) explode($('#gal-stage'), 0.6, 700);
       $(`[data-act="thumb"][data-i="${t.dataset.i}"]`)?.focus();
       break;

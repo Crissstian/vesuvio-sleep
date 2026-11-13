@@ -4,6 +4,7 @@
 // SQL in supabase/migrations/0003_functions.sql (validate_cart, create_request…).
 
 import { SEED } from './seed.js';
+import { SITE_SLOTS } from './slots.js';
 import { CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber } from './core/index.js';
 
 const DB_KEY = 'vs-preview-db-v1';
@@ -36,9 +37,27 @@ function freshDb() {
   return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [], site_media: [] };
 }
 
-let db = readLS(DB_KEY) ?? freshDb();
-if (!db.seed_version) db = freshDb();
+let db = readLS(DB_KEY);
+if (!db?.seed_version) {
+  db = freshDb();
+  writeLS(DB_KEY, db);
+}
 db.site_media ??= [];
+// Aggiornamento del seed senza perdere le modifiche fatte dall'admin:
+// si aggiungono solo gli elementi nuovi (per id), quelli esistenti non si toccano.
+if (db.seed_version !== SEED.version) {
+  for (const key of ['categories', 'products', 'variants', 'media']) {
+    const have = new Set(db[key].map((x) => x.id));
+    for (const item of SEED[key]) if (!have.has(item.id)) db[key].push(clone(item));
+  }
+  // una sola copertina per prodotto: se il seed nuovo ne porta una, prevale sulla vecchia del seed
+  for (const m of SEED.media.filter((x) => x.is_cover)) {
+    const others = db.media.filter((x) => x.product_id === m.product_id && x.is_cover && x.id !== m.id && !x.src.startsWith('idb:'));
+    if (others.length) others.forEach((x) => (x.is_cover = false));
+  }
+  db.seed_version = SEED.version;
+  writeLS(DB_KEY, db);
+}
 const listeners = new Set();
 
 export const store = {
@@ -162,9 +181,10 @@ export async function processUpload(file) {
 /** Foto pubblicata in uno spazio del sito, oppure null (si mostra il segnaposto). */
 export function siteImage(key, { drafts = false } = {}) {
   const m = (db.site_media ?? []).find((x) => x.slot === key && (drafts || x.published));
-  if (!m) return null;
-  const src = media.resolve(m);
-  return src ? { ...m, src } : null;
+  const src = m && media.resolve(m);
+  if (src) return { ...m, src, uploaded: true };
+  const def = SITE_SLOTS.find((x) => x.key === key)?.default;
+  return def ? { ...def, focal_x: 50, focal_y: 50 } : null;
 }
 
 // ---------- Catalogo ----------

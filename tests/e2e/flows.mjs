@@ -102,6 +102,45 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await ctx.close();
 }
 
+// ---------- apertura: presentazione, pausa, foto dei prodotti, migrazione del seed
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 800 } });
+  await go(p, '', 600);
+  ok((await p.locator('.hero .slide').count()) >= 4, 'apertura: almeno 4 immagini nella presentazione');
+  ok(await p.locator('.hero .slide.is-active img').evaluate((i) => i.complete && i.naturalWidth > 0), 'apertura: prima immagine caricata');
+  await p.waitForTimeout(9000);
+  ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) !== '0', 'apertura: avanza da sola dopo il tempo previsto');
+  await p.locator('.hero__pause').click();
+  const before = await p.locator('.hero__dot.is-active').getAttribute('data-i');
+  await p.waitForTimeout(7500);
+  ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === before, 'apertura: il pulsante pausa ferma la presentazione');
+  await p.locator('.hero__dot[data-i="3"]').click(); await p.waitForTimeout(1400);
+  ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === '3', 'apertura: i pallini portano all\'immagine scelta');
+  await go(p, 'prodotto-memory-air-3d', 700);
+  ok((await p.locator('.gallery__main img').count()) === 1 && (await p.locator('.thumb').count()) === 3, 'Memory Air 3D: foto 3/4, sezione e tessuto in galleria');
+  await go(p, 'prodotto-essential-foam', 500);
+  ok((await p.locator('.thumb--ph').count()) === 3, 'Essential Foam: segnaposto per le foto mancanti');
+  // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
+  await p.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
+    db.seed_version = 'seed-2026-11-12';
+    db.media = db.media.filter((m) => !m.src.includes('img/foto/'));
+    db.products.find((x) => x.slug === 'rete-flex').short = 'Testo modificato da admin';
+    localStorage.setItem('vs-preview-db-v1', JSON.stringify(db));
+  });
+  await p.reload(); await p.waitForTimeout(600);
+  await go(p, 'prodotto-rete-flex', 600);
+  ok((await p.locator('.buy p').first().innerText()).includes('Testo modificato da admin') && (await p.locator('.gallery__main img').count()) === 1, 'aggiornamento seed: foto nuove aggiunte, modifiche admin conservate');
+  await ctx.close();
+}
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+  await go(p, '', 600);
+  await p.waitForTimeout(8000);
+  ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === '0' && (await p.locator('.hero__pause').getAttribute('aria-pressed')) === 'true', 'movimento ridotto: presentazione ferma, cambio solo manuale');
+  await ctx.close();
+}
+
 // ---------- pagina dentro un frame isolato (come il visualizzatore degli artifact)
 {
   const { ctx, p } = await newPage({ viewport: { width: 1280, height: 800 } });
