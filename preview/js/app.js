@@ -66,7 +66,8 @@ function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls
 }
 window.__fb = FALLBACK.materasso;
 /** Le foto con sfondo pieno riempiono il riquadro; i render scontornati restano "contenuti". */
-const fitCls = (m) => (m.fit === 'cover' || !m.illustrative ? 'is-cover' : '');
+// "fit" dichiarato sulla foto prevale: le foto su fondo bianco restano intere e centrate
+const fitCls = (m) => ((m.fit ? m.fit === 'cover' : !m.illustrative) ? 'is-cover' : '');
 function coverHtml(idx, p, opts = {}) {
   const m = coverFor(idx, p);
   return (m && imgTag(m, { ...opts, cls: fitCls(m) })) || productIllustration(p, idx.kind(p));
@@ -261,6 +262,8 @@ async function dispatch(cur) {
   return viewNotFound();
 }
 async function route() {
+  // dopo la prima pagina l'entrata è finita: niente più ritardi sulle animazioni
+  if (state.lastRoute !== undefined) document.documentElement.classList.remove('vs-intro');
   const cur = current();
   if (cur.legacy !== undefined) {
     // vecchio indirizzo (#materassi, #prodotto-xxx ...): si passa a quello nuovo
@@ -1689,6 +1692,12 @@ window.addEventListener('vs:rerender', route);
 // Avvio: si disegna SUBITO. Le foto caricate dall'admin (IndexedDB) arrivano dopo,
 // con un tempo massimo: in alcuni frame isolati IndexedDB non risponde mai.
 applySettings(store.db.settings);
+// un tocco o un tasto saltano l'entrata
+if (document.documentElement.classList.contains('vs-intro')) {
+  const skip = () => document.documentElement.classList.add('vs-intro-skip');
+  $('.vs-curtain')?.addEventListener('click', skip, { once: true });
+  window.addEventListener('keydown', skip, { once: true });
+}
 route();
 (async () => {
   const hasLocalPhotos = store.db.media.some((m) => m.src.startsWith('idb:'));

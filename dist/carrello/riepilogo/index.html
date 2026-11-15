@@ -14,10 +14,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/app.css?v=d1d6016593">
-  <link rel="stylesheet" href="css/home.css?v=944ebc0aa6">
+  <link rel="stylesheet" href="css/home.css?v=c5dff93b35">
   <link rel="stylesheet" href="css/pages.css?v=7d62656e89">
+  <link rel="stylesheet" href="css/motion.css?v=04ddcd7be6">
   <link rel="stylesheet" href="css/admin.css?v=4839a970a9">
   <script src="js/config.js?v=7202a24d3b"></script>
+  <script>
+    // Entrata animata: una volta per visita (se il browser non conserva la sessione, a ogni apertura).
+    (function () {
+      var d = document.documentElement, seen = false;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+      try { seen = sessionStorage.getItem('vs-intro') === '1'; sessionStorage.setItem('vs-intro', '1'); } catch (e) {}
+      if (!seen) d.classList.add('vs-intro');
+    })();
+  </script>
   <script>
     // Se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
     (function () {
@@ -39,6 +49,21 @@
   <script type="application/ld+json" id="ld">{}</script>
 </head>
 <body class="on-hero">
+  <div class="vs-curtain" aria-hidden="true">
+    <div class="vs-curtain__panel vs-curtain__panel--top"></div>
+    <div class="vs-curtain__panel vs-curtain__panel--bottom"></div>
+    <i class="vs-curtain__zip"></i>
+    <div class="vs-curtain__mark">
+      <svg viewBox="0 0 400 124" focusable="false">
+        <defs><mask id="vs-sew" maskUnits="userSpaceOnUse" x="-20" y="0" width="440" height="140"><path class="reveal" pathLength="1" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"/></mask></defs>
+        <g mask="url(#vs-sew)"><path class="seam-shadow" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"/><path class="seam" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"/></g>
+        <circle class="needle" r="4.5"/>
+      </svg>
+      <span class="vs-curtain__name"><span>Vesuvio Sleep</span></span>
+      <span class="vs-curtain__tag">Materassi di fabbrica a Casoria, dal 1986</span>
+    </div>
+  </div>
+  <div class="seam-progress" aria-hidden="true"><i></i></div>
   <a class="skip" href="/carrello/riepilogo/#app">Vai al contenuto</a>
   <div class="topbar" id="topbar"><div class="wrap"><div class="ticker" aria-hidden="true"><div class="ticker__track"><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span></div></div></div></div>
   <header class="header">
@@ -108,6 +133,6 @@
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="js/bundle.js?v=a296a1e1d4" defer></script>
+  <script src="js/bundle.js?v=76d5f19f66" defer></script>
 </body>
 </html>

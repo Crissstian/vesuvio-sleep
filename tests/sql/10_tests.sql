@@ -12,7 +12,7 @@ grant execute on function pg_temp.expect_error(text,text), pg_temp.check(boolean
 -- dati di prova: un admin e un utente normale
 insert into auth.users values ('00000000-0000-0000-0000-00000000a001'), ('00000000-0000-0000-0000-00000000b002');
 insert into public.admins values ('00000000-0000-0000-0000-00000000a001');
-insert into storage.objects (bucket_id, name) values ('product-media', 'seed/prodotti/vesuvio-pocket-2600-elite/hero-1536.webp'), ('product-media', 'seed/pocket-2400-cutaway-1200.webp'), ('product-media', 'bozze/foto-non-pubblicata.webp');
+insert into storage.objects (bucket_id, name) values ('product-media', 'seed/prodotti/vesuvio-pocket-2600-elite/hero-1200.webp'), ('product-media', 'seed/pocket-2400-cutaway-1200.webp'), ('product-media', 'bozze/foto-non-pubblicata.webp');
 insert into public.media (product_id, slot, storage_path, alt, published)
   select id, 'extra', 'bozze/foto-non-pubblicata.webp', '', false from public.products where slug = 'memory-duo';
 

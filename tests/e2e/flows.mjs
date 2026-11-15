@@ -8,7 +8,10 @@ const ok = (c, label, extra = '') => { if (c) { pass++; console.log('OK  ', labe
 const b = await chromium.launch();
 const errors = [];
 async function newPage(opts = {}) {
-  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, ...opts });
+  const { intro, ...ctxOpts } = opts;
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, ...ctxOpts });
+  // l'entrata animata ha un suo test: qui si parte con la pagina già aperta
+  if (!opts.intro) await ctx.addInitScript(() => { try { sessionStorage.setItem('vs-intro', '1'); } catch {} });
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errors.push(e.message));
   p.on('console', (m) => m.type() === 'error' && !/ERR_TUNNEL|Failed to load resource/.test(m.text()) && errors.push(m.text()));
@@ -328,6 +331,51 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await answer(['single', 'fianco', '60-85', 'accogliente', 'spalle', 'spesso', 'memory', 'true']);
   ok(!/Memory Air 3D/.test(await p.locator('#quiz').innerText()) && (await p.locator('.result').count()) === 1, 'Sleep Match: mai un prodotto sospeso (Memory Air 3D) tra i risultati');
   ok(!(await p.evaluate(() => Object.keys(localStorage).some((k) => /sleep|match|sm/i.test(k)))), 'Sleep Match: risposte non salvate');
+  await ctx.close();
+}
+
+// ---------- entrata animata
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 800 }, intro: true });
+  await p.goto(BASE + '#/contatti/'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.documentElement.classList.contains('vs-intro') && getComputedStyle(document.querySelector('.vs-curtain')).display === 'block'), 'entrata: sipario visibile all\'arrivo, su qualsiasi pagina');
+  await p.waitForTimeout(2000);
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.vs-curtain')).visibility === 'hidden'), 'entrata: dopo circa 1,8 secondi il sipario si è aperto');
+  await p.locator('.nav a', { hasText: 'Materassi' }).click(); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => !document.documentElement.classList.contains('vs-intro')), 'navigando nel sito l\'entrata non si ripete');
+  await p.goto(BASE + '#/'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => !document.documentElement.classList.contains('vs-intro')), 'una sola entrata per visita');
+  await ctx.close();
+  const s2 = await newPage({ viewport: { width: 1280, height: 800 }, intro: true });
+  await s2.p.goto(BASE); await s2.p.waitForTimeout(250);
+  await s2.p.mouse.click(640, 400); await s2.p.waitForTimeout(450);
+  ok(await s2.p.evaluate(() => getComputedStyle(document.querySelector('.vs-curtain')).visibility === 'hidden'), 'entrata: un clic la salta');
+  await s2.ctx.close();
+  const s3 = await newPage({ viewport: { width: 1280, height: 800 }, intro: true, reducedMotion: 'reduce' });
+  await s3.p.goto(BASE); await s3.p.waitForTimeout(200);
+  ok(await s3.p.evaluate(() => getComputedStyle(document.querySelector('.vs-curtain')).display === 'none'), 'con "riduci movimento" nessun sipario');
+  await s3.ctx.close();
+}
+{
+  // foto prodotto: sfondo trasparente e soggetto al centro
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });
+  await p.goto(BASE + '#/materassi/'); await p.waitForTimeout(900);
+  const res = await p.evaluate(async () => {
+    const out = [];
+    for (const img of document.querySelectorAll('.card__media img')) {
+      await img.decode().catch(() => {});
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      let x0 = c.width, x1 = 0, y0 = c.height, y1 = 0;
+      for (let y = 0; y < c.height; y += 2) for (let x = 0; x < c.width; x += 2) if (d[(y * c.width + x) * 4 + 3] > 40) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+      out.push({ corner: d[3], cx: (x0 + x1) / 2 / c.width, cy: (y0 + y1) / 2 / c.height, src: img.getAttribute('src') });
+    }
+    return out;
+  });
+  ok(res.length === 3 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
+  ok(res.every((r) => Math.abs(r.cx - 0.5) < 0.04 && Math.abs(r.cy - 0.5) < 0.06), 'foto prodotto: materasso al centro della foto', JSON.stringify(res.map((r) => [r.cx.toFixed(2), r.cy.toFixed(2)])));
   await ctx.close();
 }
 

@@ -2595,8 +2595,9 @@ body.on-hero:not(.is-scrolled) .menu-btn {
 }
 
 /* foto prodotto su fondo bianco: il bianco si fonde con il riquadro */
+/* le foto prodotto hanno lo sfondo già trasparente (scripts/build_product_images.py) */
 img.blend {
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
 }
 .card__media img.blend {
   padding: 4%;

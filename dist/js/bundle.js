@@ -1369,7 +1369,7 @@ __exp.VIEW_SEO = VIEW_SEO;
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-15b",
+ "version": "seed-2026-11-15e",
  "catalog_version": "catalogo-2026-11-15",
  "authoritative": true,
  "categories": [
@@ -4339,7 +4339,7 @@ const SEED = {
    "src": "img/prodotti/vesuvio-essential-foam/hero-1200.webp",
    "srcset": "img/prodotti/vesuvio-essential-foam/hero-720.webp 720w, img/prodotti/vesuvio-essential-foam/hero-1200.webp 1200w",
    "width": 1200,
-   "height": 1200,
+   "height": 900,
    "alt": "Vesuvio Essential Foam, materasso con rivestimento bianco trapuntato",
    "caption": "",
    "illustrative": false,
@@ -4358,7 +4358,7 @@ const SEED = {
    "src": "img/prodotti/vesuvio-essential-foam/exploded-1200.webp",
    "srcset": "img/prodotti/vesuvio-essential-foam/exploded-720.webp 720w, img/prodotti/vesuvio-essential-foam/exploded-1200.webp 1200w",
    "width": 1200,
-   "height": 1200,
+   "height": 900,
    "alt": "Vista esplosa del Vesuvio Essential Foam: rivestimento e anima in poliuretano espanso",
    "caption": "",
    "illustrative": true,
@@ -4396,7 +4396,7 @@ const SEED = {
    "src": "img/prodotti/vesuvio-memory-duo/hero-1200.webp",
    "srcset": "img/prodotti/vesuvio-memory-duo/hero-720.webp 720w, img/prodotti/vesuvio-memory-duo/hero-1200.webp 1200w",
    "width": 1200,
-   "height": 1200,
+   "height": 900,
    "alt": "Vesuvio Memory Duo con piano trapuntato bianco e fascia laterale grigio scuro",
    "caption": "",
    "illustrative": false,
@@ -4415,7 +4415,7 @@ const SEED = {
    "src": "img/prodotti/vesuvio-memory-duo/exploded-1200.webp",
    "srcset": "img/prodotti/vesuvio-memory-duo/exploded-720.webp 720w, img/prodotti/vesuvio-memory-duo/exploded-1200.webp 1200w",
    "width": 1200,
-   "height": 1200,
+   "height": 900,
    "alt": "Vista esplosa del Vesuvio Memory Duo: rivestimento, strato in Memory Foam e base in poliuretano",
    "caption": "",
    "illustrative": true,
@@ -4450,10 +4450,10 @@ const SEED = {
    "id": "5afbdd62-6147-5395-9b0e-9ecf6c6cc9f5",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slot": "hero",
-   "src": "img/prodotti/vesuvio-pocket-2600-elite/hero-1536.webp",
-   "srcset": "img/prodotti/vesuvio-pocket-2600-elite/hero-900.webp 900w, img/prodotti/vesuvio-pocket-2600-elite/hero-1536.webp 1536w",
-   "width": 1536,
-   "height": 1024,
+   "src": "img/prodotti/vesuvio-pocket-2600-elite/hero-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-2600-elite/hero-720.webp 720w, img/prodotti/vesuvio-pocket-2600-elite/hero-1200.webp 1200w",
+   "width": 1200,
+   "height": 900,
    "alt": "Vesuvio Pocket 2600 Elite con piano trapuntato e fascia laterale marrone chiaro",
    "caption": "",
    "illustrative": false,
@@ -4472,7 +4472,7 @@ const SEED = {
    "src": "img/prodotti/vesuvio-pocket-2600-elite/exploded-1200.webp",
    "srcset": "img/prodotti/vesuvio-pocket-2600-elite/exploded-720.webp 720w, img/prodotti/vesuvio-pocket-2600-elite/exploded-1200.webp 1200w",
    "width": 1200,
-   "height": 1200,
+   "height": 900,
    "alt": "Vista esplosa del Vesuvio Pocket 2600 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate",
    "caption": "",
    "illustrative": true,
@@ -5952,8 +5952,45 @@ function countUp(el) {
   requestAnimationFrame(step);
 }
 
+// ------------------------------------------------------------------ scorrimento
+// Una sola funzione, una volta per fotogramma: cucitura di avanzamento in cima,
+// hero che si allontana, foto che scorrono più lente della pagina.
+let ticking = false;
+const PAR = '.page-hero__bg img, .factory-band__img img, .statement__img img';
+function scrollUpdate() {
+  ticking = false;
+  const y = window.scrollY;
+  // stato dell'header durante lo scorrimento
+  document.body.classList.toggle('is-scrolled', y > 12);
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  document.querySelector('.seam-progress')?.style.setProperty('--p', max > 0 ? Math.min(1, y / max).toFixed(4) : '0');
+  if (reduced()) return;
+  const hero = document.querySelector('#app > .hero');
+  if (hero) hero.style.setProperty('--hs', Math.min(1, Math.max(0, y / Math.max(1, hero.offsetHeight))).toFixed(3));
+  const vh = window.innerHeight;
+  document.querySelectorAll(PAR).forEach((img) => {
+    const r = img.parentElement.getBoundingClientRect();
+    if (r.bottom < -50 || r.top > vh + 50) return;
+    const c = Math.max(-1, Math.min(1, (r.top + r.height / 2 - vh / 2) / vh));
+    img.style.setProperty('--py', `${(-c * r.height * 0.05).toFixed(1)}px`);
+  });
+}
+window.addEventListener(
+  'scroll',
+  () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(scrollUpdate);
+    }
+  },
+  { passive: true },
+);
+window.addEventListener('resize', () => requestAnimationFrame(scrollUpdate));
+requestAnimationFrame(scrollUpdate);
+
 /** Da chiamare dopo ogni render di pagina. */
 function enhance(root = document) {
+  requestAnimationFrame(scrollUpdate);
   const obs = revealObserver();
   root.querySelectorAll('.rv, .kb, [data-count], [data-autoexplode]').forEach((el) => {
     if (obs) obs.observe(el);
@@ -5993,18 +6030,6 @@ document.addEventListener(
   { passive: true },
 );
 
-// stato dell'header durante lo scorrimento
-let ticking = false;
-function onScroll() {
-  if (ticking) return;
-  ticking = true;
-  requestAnimationFrame(() => {
-    document.body.classList.toggle('is-scrolled', window.scrollY > 12);
-    ticking = false;
-  });
-}
-window.addEventListener('scroll', onScroll, { passive: true });
-onScroll();
 
 function bump(el) {
   if (!el || reduced()) return;
@@ -6033,6 +6058,7 @@ function explode(el, target = 0.75, dur = 1100) {
   requestAnimationFrame(step);
 }
 
+__exp.scrollUpdate = scrollUpdate;
 __exp.enhance = enhance;
 __exp.bump = bump;
 __exp.explode = explode;
@@ -7103,7 +7129,8 @@ function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls
 }
 window.__fb = FALLBACK.materasso;
 /** Le foto con sfondo pieno riempiono il riquadro; i render scontornati restano "contenuti". */
-const fitCls = (m) => (m.fit === 'cover' || !m.illustrative ? 'is-cover' : '');
+// "fit" dichiarato sulla foto prevale: le foto su fondo bianco restano intere e centrate
+const fitCls = (m) => ((m.fit ? m.fit === 'cover' : !m.illustrative) ? 'is-cover' : '');
 function coverHtml(idx, p, opts = {}) {
   const m = coverFor(idx, p);
   return (m && imgTag(m, { ...opts, cls: fitCls(m) })) || productIllustration(p, idx.kind(p));
@@ -7298,6 +7325,8 @@ async function dispatch(cur) {
   return viewNotFound();
 }
 async function route() {
+  // dopo la prima pagina l'entrata è finita: niente più ritardi sulle animazioni
+  if (state.lastRoute !== undefined) document.documentElement.classList.remove('vs-intro');
   const cur = current();
   if (cur.legacy !== undefined) {
     // vecchio indirizzo (#materassi, #prodotto-xxx ...): si passa a quello nuovo
@@ -8726,6 +8755,12 @@ window.addEventListener('vs:rerender', route);
 // Avvio: si disegna SUBITO. Le foto caricate dall'admin (IndexedDB) arrivano dopo,
 // con un tempo massimo: in alcuni frame isolati IndexedDB non risponde mai.
 applySettings(store.db.settings);
+// un tocco o un tasto saltano l'entrata
+if (document.documentElement.classList.contains('vs-intro')) {
+  const skip = () => document.documentElement.classList.add('vs-intro-skip');
+  $('.vs-curtain')?.addEventListener('click', skip, { once: true });
+  window.addEventListener('keydown', skip, { once: true });
+}
 route();
 (async () => {
   const hasLocalPhotos = store.db.media.some((m) => m.src.startsWith('idb:'));

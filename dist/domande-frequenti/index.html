@@ -13,10 +13,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@500;600;700;800&amp;display=swap">
   <link rel="stylesheet" href="css/app.css?v=d1d6016593">
-  <link rel="stylesheet" href="css/home.css?v=944ebc0aa6">
+  <link rel="stylesheet" href="css/home.css?v=c5dff93b35">
   <link rel="stylesheet" href="css/pages.css?v=7d62656e89">
+  <link rel="stylesheet" href="css/motion.css?v=04ddcd7be6">
   <link rel="stylesheet" href="css/admin.css?v=4839a970a9">
   <script src="js/config.js?v=7202a24d3b"></script>
+  <script>
+    // Entrata animata: una volta per visita (se il browser non conserva la sessione, a ogni apertura).
+    (function () {
+      var d = document.documentElement, seen = false;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+      try { seen = sessionStorage.getItem('vs-intro') === '1'; sessionStorage.setItem('vs-intro', '1'); } catch (e) {}
+      if (!seen) d.classList.add('vs-intro');
+    })();
+  </script>
   <script>
     // Se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
     (function () {
@@ -38,6 +48,21 @@
   <script type="application/ld+json" id="ld">[{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://vesuviosleep.it/"},{"@type":"ListItem","position":2,"name":"Domande frequenti","item":"https://vesuviosleep.it/domande-frequenti/"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Come si ordina un materasso Vesuvio Sleep?","acceptedAnswer":{"@type":"Answer","text":"Scegli il modello, l'altezza e la misura e aggiungilo al carrello. Nel riepilogo scegli come pagare e invii la richiesta su WhatsApp con un clic: il messaggio contiene articoli, prezzi e un numero di riferimento. Ti rispondiamo noi per confermare disponibilità, consegna e pagamento. Aprire WhatsApp non è ancora un ordine: l'ordine è confermato solo quando te lo confermiamo per iscritto."}},{"@type":"Question","name":"Come si paga?","acceptedAnswer":{"@type":"Answer","text":"In due modi: in contrassegno, pagando alla consegna, oppure con bonifico bancario: ti mandiamo gli estremi su WhatsApp e, dopo il bonifico, ricevi poco dopo la bolla di spedizione. Sul sito non si paga e non si inseriscono carte. Dettagli nella pagina Pagamenti."}},{"@type":"Question","name":"Quanto costa la spedizione?","acceptedAnswer":{"@type":"Answer","text":"Niente: la spedizione è gratuita in tutta Italia, isole comprese. Fuori Napoli consegna il corriere, con il tracciamento della spedizione. Tutti i dettagli in Spedizioni e consegna."}},{"@type":"Question","name":"Quanto tempo ci vuole?","acceptedAnswer":{"@type":"Answer","text":"I materassi sono prodotti su ordinazione nella nostra fabbrica di Casoria: servono circa 2 giorni di lavorazione prima della spedizione. I tempi del corriere te li indichiamo con la conferma dell'ordine."}},{"@type":"Question","name":"Consegnate a Napoli?","acceptedAnswer":{"@type":"Answer","text":"Sì, a Napoli consegniamo con il nostro furgone: consegna al piano gratuita, ritiro del vecchio materasso e montaggio delle reti. Vedi Materassi a Napoli."}},{"@type":"Question","name":"Posso provare i materassi prima di comprarli?","acceptedAnswer":{"@type":"Answer","text":"Sì. Fabbrica, esposizione e showroom sono nello stesso posto, in Via Raffaele Salierno 38 a Casoria: lunedì–venerdì 9:00–18:00, sabato 10:00–14:00. Come arrivare."}},{"@type":"Question","name":"Fate materassi su misura?","acceptedAnswer":{"@type":"Answer","text":"Sì, fuori misura e altezze personalizzate. Indica prodotto e misure nella pagina Materassi su misura: ti mandiamo il preventivo su WhatsApp, senza pagamenti anticipati."}},{"@type":"Question","name":"Quali misure sono disponibili?","acceptedAnswer":{"@type":"Answer","text":"Tredici misure standard, dal singolo 80×190 al King Size 180×200, passando per piazza e mezza, francese e matrimoniale. La guida alle misure le confronta in scala."}},{"@type":"Question","name":"Il rivestimento è sfoderabile?","acceptedAnswer":{"@type":"Answer","text":"Dipende dal modello: Memory Duo, Pocket 2600 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Essential Foam no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento."}},{"@type":"Question","name":"Posso restituire il materasso?","acceptedAnswer":{"@type":"Answer","text":"Per le misure standard hai 14 giorni dalla consegna per recedere, senza dover dare una motivazione; le spese di restituzione sono a tuo carico. Il recesso non vale per i prodotti fatti su misura, salvo difetti. Come fare: Resi e recesso."}},{"@type":"Question","name":"Che garanzia hanno i prodotti?","acceptedAnswer":{"@type":"Answer","text":"Tutti i prodotti hanno la garanzia legale di conformità di 2 anni dalla consegna, prevista dal Codice del Consumo. Come funziona: Garanzia."}},{"@type":"Question","name":"Fornite hotel e B&B?","acceptedAnswer":{"@type":"Answer","text":"Sì, anche in grandi quantità e fuori misura, con prezzi su preventivo. Vedi Hotel e B&B."}},{"@type":"Question","name":"Come vi contatto?","acceptedAnswer":{"@type":"Answer","text":"Su WhatsApp e al telefono al 366 121 8346, per email a fdimaterassi@gmail.com, oppure in showroom a Casoria. Tutti i recapiti in Contatti."}}]}]</script>
 <link rel="canonical" href="https://vesuviosleep.it/domande-frequenti/"><meta property="og:type" content="website"><meta property="og:site_name" content="Vesuvio Sleep"><meta property="og:locale" content="it_IT"><meta property="og:title" content="Domande frequenti: ordini, pagamenti, consegna e resi"><meta property="og:description" content="Come si ordina, come si paga (contrassegno o bonifico), spedizione gratuita, consegna a Napoli, misure, resi e garanzia: le risposte di Vesuvio Sleep."><meta property="og:url" content="https://vesuviosleep.it/domande-frequenti/"><meta property="og:image" content="https://vesuviosleep.it/img/social/vesuvio-sleep-condividi.jpg"><meta name="twitter:card" content="summary_large_image"></head>
 <body class="on-dark">
+  <div class="vs-curtain" aria-hidden="true">
+    <div class="vs-curtain__panel vs-curtain__panel--top"></div>
+    <div class="vs-curtain__panel vs-curtain__panel--bottom"></div>
+    <i class="vs-curtain__zip"></i>
+    <div class="vs-curtain__mark">
+      <svg viewBox="0 0 400 124" focusable="false">
+        <defs><mask id="vs-sew" maskUnits="userSpaceOnUse" x="-20" y="0" width="440" height="140"><path class="reveal" pathLength="1" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path></mask></defs>
+        <g mask="url(#vs-sew)"><path class="seam-shadow" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path><path class="seam" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path></g>
+        <circle class="needle" r="4.5"></circle>
+      </svg>
+      <span class="vs-curtain__name"><span>Vesuvio Sleep</span></span>
+      <span class="vs-curtain__tag">Materassi di fabbrica a Casoria, dal 1986</span>
+    </div>
+  </div>
+  <div class="seam-progress" aria-hidden="true" style="--p: 0.0000;"><i></i></div>
   <a class="skip" href="/domande-frequenti/#app">Vai al contenuto</a>
   <div class="topbar" id="topbar"><div class="wrap">
       <div class="ticker" aria-hidden="true"><div class="ticker__track"><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>WhatsApp e telefono 366 121 8346</span><span>Produciamo materassi a Casoria dal 1986</span><span>Paghi alla consegna o con bonifico</span><span>A Napoli consegna al piano gratuita</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>WhatsApp e telefono 366 121 8346</span><span>Produciamo materassi a Casoria dal 1986</span><span>Paghi alla consegna o con bonifico</span><span>A Napoli consegna al piano gratuita</span><span>Fuori misura e altezze personalizzate su richiesta</span></div></div><span class="sr-only">Spedizione gratuita in tutta Italia, isole comprese</span>
@@ -98,7 +123,7 @@
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="js/bundle.js?v=a296a1e1d4" defer=""></script>
+  <script src="js/bundle.js?v=76d5f19f66" defer=""></script>
 
 
 <a id="wa-float" class="wa-float" target="_blank" rel="noopener" aria-label="Scrivici su WhatsApp" href="https://wa.me/393661218346?text=Ciao%20Vesuvio%20Sleep%2C%20vorrei%20qualche%20informazione."><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.4-4.3a8.5 8.5 0 1 1 15.6-4.5z"></path><path d="M9 8.6c.2 2.9 2.6 5.4 5.6 5.8l1.1-1.2-1.7-.9-.8.8c-1.1-.4-2-1.3-2.4-2.4l.8-.8-.9-1.7z"></path></svg><span>Scrivici</span></a></body></html>

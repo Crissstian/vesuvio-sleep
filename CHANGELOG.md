@@ -1,5 +1,11 @@
 # Changelog
 
+## Entrata animata, foto centrate, più movimento (15/11/2026, notte)
+- **Entrata**: all'arrivo sul sito, su qualsiasi pagina, un sipario blu: la cucitura disegna il profilo del Vesuvio, compare il nome, una cucitura corre lungo il taglio e il sipario si apre in due. Poi la foto d'apertura si assesta e il titolo sale. Dura meno di 2 secondi, una volta per visita; un clic o un tasto la saltano; con "riduci movimento" non c'è. Sostituisce le vecchie bande dell'apertura, che sembravano un errore di caricamento.
+- **Foto prodotto centrate**: le foto su fondo bianco di Essential Foam, Memory Duo e Pocket 2600 Elite sono ricentrate sul materasso, su una tela 4:3 con margini uguali, e hanno lo sfondo trasparente: niente più riquadri bianchi sul fondo azzurro (comparivano durante le animazioni). Corretto anche un errore che ritagliava la foto principale nelle card invece di mostrarla intera.
+- **Movimento**: cucitura di avanzamento in cima alla pagina, testo della hero che si allontana scorrendo, foto delle testate e della fabbrica in parallasse, cucitura che si disegna sotto i titoli di sezione, foto delle card che si assestano quando entrano, cucitura sul bordo delle card al passaggio, titoli delle pagine interne che salgono, galleria e scheda che entrano.
+- Test: 115 end-to-end sull'anteprima (entrata, salto, una volta per visita, foto trasparenti e centrate), 22 sul sito pubblico.
+
 ## Contatti, pagine legali e sito SEO (15/11/2026, sera)
 - **Contatti reali**: WhatsApp e telefono +39 366 121 8346, email fdimaterassi@gmail.com. Il checkout apre WhatsApp sul numero aziendale; footer, pagina Contatti, pulsante WhatsApp fisso e dati strutturati usano gli stessi recapiti, modificabili da Admin › Impostazioni.
 - **Pagamenti**: contrassegno alla consegna o bonifico (con bolla di spedizione poco dopo). Il cliente sceglie nel riepilogo e la scelta finisce nel messaggio WhatsApp. Indicati nel carrello, nella scheda e nella pagina Pagamenti.

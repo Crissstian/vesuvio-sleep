@@ -13,10 +13,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@500;600;700;800&amp;display=swap">
   <link rel="stylesheet" href="css/app.css?v=d1d6016593">
-  <link rel="stylesheet" href="css/home.css?v=944ebc0aa6">
+  <link rel="stylesheet" href="css/home.css?v=c5dff93b35">
   <link rel="stylesheet" href="css/pages.css?v=7d62656e89">
+  <link rel="stylesheet" href="css/motion.css?v=04ddcd7be6">
   <link rel="stylesheet" href="css/admin.css?v=4839a970a9">
   <script src="js/config.js?v=7202a24d3b"></script>
+  <script>
+    // Entrata animata: una volta per visita (se il browser non conserva la sessione, a ogni apertura).
+    (function () {
+      var d = document.documentElement, seen = false;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+      try { seen = sessionStorage.getItem('vs-intro') === '1'; sessionStorage.setItem('vs-intro', '1'); } catch (e) {}
+      if (!seen) d.classList.add('vs-intro');
+    })();
+  </script>
   <script>
     // Se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
     (function () {
@@ -38,6 +48,21 @@
   <script type="application/ld+json" id="ld">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://vesuviosleep.it/"},{"@type":"ListItem","position":2,"name":"Chi siamo","item":"https://vesuviosleep.it/chi-siamo/"}]}</script>
 <link rel="canonical" href="https://vesuviosleep.it/chi-siamo/"><meta property="og:type" content="website"><meta property="og:site_name" content="Vesuvio Sleep"><meta property="og:locale" content="it_IT"><meta property="og:title" content="Chi siamo: fabbrica di materassi a Casoria dal 1986"><meta property="og:description" content="Vesuvio Sleep produce materassi a Casoria, alle porte di Napoli, dal 1986 e li vende direttamente, senza intermediari: fabbrica, esposizione e showroom nello stesso posto."><meta property="og:url" content="https://vesuviosleep.it/chi-siamo/"><meta property="og:image" content="https://vesuviosleep.it/img/foto/fabbrica-panoramica-1600.webp"><meta name="twitter:card" content="summary_large_image"></head>
 <body class="on-dark">
+  <div class="vs-curtain" aria-hidden="true">
+    <div class="vs-curtain__panel vs-curtain__panel--top"></div>
+    <div class="vs-curtain__panel vs-curtain__panel--bottom"></div>
+    <i class="vs-curtain__zip"></i>
+    <div class="vs-curtain__mark">
+      <svg viewBox="0 0 400 124" focusable="false">
+        <defs><mask id="vs-sew" maskUnits="userSpaceOnUse" x="-20" y="0" width="440" height="140"><path class="reveal" pathLength="1" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path></mask></defs>
+        <g mask="url(#vs-sew)"><path class="seam-shadow" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path><path class="seam" d="M14 112 C 70 108, 112 92, 150 68 C 166 57, 177 49, 189 49 C 199 49, 205 56, 213 61 C 221 43, 233 30, 249 30 C 265 30, 277 47, 291 64 C 322 96, 362 108, 386 112"></path></g>
+        <circle class="needle" r="4.5"></circle>
+      </svg>
+      <span class="vs-curtain__name"><span>Vesuvio Sleep</span></span>
+      <span class="vs-curtain__tag">Materassi di fabbrica a Casoria, dal 1986</span>
+    </div>
+  </div>
+  <div class="seam-progress" aria-hidden="true" style="--p: 0.0000;"><i></i></div>
   <a class="skip" href="/chi-siamo/#app">Vai al contenuto</a>
   <div class="topbar" id="topbar"><div class="wrap">
       <div class="ticker" aria-hidden="true"><div class="ticker__track"><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>WhatsApp e telefono 366 121 8346</span><span>Produciamo materassi a Casoria dal 1986</span><span>Paghi alla consegna o con bonifico</span><span>A Napoli consegna al piano gratuita</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>WhatsApp e telefono 366 121 8346</span><span>Produciamo materassi a Casoria dal 1986</span><span>Paghi alla consegna o con bonifico</span><span>A Napoli consegna al piano gratuita</span><span>Fuori misura e altezze personalizzate su richiesta</span></div></div><span class="sr-only">Spedizione gratuita in tutta Italia, isole comprese</span>
@@ -102,7 +127,7 @@
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="js/bundle.js?v=a296a1e1d4" defer=""></script>
+  <script src="js/bundle.js?v=76d5f19f66" defer=""></script>
 
 
 <a id="wa-float" class="wa-float" target="_blank" rel="noopener" aria-label="Scrivici su WhatsApp" href="https://wa.me/393661218346?text=Ciao%20Vesuvio%20Sleep%2C%20vorrei%20qualche%20informazione."><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.4-4.3a8.5 8.5 0 1 1 15.6-4.5z"></path><path d="M9 8.6c.2 2.9 2.6 5.4 5.6 5.8l1.1-1.2-1.7-.9-.8.8c-1.1-.4-2-1.3-2.4-2.4l.8-.8-.9-1.7z"></path></svg><span>Scrivici</span></a></body></html>

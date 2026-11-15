@@ -44,8 +44,45 @@ function countUp(el) {
   requestAnimationFrame(step);
 }
 
+// ------------------------------------------------------------------ scorrimento
+// Una sola funzione, una volta per fotogramma: cucitura di avanzamento in cima,
+// hero che si allontana, foto che scorrono più lente della pagina.
+let ticking = false;
+const PAR = '.page-hero__bg img, .factory-band__img img, .statement__img img';
+export function scrollUpdate() {
+  ticking = false;
+  const y = window.scrollY;
+  // stato dell'header durante lo scorrimento
+  document.body.classList.toggle('is-scrolled', y > 12);
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  document.querySelector('.seam-progress')?.style.setProperty('--p', max > 0 ? Math.min(1, y / max).toFixed(4) : '0');
+  if (reduced()) return;
+  const hero = document.querySelector('#app > .hero');
+  if (hero) hero.style.setProperty('--hs', Math.min(1, Math.max(0, y / Math.max(1, hero.offsetHeight))).toFixed(3));
+  const vh = window.innerHeight;
+  document.querySelectorAll(PAR).forEach((img) => {
+    const r = img.parentElement.getBoundingClientRect();
+    if (r.bottom < -50 || r.top > vh + 50) return;
+    const c = Math.max(-1, Math.min(1, (r.top + r.height / 2 - vh / 2) / vh));
+    img.style.setProperty('--py', `${(-c * r.height * 0.05).toFixed(1)}px`);
+  });
+}
+window.addEventListener(
+  'scroll',
+  () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(scrollUpdate);
+    }
+  },
+  { passive: true },
+);
+window.addEventListener('resize', () => requestAnimationFrame(scrollUpdate));
+requestAnimationFrame(scrollUpdate);
+
 /** Da chiamare dopo ogni render di pagina. */
 export function enhance(root = document) {
+  requestAnimationFrame(scrollUpdate);
   const obs = revealObserver();
   root.querySelectorAll('.rv, .kb, [data-count], [data-autoexplode]').forEach((el) => {
     if (obs) obs.observe(el);
@@ -85,18 +122,6 @@ document.addEventListener(
   { passive: true },
 );
 
-// stato dell'header durante lo scorrimento
-let ticking = false;
-function onScroll() {
-  if (ticking) return;
-  ticking = true;
-  requestAnimationFrame(() => {
-    document.body.classList.toggle('is-scrolled', window.scrollY > 12);
-    ticking = false;
-  });
-}
-window.addEventListener('scroll', onScroll, { passive: true });
-onScroll();
 
 export function bump(el) {
   if (!el || reduced()) return;

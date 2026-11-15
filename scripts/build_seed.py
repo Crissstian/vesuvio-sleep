@@ -317,7 +317,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-15b', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-15e', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 with open(os.path.join(ROOT, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
     f.write('// Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.\n')

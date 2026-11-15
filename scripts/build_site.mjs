@@ -39,7 +39,7 @@ for (const f of fs.readdirSync(path.join(OUT, 'img'))) if (f.startsWith('pocket-
 
 // versione nei link di CSS e JS: si possono mettere in cache a lungo
 const hash = (f) => crypto.createHash('sha256').update(fs.readFileSync(path.join(OUT, f))).digest('hex').slice(0, 10);
-const VERSIONED = ['css/app.css', 'css/home.css', 'css/pages.css', 'css/admin.css', 'js/config.js', 'js/bundle.js'];
+const VERSIONED = ['css/app.css', 'css/home.css', 'css/pages.css', 'css/motion.css', 'css/admin.css', 'js/config.js', 'js/bundle.js'];
 const ver = Object.fromEntries(VERSIONED.map((f) => [f, hash(f)]));
 
 let template = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8');
@@ -102,7 +102,7 @@ async function render(p) {
 }
 function finish(html, p) {
   // senza JavaScript il contenuto deve restare visibile: la classe "js" la rimette lo script
-  html = html.replace('<html lang="it" class="js">', '<html lang="it">');
+  html = html.replace(/<html lang="it" class="[^"]*">/, '<html lang="it">');
   // il link "Vai al contenuto" resta sulla pagina anche senza JavaScript (c'è <base href="/">)
   html = html.replace('href="#app"', `href="${p}#app"`);
   // fuori dalla home niente preload dell'immagine d'apertura
