@@ -36,6 +36,7 @@ function writeLS(key, val) {
 function freshDb() {
   return { seed_version: SEED.version, ...clone(SEED), requests: [], audit: [], price_history: [], site_media: [] };
 }
+const rid0 = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2));
 
 let db = readLS(DB_KEY);
 if (!db?.seed_version) {
@@ -43,18 +44,32 @@ if (!db?.seed_version) {
   writeLS(DB_KEY, db);
 }
 db.site_media ??= [];
-// Aggiornamento del seed senza perdere le modifiche fatte dall'admin:
-// si aggiungono solo gli elementi nuovi (per id), quelli esistenti non si toccano.
+db.redirects ??= clone(SEED.redirects ?? []);
+// Aggiornamento del seed. Con un catalogo UFFICIALE (SEED.authoritative) gli elementi
+// del seed vengono aggiornati per ID (upsert: prezzi, varianti, stati, foto) senza
+// duplicarli; restano intatti prodotti e foto creati dall'admin, richieste, impostazioni.
+// Con un seed normale si aggiungono solo gli elementi nuovi.
 if (db.seed_version !== SEED.version) {
   for (const key of ['categories', 'products', 'variants', 'media']) {
-    const have = new Set(db[key].map((x) => x.id));
-    for (const item of SEED[key]) if (!have.has(item.id)) db[key].push(clone(item));
+    const byId = new Map(db[key].map((x, i) => [x.id, i]));
+    for (const item of SEED[key]) {
+      if (!byId.has(item.id)) db[key].push(clone(item));
+      else if (SEED.authoritative) {
+        const cur = db[key][byId.get(item.id)];
+        // una foto sostituita dall'admin (IndexedDB) non viene sovrascritta
+        if (key === 'media' && cur.src?.startsWith('idb:')) continue;
+        db[key][byId.get(item.id)] = clone(item);
+      }
+    }
   }
-  // una sola copertina per prodotto: se il seed nuovo ne porta una, prevale sulla vecchia del seed
-  for (const m of SEED.media.filter((x) => x.is_cover)) {
-    const others = db.media.filter((x) => x.product_id === m.product_id && x.is_cover && x.id !== m.id && !x.src.startsWith('idb:'));
-    if (others.length) others.forEach((x) => (x.is_cover = false));
+  if (SEED.authoritative) {
+    // copertine: una per prodotto, prevale quella del catalogo ufficiale
+    for (const m of SEED.media.filter((x) => x.is_cover)) {
+      db.media.filter((x) => x.product_id === m.product_id && x.id !== m.id).forEach((x) => (x.is_cover = false));
+    }
+    db.audit?.unshift({ id: rid0(), at: nowIso(), action: 'catalogo', entity: SEED.catalog_version, detail: 'Catalogo ufficiale applicato (prezzi, varianti, stati, foto)' });
   }
+  db.redirects = clone(SEED.redirects ?? []);
   db.seed_version = SEED.version;
   writeLS(DB_KEY, db);
 }

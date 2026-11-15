@@ -85,3 +85,14 @@ export function buildSitemap(idx, baseUrl, staticPaths = ['/', '/sleep-match', '
         '</urlset>',
     ].join('\n');
 }
+/** Redirect degli slug cambiati (301 nell'app Next.js, cambio di hash nella preview). */
+export function resolveRedirect(redirects, slug) {
+    let cur = slug;
+    for (let i = 0; i < 5; i++) {
+        const r = redirects.find((x) => x.old_slug === cur);
+        if (!r)
+            break;
+        cur = r.new_slug;
+    }
+    return cur === slug ? null : cur;
+}

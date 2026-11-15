@@ -17,4 +17,7 @@ for f in "$ROOT"/supabase/migrations/*.sql; do echo "migrazione $(basename "$f")
 $P -f "$ROOT/supabase/seed.sql"
 $P -f "$ROOT/supabase/seed.sql"
 echo "seed eseguito due volte"
+$P -f "$ROOT/supabase/catalog/2026-11-15_catalogo_ufficiale.sql"
+$P -f "$ROOT/supabase/catalog/2026-11-15_catalogo_ufficiale.sql"
+echo "aggiornamento catalogo eseguito due volte"
 $P -o /dev/null -f "$ROOT/tests/sql/10_tests.sql" 2>&1 | sed 's/^psql:.*NOTICE:  //'

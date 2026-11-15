@@ -57,3 +57,22 @@ test('pagamenti: nessun metodo visibile di default, nessuna sessione creabile', 
 test('riferimento richiesta', () => {
   assert.match(makeRef('R', new Date('2026-11-12T10:00:00Z')), /^VS-R-20261112-[2-9A-Z]{4}$/);
 });
+
+test('listino 15/11/2026: 13 misure standard e redirect degli slug', async () => {
+  const core = await import('../../preview/js/core/index.js');
+  assert.equal(core.STANDARD_SIZES.length, 13);
+  assert.deepEqual([core.STANDARD_SIZES[0], core.STANDARD_SIZES[12]], ['80x190', '180x200']);
+  const r = [{ old_slug: 'pocket-2400-elite', new_slug: 'pocket-2600-elite' }];
+  assert.equal(core.resolveRedirect(r, 'pocket-2400-elite'), 'pocket-2600-elite');
+  assert.equal(core.resolveRedirect(r, 'memory-duo'), null);
+});
+
+test('seed: 130 varianti acquistabili, nessun prezzo zero o inventato', async () => {
+  const { SEED } = await import('../../preview/js/seed.js');
+  const pub = new Set(SEED.products.filter((p) => p.status === 'published').map((p) => p.id));
+  const priced = SEED.variants.filter((v) => v.price_cents !== null);
+  assert.equal(priced.length, 130);
+  assert.ok(priced.every((v) => v.price_cents > 0 && pub.has(v.product_id)));
+  assert.ok(!SEED.media.some((m) => /grafeno/i.test(m.src)));
+  assert.ok(!SEED.products.some((p) => p.status === 'published' && /2400/.test(p.name + p.slug + p.description + p.highlights.join(' '))));
+});

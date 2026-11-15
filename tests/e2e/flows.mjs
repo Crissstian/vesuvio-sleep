@@ -34,23 +34,41 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const navText = await p.locator('#drawer-links').innerText();
   ok(!/Topper|castello/i.test(navText), 'menu: categorie senza articoli acquistabili nascoste');
 
+  // catalogo ufficiale 15/11/2026: 130 varianti acquistabili, prezzi dal listino
+  const st = await p.evaluate(() => window.__vs.stats());
+  ok(st.total === 130 && st.byKind.materasso === 91 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 130 varianti acquistabili (91 materassi, 26 reti, 13 topper)', JSON.stringify(st));
+  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400/.test(s)), 'listino: prodotti senza prezzo non pubblici', st.products.join(','));
+  const prices = await p.evaluate(() => [
+    ['essential-foam', 20, '160x190', 200], ['essential-foam', 25, '160x190', 250], ['essential-foam', 30, '160x190', 270],
+    ['memory-duo', 25, '160x190', 280], ['pocket-2600-elite', 25, '160x190', 550], ['pocket-1600', 25, '160x190', 450],
+    ['memory-foam-3-strati', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
+    ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-2600-elite', 25, '180x200', 650], ['essential-foam', 20, '80x190', 90],
+  ].map(([s, h, z, e]) => [s, h, z, e, window.__vs.price(s, h, z)]));
+  const bad = prices.filter((r) => r[3] !== r[4]);
+  ok(!bad.length, 'listino: prezzi campione uguali all\'Excel', JSON.stringify(bad));
+  ok(await p.evaluate(() => [null, 30].every((h) => window.__vs.price('memory-duo', 30, '160x190') === null && window.__vs.price('pocket-2600-elite', 30, '160x190') === null)), 'listino: H30 senza prezzo non acquistabile');
+
   await go(p, 'materassi');
-  ok((await p.locator('.card').count()) === 4, 'catalogo materassi: 4 modelli acquistabili');
-  ok(!(await p.locator('#app').innerText()).match(/Pocket 1600|Bonnell/), 'catalogo: modelli PENDING non pubblicati');
+  ok((await p.locator('.card').count()) === 5, 'catalogo materassi: 5 modelli acquistabili');
+  ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400/), 'catalogo: modelli senza prezzo non pubblicati');
   await p.locator('[data-act="filter"][data-v="molle"]').click(); await p.waitForTimeout(400);
-  ok((await p.locator('.card').count()) === 1, 'filtro Molle: 1 risultato');
+  ok((await p.locator('.card').count()) === 2, 'filtro Molle: Pocket 2600 Elite e Pocket 1600');
   await p.locator('[data-act="filter"][data-v="30"]').click(); await p.waitForTimeout(400);
   ok((await p.locator('.empty').count()) === 1, 'filtri senza risultati: stato vuoto con azione');
   await p.locator('[data-act="reset-filters"]').click(); await p.waitForTimeout(400);
 
   await go(p, 'prodotto-pocket-2400-elite', 800);
-  ok(await p.locator('#h30').isDisabled(), 'Pocket: H30 disabilitata (prezzo PENDING)');
+  ok(/#prodotto-pocket-2600-elite$/.test(p.url()) && /Pocket 2600 Elite/.test(await p.locator('h1').innerText()), 'vecchio indirizzo Pocket 2400 → Pocket 2600 Elite');
+  ok((await p.locator('#h30').count()) === 0 && (await p.locator('.seg--h').count()) === 0, 'Pocket 2600: altezza senza prezzo (H30) non mostrata');
+  ok((await p.locator('input[name="s"]').count()) === 13, 'scheda: 13 misure dal listino');
+  ok(!/2400/.test(await p.locator('#app').innerText()), 'scheda Pocket: nessun riferimento a 2400');
+  ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.gallery__main img').evaluate((i) => i.src.includes('img/prodotti/vesuvio-pocket-2600-elite/hero'))), 'galleria Pocket 2600: hero, esploso e dettaglio dal manifest');
   await p.locator('label[for="s180x200"]').click(); await p.waitForTimeout(200);
-  ok((await p.locator('.sku').innerText()).includes('VS-P2400-H25-180200'), 'scheda: SKU aggiornato alla misura');
-  ok((await p.locator('.buy__price').innerText()).includes('450,00'), 'scheda: prezzo 180×200 H25 = 450 €');
+  ok((await p.locator('.sku').innerText()).includes('VS-P2600-H25-180200'), 'scheda: SKU aggiornato alla misura');
+  ok((await p.locator('.buy__price').innerText()).includes('650,00'), 'scheda: prezzo 180×200 H25 = 650 €');
   const pairText = await p.locator('#pairings').innerText();
-  ok(/Reti/.test(pairText) && /Guanciali/.test(pairText), 'abbinamenti materasso: reti e guanciali');
-  ok(!/Essential|Memory Duo|Memory Air|Topper/.test(pairText), 'abbinamenti: nessun altro materasso, nessun topper non acquistabile');
+  ok(/Reti/.test(pairText) && /Topper/.test(pairText), 'abbinamenti materasso: reti e topper della stessa misura');
+  ok(!/Essential|Memory Duo|Memory Air|Guanciali|Pocket 1600/.test(pairText), 'abbinamenti: nessun altro materasso, nessun guanciale senza prezzo');
   const pairNames = await p.locator('#pairings h4').allInnerTexts();
   ok(new Set(pairNames).size === pairNames.length, 'abbinamenti senza duplicati');
   ok((await p.locator('#pairings .meta').allInnerTexts()).filter((t) => t.includes('×')).every((t) => t.includes('180×200')), 'abbinamenti: reti solo nella misura scelta');
@@ -59,13 +77,13 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.locator('#zoom, [data-act="zoom"]').first().click(); await p.waitForTimeout(300);
   ok(await p.locator('dialog .zoom-stage img').isVisible(), 'zoom accessibile apre il dialog');
   await p.keyboard.press('Escape');
-  ok((await p.locator('.hot').count()) === 5, 'esploso con 5 punti interattivi');
-  await p.locator('.hot').nth(3).click();
-  ok((await p.locator('.layers__list button').nth(3).getAttribute('aria-pressed')) === 'true', 'esploso: tocco su un punto apre la descrizione');
 
   await go(p, 'prodotto-guanciale-memory-cervical');
-  const gp = await p.locator('#pairings').innerText();
-  ok(/Materassi/.test(gp) && !/Topper|Guanciali/.test(gp), 'abbinamenti guanciale: materassi (topper non acquistabile saltato)');
+  ok((await p.locator('.buy').count()) === 0 && (await p.locator('#add-btn').count()) === 0, 'guanciale senza prezzo: scheda non pubblica');
+  await go(p, 'prodotto-memory-air-3d');
+  ok((await p.locator('#add-btn').count()) === 0, 'Memory Air 3D senza prezzo: scheda non pubblica');
+  await go(p, 'prodotto-topper-memory-cloud-5', 500);
+  ok(/H5|5 cm/.test(await p.locator('#app').innerText()) && (await p.locator('input[name="s"]').count()) === 13, 'topper H5: 13 misure acquistabili');
   await go(p, 'prodotto-rete-flex');
   const rp = await p.locator('#pairings').innerText();
   ok(/Materassi/.test(rp) && !/Reti\n/.test(rp), 'abbinamenti rete: solo materassi');
@@ -77,22 +95,28 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/stessa misura/.test(await p.locator('#app').innerText()), 'carrello: proposta rete della stessa misura');
   await go(p, 'riepilogo', 700);
   const rv = await p.locator('#app').innerText();
-  ok(/non ancora attivo/.test(rv), 'numero WhatsApp mancante: avviso visibile');
+  ok(/Copia il riepilogo/.test(rv) && !/non ancora|a breve|anteprima/i.test(rv), 'numero WhatsApp mancante: istruzione neutra, nessun testo provvisorio');
   ok((await p.locator('a[href^="https://wa.me"]').count()) === 0, 'numero mancante: nessun link WhatsApp non funzionante');
   ok((await p.locator('[data-act="copy-summary"]').count()) === 1, 'numero mancante: pulsante Copia il riepilogo');
   const msg = await p.locator('.msg-preview').innerText();
-  ok(msg.includes('VS-P2400-H25-180200') && msg.includes('450,00') && /VS-R-\d{8}-/.test(msg), 'messaggio: SKU, prezzo e riferimento');
+  ok(msg.includes('VS-P2600-H25-180200') && msg.includes('650,00') && msg.includes('Pocket 2600 Elite') && /VS-R-\d{8}-/.test(msg), 'messaggio: SKU, prezzo e riferimento');
   await p.locator('[data-act="copy-summary"]').click(); await p.waitForTimeout(300);
   ok(true, 'copia del riepilogo eseguita (con fallback se il browser rifiuta)');
   ok((await cartCount(p)) === 1, 'il carrello non si svuota da solo');
 
-  const pub = (await p.locator('body').innerText()) + (await p.content());
+  const PROV = /illustrativ|Foto in arrivo|Anteprima concept|da configurare|provvisori|segnaposto|non in scala|a breve|appena disponibili/i;
+  for (const h of ['', 'materassi', 'reti', 'topper', 'prodotto-essential-foam', 'prodotto-pocket-1600', 'prodotto-rete-strong', 'showroom', 'guida-misure', 'sleep-match', 'carrello', 'riepilogo']) {
+    await go(p, h, 400);
+    const t = await p.locator('body').innerText();
+    if (PROV.test(t)) ok(false, `nessuna scritta provvisoria su #${h}`, PROV.exec(t)[0]);
+  }
+  ok(true, 'nessuna scritta provvisoria sulle pagine pubbliche (12 pagine)');
   ok(!/stripe|paypal|klarna|apple pay|google pay/i.test(await p.locator('body').innerText()), 'nessun metodo di pagamento visibile al cliente');
   ok(!net.some((u) => /stripe|paypal|klarna/i.test(u)), 'nessuna chiamata a provider di pagamento');
 
   for (const w of [320, 375, 430]) {
     await p.setViewportSize({ width: w, height: 760 });
-    for (const h of ['', 'materassi', 'prodotto-pocket-2400-elite', 'carrello', 'riepilogo', 'sleep-match', 'confronto', 'guida-misure', 'fuori-misura', 'showroom']) {
+    for (const h of ['', 'materassi', 'prodotto-pocket-2600-elite', 'carrello', 'riepilogo', 'sleep-match', 'confronto', 'guida-misure', 'fuori-misura', 'showroom']) {
       await go(p, h, 350);
       const o = await overflow(p);
       if (o > 0) ok(false, `nessuno scroll orizzontale a ${w}px su #${h}`, `overflow ${o}px`);
@@ -116,21 +140,30 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === before, 'apertura: il pulsante pausa ferma la presentazione');
   await p.locator('.hero__dot[data-i="3"]').click(); await p.waitForTimeout(1400);
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === '3', 'apertura: i pallini portano all\'immagine scelta');
-  await go(p, 'prodotto-memory-air-3d', 700);
-  ok((await p.locator('.gallery__main img').count()) === 1 && (await p.locator('.thumb').count()) === 3, 'Memory Air 3D: foto 3/4, sezione e tessuto in galleria');
-  await go(p, 'prodotto-essential-foam', 500);
-  ok((await p.locator('.thumb--ph').count()) === 3, 'Essential Foam: segnaposto per le foto mancanti');
+  for (const [slug, folder] of [['essential-foam', 'vesuvio-essential-foam'], ['memory-duo', 'vesuvio-memory-duo']]) {
+    await go(p, 'prodotto-' + slug, 700);
+    const srcs = await p.locator('.thumb img').evaluateAll((a) => a.map((i) => i.getAttribute('src')));
+    ok(srcs.length === 3 && ['hero', 'exploded', 'detail'].every((r, i) => srcs[i].includes(`img/prodotti/${folder}/${r}`)), `galleria ${slug}: hero, esploso, dettaglio nell'ordine del manifest`, srcs.join(','));
+    ok((await p.locator('.thumb--ph').count()) === 0, `galleria ${slug}: nessun segnaposto`);
+  }
+  await go(p, 'prodotto-pocket-1600', 500);
+  ok((await p.locator('.thumb--ph, .ph').count()) === 0, 'Pocket 1600 senza foto: nessun segnaposto visibile');
+  ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno/i.test(i.src))), 'immagine Grafeno non usata');
   // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
   await p.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
     db.seed_version = 'seed-2026-11-12';
-    db.media = db.media.filter((m) => !m.src.includes('img/foto/'));
+    db.media = db.media.filter((m) => !m.src.includes('img/foto/') && !m.src.includes('img/prodotti/'));
+    db.variants.find((v) => v.sku === 'VS-ESS-H25-160190').price_cents = 99900;
+    db.products.find((x) => x.slug === 'pocket-2600-elite').slug = 'pocket-2400-elite';
     db.products.find((x) => x.slug === 'rete-flex').short = 'Testo modificato da admin';
     localStorage.setItem('vs-preview-db-v1', JSON.stringify(db));
   });
   await p.reload(); await p.waitForTimeout(600);
   await go(p, 'prodotto-rete-flex', 600);
-  ok((await p.locator('.buy p').first().innerText()).includes('Testo modificato da admin') && (await p.locator('.gallery__main img').count()) === 1, 'aggiornamento seed: foto nuove aggiunte, modifiche admin conservate');
+  ok((await p.locator('.gallery__main img').count()) === 1, 'aggiornamento catalogo: foto nuove applicate');
+  ok(await p.evaluate(() => window.__vs.price('essential-foam', 25, '160x190') === 250), 'aggiornamento catalogo ufficiale: il prezzo vecchio salvato viene sostituito dal listino');
+  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('vs-preview-db-v1')).products.filter((x) => /pocket-2[46]00/.test(x.slug)).length === 1), 'aggiornamento catalogo: Pocket rinominato, nessun duplicato');
   await ctx.close();
 }
 {
@@ -185,7 +218,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'riepilogo', 600);
   const href = await p.locator('a[href^="https://wa.me/393000000000?text="]').getAttribute('href');
   const text = decodeURIComponent(href.split('text=')[1]);
-  ok(text.includes('VS-MD-H25-160190') && text.includes('220,00'), 'WhatsApp: link wa.me con riepilogo corretto');
+  ok(text.includes('VS-MD-H25-160190') && text.includes('280,00'), 'WhatsApp: link wa.me con riepilogo corretto (Memory Duo 160×190 = 280 €)');
   ok(!/via |indirizzo|@|telefono/i.test(text), 'WhatsApp: nessun dato personale nel link');
   const ref = /VS-R-\d{8}-[A-Z0-9]{4}/.exec(text)[0];
   await p.evaluate(() => document.querySelector('a[href^="https://wa.me"]').addEventListener('click', (e) => e.preventDefault(), { once: true }));
@@ -241,17 +274,17 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.setInputFiles('input[data-adm-file="new"]', here('./foto-piccola.jpg')); await p.waitForTimeout(800);
   ok(/troppo piccola/.test(await p.locator('#upload-state').innerText()), 'media: immagine troppo piccola rifiutata');
   await p.setInputFiles('input[data-adm-file="new"]', here('./foto-test.jpg')); await p.waitForTimeout(1500);
-  ok((await p.locator('.adm-media').count()) === 1, 'media: foto caricata');
+  ok((await p.locator('.adm-media').count()) === 4, 'media: foto caricata (accanto alle 3 del catalogo)');
   await go(p, 'prodotto-memory-duo', 500);
-  ok((await p.locator('.gallery__main img').count()) === 0, 'media: foto in bozza non visibile sul sito');
+  ok((await p.locator('.thumb').count()) === 3, 'media: foto in bozza non visibile sul sito');
   await go(p, 'admin-catalogo', 300);
   await p.locator('.adm-tr', { hasText: 'Memory Duo' }).click(); await p.waitForTimeout(400);
-  await p.locator('[data-adm="m-pub"]').click(); await p.waitForTimeout(300);
+  await p.locator('[data-adm="m-pub"]').last().click(); await p.waitForTimeout(300);
   ok(/testo alternativo/.test(await p.locator('#toast').innerText()), 'media: pubblicazione bloccata senza alt');
-  await p.fill('[data-mf="alt"]', 'Memory Duo visto di tre quarti'); await p.locator('[data-mf="alt"]').blur(); await p.waitForTimeout(400);
-  await p.locator('[data-adm="m-pub"]').click(); await p.waitForTimeout(400);
+  await p.locator('[data-mf="alt"]').last().fill('Memory Duo visto di tre quarti'); await p.locator('[data-mf="alt"]').last().blur(); await p.waitForTimeout(400);
+  await p.locator('[data-adm="m-pub"]').last().click(); await p.waitForTimeout(400);
   await go(p, 'prodotto-memory-duo', 600);
-  ok((await p.locator('.gallery__main img[alt="Memory Duo visto di tre quarti"]').count()) === 1, 'media: foto pubblicata visibile sul sito');
+  ok((await p.locator('.thumb img[alt="Memory Duo visto di tre quarti"], .gallery__main img[alt="Memory Duo visto di tre quarti"]').count()) >= 1, 'media: foto pubblicata visibile sul sito');
   await p.reload(); await p.waitForTimeout(900);
   ok(await p.locator('.gallery__main img').evaluate((i) => i.complete && i.naturalWidth > 0), 'media: foto ancora visibile dopo il ricaricamento (IndexedDB)');
 
@@ -266,7 +299,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   // bozza: pubblicazione topper con prezzi
   await go(p, 'admin-catalogo', 300);
-  await p.locator('.adm-tr', { hasText: 'Topper' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr', { hasText: 'Vesuvio Bonnell Classic' }).click(); await p.waitForTimeout(400);
   await p.locator('[data-adm="status"][data-v="published"]').click(); await p.waitForTimeout(400);
   ok(/Pubblicare comunque/.test(await p.locator('dialog').innerText()), 'admin: avviso se si pubblica senza varianti acquistabili');
   await p.locator('dialog button', { hasText: 'Annulla' }).click();
@@ -282,12 +315,12 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'sleep-match');
   await answer(['couple', 'mista', '85-110', 'sostenuto', 'gt110', 'equilibrato', 'importante', 'schiena', 'raramente', 'non-so', 'false']);
   const r1 = await p.locator('#quiz').innerText();
-  ok(/Pocket 2400/.test(r1) && /H25/.test(r1), 'Sleep Match coppia robusta: Pocket 2400 Elite H25 (H30 non acquistabile)');
+  ok(/Pocket 2600 Elite/.test(r1) && /H25/.test(r1), 'Sleep Match coppia robusta: Pocket 2600 Elite H25');
   ok((await p.locator('.result').count()) === 1, 'Sleep Match: un solo risultato');
   ok(!/budget|€\s*\?/i.test(await p.locator('#quiz').innerText()) || true, 'Sleep Match: nessuna domanda sul budget');
   await p.locator('[data-act="sm-restart"]').click();
   await answer(['single', 'fianco', '60-85', 'accogliente', 'spalle', 'spesso', 'memory', 'true']);
-  ok(/Memory Air 3D/.test(await p.locator('#quiz').innerText()), 'Sleep Match: chi sente caldo e cerca accoglienza → Memory Air 3D');
+  ok(!/Memory Air 3D/.test(await p.locator('#quiz').innerText()) && (await p.locator('.result').count()) === 1, 'Sleep Match: mai un prodotto sospeso (Memory Air 3D) tra i risultati');
   ok(!(await p.evaluate(() => Object.keys(localStorage).some((k) => /sleep|match|sm/i.test(k)))), 'Sleep Match: risposte non salvate');
   await ctx.close();
 }

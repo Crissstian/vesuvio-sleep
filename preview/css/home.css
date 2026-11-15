@@ -2592,3 +2592,19 @@ body.on-hero:not(.is-scrolled) .menu-btn {
 .page-hero--photo > .page-hero__credit {
   z-index: 2;
 }
+
+/* foto prodotto su fondo bianco: il bianco si fonde con il riquadro */
+img.blend {
+  mix-blend-mode: multiply;
+}
+.card__media img.blend {
+  padding: 4%;
+}
+.gallery__main img.blend {
+  padding: 3%;
+}
+
+/* il titolo riceve il focus al cambio pagina (lettori di schermo) senza mostrare il contorno */
+h1[tabindex='-1']:focus {
+  outline: none;
+}

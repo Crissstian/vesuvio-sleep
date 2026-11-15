@@ -8,8 +8,8 @@
 | --- | --- |
 | `preview/` | Sito statico completo e navigabile: vetrina, catalogo, schede, Sleep Match, confronto, guida alle misure, fuori misura, carrello, riepilogo WhatsApp e admin. I dati vivono nel browser (localStorage + IndexedDB). |
 | `core/` | Logica condivisa in TypeScript: prezzi, SKU, acquistabilità, abbinamenti, Sleep Match, messaggio e link WhatsApp, validazione carrello, dati strutturati e sitemap, interfaccia pagamenti disattivata. Compilata in `preview/js/core/`. |
-| `supabase/` | Migrazioni (schema, RLS, storage, funzioni server) e `seed.sql` idempotente. |
-| `scripts/` | `build_seed.py` genera il catalogo dal dataset ufficiale; `build_assets.py` genera i WebP pubblici dal kit. |
+| `supabase/` | Migrazioni (schema, RLS, storage, funzioni server), `seed.sql` idempotente e `catalog/2026-11-15_catalogo_ufficiale.sql` per aggiornare un database già popolato. |
+| `scripts/` | `build_seed.py` genera il catalogo dal listino Excel confermato (prezzi) e dal dataset (testi); `build_product_images.py` converte le foto approvate di `MEDIA_MANIFEST.csv`; `build_assets.py` genera i WebP pubblici dal kit. |
 | `tests/` | Test unitari, test SQL su Postgres locale, test end-to-end con Playwright. |
 | `input-vesuvio/` | Il kit originale (dati, prompt, asset). Non è pubblico: da qui si generano solo gli asset approvati. |
 
@@ -17,7 +17,7 @@
 
 ```bash
 npm run build:core     # compila core/ in preview/js/core (richiede tsc)
-npm run build:seed     # rigenera preview/js/seed.js e supabase/seed.sql dal JSON
+npm run build:seed     # rigenera seed.js, seed.sql e lo script di aggiornamento dal listino Excel
 npm run serve          # http://localhost:8765
 ```
 

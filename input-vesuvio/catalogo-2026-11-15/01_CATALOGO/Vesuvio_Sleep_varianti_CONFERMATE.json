@@ -1,0 +1,1180 @@
+{
+  "progetto": "Vesuvio Sleep",
+  "versione": "15-11-2026",
+  "valuta": "EUR",
+  "prezzi_iva_inclusa": true,
+  "nota": "Fonte dati: Excel caricato dall'utente, con due rettifiche confermate: Pocket 2600 (non 2400) e Topper H5 (non H80).",
+  "regola_visibilita": "Una variante è vendibile solo quando ha prezzo numerico maggiore di 0; prodotti privi di varianti prezzate non visibili/pubblici, né acquistabili.",
+  "varianti_prezzate": [
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "80x190",
+      "prezzo_eur": 90,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "80x200",
+      "prezzo_eur": 100,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "90x190",
+      "prezzo_eur": 120,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "90x200",
+      "prezzo_eur": 120,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "120x190",
+      "prezzo_eur": 150,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "120x200",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "140x190",
+      "prezzo_eur": 180,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "140x200",
+      "prezzo_eur": 190,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "160x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "160x200",
+      "prezzo_eur": 210,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "165x190",
+      "prezzo_eur": 210,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "170x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 20,
+      "misura_cm": "180x200",
+      "prezzo_eur": 240,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "80x190",
+      "prezzo_eur": 100,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "80x200",
+      "prezzo_eur": 110,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "90x190",
+      "prezzo_eur": 130,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "90x200",
+      "prezzo_eur": 140,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "120x190",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "120x200",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "140x190",
+      "prezzo_eur": 210,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "140x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "160x190",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "160x200",
+      "prezzo_eur": 280,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "165x190",
+      "prezzo_eur": 280,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "170x200",
+      "prezzo_eur": 290,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 25,
+      "misura_cm": "180x200",
+      "prezzo_eur": 320,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "80x190",
+      "prezzo_eur": 120,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "80x200",
+      "prezzo_eur": 130,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "90x190",
+      "prezzo_eur": 150,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "90x200",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "120x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "120x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "140x190",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "140x200",
+      "prezzo_eur": 270,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "160x190",
+      "prezzo_eur": 270,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "160x200",
+      "prezzo_eur": 280,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "165x190",
+      "prezzo_eur": 290,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "170x200",
+      "prezzo_eur": 320,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Essential Foam",
+      "tipologia": "Poliuretano espanso",
+      "altezza_cm": 30,
+      "misura_cm": "180x200",
+      "prezzo_eur": 340,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "80x190",
+      "prezzo_eur": 130,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "80x200",
+      "prezzo_eur": 140,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "90x190",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "90x200",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "120x190",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "120x200",
+      "prezzo_eur": 230,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "140x190",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "140x200",
+      "prezzo_eur": 260,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "160x190",
+      "prezzo_eur": 280,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "160x200",
+      "prezzo_eur": 300,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "165x190",
+      "prezzo_eur": 310,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "170x200",
+      "prezzo_eur": 330,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Memory Duo",
+      "tipologia": "Memory Foam 2 strati",
+      "altezza_cm": 25,
+      "misura_cm": "180x200",
+      "prezzo_eur": 350,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "80x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "80x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "90x190",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "90x200",
+      "prezzo_eur": 260,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "120x190",
+      "prezzo_eur": 350,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "120x200",
+      "prezzo_eur": 360,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "140x190",
+      "prezzo_eur": 420,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "140x200",
+      "prezzo_eur": 430,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "160x190",
+      "prezzo_eur": 550,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "160x200",
+      "prezzo_eur": 560,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "165x190",
+      "prezzo_eur": 560,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "170x200",
+      "prezzo_eur": 600,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 2600 Elite",
+      "tipologia": "2600 molle insacchettate + Memory",
+      "altezza_cm": 25,
+      "misura_cm": "180x200",
+      "prezzo_eur": 650,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "80x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "80x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "90x190",
+      "prezzo_eur": 240,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "90x200",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "120x190",
+      "prezzo_eur": 350,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "120x200",
+      "prezzo_eur": 360,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "140x190",
+      "prezzo_eur": 380,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "140x200",
+      "prezzo_eur": 400,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "160x190",
+      "prezzo_eur": 450,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "160x200",
+      "prezzo_eur": 460,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "165x190",
+      "prezzo_eur": 460,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "170x200",
+      "prezzo_eur": 480,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Vesuvio Pocket 1600",
+      "tipologia": "Molle insacchettate",
+      "altezza_cm": 25,
+      "misura_cm": "180x200",
+      "prezzo_eur": 520,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "80x190",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "80x200",
+      "prezzo_eur": 180,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "90x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "90x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "120x190",
+      "prezzo_eur": 260,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "120x200",
+      "prezzo_eur": 300,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "140x190",
+      "prezzo_eur": 340,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "140x200",
+      "prezzo_eur": 350,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "160x190",
+      "prezzo_eur": 400,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "160x200",
+      "prezzo_eur": 420,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "165x190",
+      "prezzo_eur": 420,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "170x200",
+      "prezzo_eur": 450,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "materasso",
+      "prodotto": "Memory Foam 3 strati",
+      "tipologia": "Memory Foam 3 strati",
+      "altezza_cm": 27,
+      "misura_cm": "180x200",
+      "prezzo_eur": 480,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "80x190",
+      "prezzo_eur": 80,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "80x200",
+      "prezzo_eur": 90,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "90x190",
+      "prezzo_eur": 100,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "90x200",
+      "prezzo_eur": 110,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "120x190",
+      "prezzo_eur": 140,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "120x200",
+      "prezzo_eur": 150,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "140x190",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "140x200",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "160x190",
+      "prezzo_eur": 180,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "160x200",
+      "prezzo_eur": 190,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "165x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "170x200",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Flex",
+      "tipologia": "Rete a doghe",
+      "altezza_cm": null,
+      "misura_cm": "180x200",
+      "prezzo_eur": 240,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "80x190",
+      "prezzo_eur": 100,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "80x200",
+      "prezzo_eur": 110,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "90x190",
+      "prezzo_eur": 120,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "90x200",
+      "prezzo_eur": 130,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "120x190",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "120x200",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "140x190",
+      "prezzo_eur": 180,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "140x200",
+      "prezzo_eur": 190,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "160x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "160x200",
+      "prezzo_eur": 219,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "165x190",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "170x200",
+      "prezzo_eur": 240,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "rete",
+      "prodotto": "Vesuvio Rete Strong",
+      "tipologia": "Rete rinforzata",
+      "altezza_cm": null,
+      "misura_cm": "180x200",
+      "prezzo_eur": 260,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "80x190",
+      "prezzo_eur": 80,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "80x200",
+      "prezzo_eur": 90,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "90x190",
+      "prezzo_eur": 110,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "90x200",
+      "prezzo_eur": 120,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "120x190",
+      "prezzo_eur": 140,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "120x200",
+      "prezzo_eur": 159,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "140x190",
+      "prezzo_eur": 160,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "140x200",
+      "prezzo_eur": 170,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "160x190",
+      "prezzo_eur": 200,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "160x200",
+      "prezzo_eur": 210,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "165x190",
+      "prezzo_eur": 220,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "170x200",
+      "prezzo_eur": 230,
+      "iva_inclusa": true
+    },
+    {
+      "categoria": "topper",
+      "prodotto": "Vesuvio Topper Memory Cloud 5",
+      "tipologia": "Memory Foam",
+      "altezza_cm": 5,
+      "misura_cm": "180x200",
+      "prezzo_eur": 250,
+      "iva_inclusa": true
+    }
+  ]
+}

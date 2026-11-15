@@ -22,21 +22,17 @@ const LAYERS = {
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
-  'pocket-2400-elite': [
+  'pocket-2600-elite': [
     { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
     { k: 'memory', label: 'Memory Foam', note: 'Lo strato di comfort' },
     { k: 'foam', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
-    { k: 'springs', label: 'Molle insacchettate', note: '2400 nella misura 160×190' },
+    { k: 'springs', label: 'Molle insacchettate', note: '2600 molle indipendenti' },
     { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
   ],
 };
-const BY_TECH = {
-  foam: LAYERS['essential-foam'],
-  memory: LAYERS['memory-duo'],
-  molle: LAYERS['pocket-2400-elite'],
-};
+/** Solo modelli con composizione confermata: per gli altri nessuna stratigrafia (non si inventa). */
 export function layersFor(p) {
-  return LAYERS[p.slug] ?? BY_TECH[p.match?.tech] ?? null;
+  return LAYERS[p.slug] ?? null;
 }
 
 const STYLE = {
@@ -220,6 +216,8 @@ export function productIllustration(p, kind, opts = {}) {
   if (kind === 'rete') return baseSvg(/strong/.test(p.slug));
   if (kind === 'guanciale') return pillowSvg(/cerv/.test(p.slug) ? 'cervical' : /piuma/.test(p.slug) ? 'piuma' : /flakes/.test(p.slug) ? 'flakes' : 'classic');
   if (kind === 'topper') return mattressSvg([{ k: 'cover', zip: true, h: 4, label: '' }, { k: 'topper', label: '' }], { title: p.name, ...opts });
-  const ls = layersFor(p) ?? LAYERS['essential-foam'];
+  const ls = layersFor(p);
+  // composizione non confermata: materasso chiuso, senza strati
+  if (!ls) return mattressSvg([{ k: 'cover', h: 20, label: '' }], { title: p.name, ...opts, gap: 0 });
   return mattressSvg(ls, { title: p.name, ...opts });
 }

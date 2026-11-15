@@ -1,31 +1,78 @@
-"""Genera il catalogo iniziale dal dataset ufficiale.
+"""Genera il catalogo del sito.
 
-Uso: python3 -I scripts/build_seed.py input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json
-Output: preview/js/seed.js e supabase/seed.sql (idempotente, ON CONFLICT DO NOTHING).
+Uso:
+  python3 -I scripts/build_seed.py
 
-Regole: i prezzi vengono SOLO dal dataset; i campi null restano null (variante non
-acquistabile); i prodotti PENDING entrano come bozza. I testi descrittivi
-riformulano composition_public e il Master Spec, senza aggiungere dati tecnici.
+Fonti:
+  - PREZZI E MISURE: input-vesuvio/catalogo-2026-11-15/01_CATALOGO/
+    Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx (fonte primaria, 130 varianti).
+  - Testi descrittivi già confermati: input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json.
+  - Immagini prodotto: preview/img/prodotti/manifest.json (da scripts/build_product_images.py),
+    che segue MEDIA_MANIFEST.csv.
+
+Output:
+  - preview/js/seed.js
+  - supabase/seed.sql (installazione nuova: ON CONFLICT DO NOTHING)
+  - supabase/catalog/2026-11-15_catalogo_ufficiale.sql (database esistente: upsert del catalogo)
+
+Regole: una variante è acquistabile solo con prezzo > 0 nell'Excel. Nessun prezzo
+storico, nessuna interpolazione, nessuno zero al posto delle celle vuote. I prodotti
+senza alcun prezzo restano in bozza. Gli ID restano stabili (upsert, non duplicati):
+il Pocket 2600 Elite conserva l'ID del vecchio "Pocket 2400 Elite".
 """
-import json, sys, uuid, os
+import json, os, uuid, sys
+import openpyxl
+from PIL import Image
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
+DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
+CATALOG_VERSION = 'catalogo-2026-11-15'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
     return str(uuid.uuid5(NS, '/'.join(map(str, parts))))
 
-data = json.load(open(sys.argv[1], encoding='utf-8'))
-SIZES = data['standard_sizes']
+data = json.load(open(DATASET, encoding='utf-8'))
+old = {p['id']: p for p in data['products']}
 LEAD = 'Produzione in circa 2 giorni prima della spedizione'
 
+# ------------------------------------------------------------------ Excel
+wb = openpyxl.load_workbook(XLSX, data_only=True)
+norm = lambda s: str(s).replace('×', 'x').strip()
+
+def read_sheet(name, first_size_col, height_col):
+    ws = wb[name]
+    hdr = [c.value for c in ws[4]]
+    sizes = [norm(s) for s in hdr[first_size_col:] if s]
+    rows = []
+    for r in ws.iter_rows(min_row=5, values_only=True):
+        if not r[0]:
+            continue
+        h = int(r[height_col]) if height_col is not None and r[height_col] is not None else None
+        prices = {}
+        for j, s in enumerate(sizes):
+            v = r[first_size_col + j]
+            prices[s] = int(round(v * 100)) if isinstance(v, (int, float)) and v > 0 else None
+        rows.append(dict(name=r[0].strip(), tipologia=(r[1] if height_col != 1 else None), height=h, prices=prices))
+    return sizes, rows
+
+SIZES, MATT = read_sheet('Materassi', 3, 2)
+_, BASES_X = read_sheet('Reti', 2, None)
+_, TOPPER_X = read_sheet('Topper', 2, 1)
+for r in TOPPER_X:
+    r['tipologia'] = 'Topper Memory Foam'
+
+# ------------------------------------------------------------------ categorie
 categories = [
     dict(slug='materassi', kind='materasso', name='Materassi', sort=1, status='published',
          description='Poliuretano, Memory Foam e molle insacchettate, prodotti nella nostra fabbrica di Casoria.'),
     dict(slug='reti', kind='rete', name='Reti', sort=2, status='published',
          description='Reti a doghe in acciaio e legno, con piedi inclusi.'),
-    dict(slug='guanciali', kind='guanciale', name='Guanciali', sort=3, status='published',
+    dict(slug='topper', kind='topper', name='Topper', sort=3, status='published',
+         description='Topper in Memory Foam alto 5 cm, in tutte le misure dei nostri materassi.'),
+    dict(slug='guanciali', kind='guanciale', name='Guanciali', sort=4, status='published',
          description='Guanciali in piuma e in Memory.'),
-    dict(slug='topper', kind='topper', name='Topper', sort=4, status='published',
-         description='Topper in Memory Foam da 5 cm.'),
     dict(slug='letti-a-castello', kind='letto', name='Letti a castello', sort=5, status='draft',
          description='Letti a castello in acciaio.'),
 ]
@@ -33,199 +80,249 @@ for c in categories:
     c['id'] = uid('cat', c['slug'])
 cat = {c['kind']: c['id'] for c in categories}
 
-COPY = {
-    'essential-foam': dict(
-        line='ESS',
+# ------------------------------------------------------------------ prodotti
+# key = chiave dell'ID (stabile), slug = indirizzo pubblico
+MATTRESSES = {
+    'Vesuvio Essential Foam': dict(
+        key='essential-foam', slug='essential-foam', line='ESS', sort=1,
         short='Poliuretano espanso ad alta densità: sostegno uniforme e stabile, in tre altezze.',
         description="L'anima monoblocco in poliuretano ad alta densità e alta portanza dà un sostegno uniforme, stabile e duraturo. "
                     "È il modello più essenziale della gamma, disponibile in H20, H25 e H30. Il rivestimento non è sfoderabile.",
+        composition=old['essential-foam']['composition_public'],
         highlights=['Anima monoblocco ad alta densità', 'Tre altezze: H20, H25, H30', 'Sostegno uniforme'],
+        removable_cover=False, summer_winter=False, firmness=old['essential-foam'].get('firmness_display'),
+        claims=old['essential-foam'].get('claims', []),
         match=dict(tech='foam', welcome=0, ventilation=False, independent_springs=False)),
-    'memory-duo': dict(
-        line='MD',
-        short='Memory Foam premium su base in poliuretano ad alta densità. Sfoderabile e reversibile.',
-        description="Uno strato di comfort in Memory Foam premium ad alta densità poggia su una base portante in poliuretano ad alta densità. "
+    'Vesuvio Memory Duo': dict(
+        key='memory-duo', slug='memory-duo', line='MD', sort=2,
+        short='Memory Foam su base in poliuretano ad alta densità. Sfoderabile e reversibile.',
+        description="Uno strato di comfort in Memory Foam poggia su una base portante in poliuretano ad alta densità. "
                     "È più accogliente dell'Essential ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
-        highlights=['Memory Foam premium', 'Lato invernale e lato estivo', 'Sfoderabile'],
+        composition=old['memory-duo']['composition_public'],
+        highlights=['Memory Foam 2 strati', 'Lato invernale e lato estivo', 'Sfoderabile'],
+        removable_cover=True, summer_winter=True, firmness=old['memory-duo'].get('firmness_display'),
+        claims=old['memory-duo'].get('claims', []),
         match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
-    'memory-air-3d': dict(
-        line='MA3D',
-        short='Memory Foam e poliuretano ad alta densità con fascia perimetrale 3D traspirante.',
-        description="Memory Foam premium e poliuretano ad alta densità, con una fascia perimetrale 3D traspirante che favorisce la ventilazione laterale. "
-                    "Reversibile con lato invernale e lato estivo, rivestimento sfoderabile.",
-        highlights=['Fascia perimetrale 3D traspirante', 'Lato invernale e lato estivo', 'Sfoderabile'],
-        match=dict(tech='memory', welcome=1.5, ventilation=True, independent_springs=False)),
-    'pocket-2400-elite': dict(
-        line='P2400',
-        short='Molle indipendenti insacchettate e Memory Foam: il nostro Hybrid più sostenuto.',
+    'Vesuvio Pocket 2600 Elite': dict(
+        key='pocket-2400-elite', slug='pocket-2600-elite', line='P2600', sort=3, hybrid=True,
+        short='2600 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.',
         description="Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. "
-                    "Le 2400 molle sono riferite alla misura 160×190; sulle altre misure il molleggio è proporzionato alla superficie. "
                     "Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
-        highlights=['Molle indipendenti insacchettate', 'Strato di comfort in Memory', 'Sfoderabile'],
-        hybrid=True,
+        composition='2600 molle insacchettate, Memory Foam ed elementi in poliuretano ad alta densità.',
+        highlights=['2600 molle insacchettate', 'Strato di comfort in Memory', 'Sfoderabile'],
+        removable_cover=True, summer_winter=False, firmness=old['pocket-2400-elite'].get('firmness_display'),
+        claims=old['pocket-2400-elite'].get('claims', []),
+        notes='Rinominato da "Pocket 2400 Elite" il 15/11/2026 (2600 molle confermate). Da verificare a quale misura si riferisce il numero di molle.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
+    'Vesuvio Pocket 1600': dict(
+        key='pocket-1600', slug='pocket-1600', line='P1600', sort=4,
+        short='Molle insacchettate, alto 25 cm.',
+        description='Materasso a molle insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria.',
+        composition='Molle insacchettate.',
+        highlights=['Molle insacchettate', 'Altezza 25 cm'],
+        notes='Specifiche di dettaglio e foto non ancora fornite.',
+        match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
+    'Memory Foam 3 strati': dict(
+        key='memory-foam-3-strati', slug='memory-foam-3-strati', line='MF3', sort=5,
+        short='Materasso in Memory Foam a 3 strati, alto 27 cm.',
+        description='Materasso in Memory Foam a 3 strati, alto 27 cm, prodotto nella nostra fabbrica di Casoria.',
+        composition='Memory Foam, 3 strati.',
+        highlights=['Memory Foam a 3 strati', 'Altezza 27 cm'],
+        notes='Nome dal listino. Composizione di dettaglio e foto non ancora fornite.',
+        match=dict(tech='memory', welcome=1.5, ventilation=False, independent_springs=False)),
+    'Vesuvio Memory Air 3D': dict(
+        key='memory-air-3d', slug='memory-air-3d', line='MA3D', sort=6,
+        short='Memory Foam e poliuretano ad alta densità con fascia perimetrale 3D traspirante.',
+        description="Memory Foam e poliuretano ad alta densità, con una fascia perimetrale 3D traspirante che favorisce la ventilazione laterale. "
+                    "Reversibile con lato invernale e lato estivo, rivestimento sfoderabile.",
+        composition=old['memory-air-3d']['composition_public'],
+        highlights=['Fascia perimetrale 3D traspirante', 'Lato invernale e lato estivo', 'Sfoderabile'],
+        removable_cover=True, summer_winter=True, firmness=old['memory-air-3d'].get('firmness_display'),
+        claims=old['memory-air-3d'].get('claims', []),
+        notes='Sospeso: nessun prezzo nel listino del 15/11/2026.',
+        match=dict(tech='memory', welcome=1.5, ventilation=True, independent_springs=False)),
+    'Vesuvio Bonnell Classic': dict(
+        key='bonnell-classic', slug='bonnell-classic', line='BON', sort=7,
+        short='Molle Bonnell.', description='', composition='Molle Bonnell.', highlights=[],
+        notes='Sospeso: nessun prezzo nel listino del 15/11/2026.'),
+}
+BASES = {
+    'Vesuvio Rete Flex': dict(key='rete-flex', line='FLEX', sort=10,
+        short='Acciaio e doghe in legno, piedi inclusi.',
+        description='Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.'),
+    'Vesuvio Rete Strong': dict(key='rete-strong', line='STRONG', sort=11,
+        short='Acciaio rinforzato e doghe in legno, piedi inclusi.',
+        description='Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.'),
 }
 
 products, variants, media = [], [], []
-
-def add_product(pid_key, **kw):
-    p = dict(id=uid('prod', pid_key), slug=pid_key, technical_name='', short='', description='', composition='',
+def add_product(key, **kw):
+    p = dict(id=uid('prod', key), slug=key, technical_name='', short='', description='', composition='',
              highlights=[], claims=[], removable_cover=None, reversible=None, summer_winter=None, hybrid=False,
-             firmness_display=None, line_code='', status='published', sort=0, lead_time=None, match=None,
-             internal_notes='')
+             firmness_display=None, line_code='', status='published', sort=0, lead_time=None, match=None, internal_notes='')
     p.update(kw)
     products.append(p)
     return p
 
-for i, src in enumerate(data['products']):
-    pid = src['id']
-    if src.get('status') == 'pending' or pid.startswith('topper'):
-        continue
-    cp = COPY[pid]
-    notes = []
-    if src.get('firmness_status') == 'provisional_research':
-        notes.append('Rigidità indicativa da verificare sul prodotto reale.')
-    if src.get('provisional_layer_note'):
-        notes.append(src['provisional_layer_note'])
-    notes.append('VERIFY: claim antiacaro / ipoallergenico / Free Humidity da confrontare con etichetta.')
-    p = add_product(pid, category_id=cat['materasso'], name=src['name'], technical_name=src['technical_name'],
-                    short=cp['short'], description=cp['description'], composition=src['composition_public'],
-                    highlights=cp['highlights'], claims=src.get('claims', []),
-                    removable_cover=src.get('removable_cover'), reversible=src.get('reversible', False),
-                    summer_winter=src.get('summer_winter', False), hybrid=cp.get('hybrid', False),
-                    firmness_display=src.get('firmness_display'), line_code=cp['line'], sort=i + 1,
-                    lead_time=LEAD, match=cp['match'], internal_notes=' '.join(notes))
-    prices = data['mattress_prices_eur'][pid]
-    active_h = src.get('active_heights_cm')
-    for h in src['heights_cm']:
+def add_variants(p, key, line, rows, kind):
+    for r in rows:
+        h = r['height']
         for j, size in enumerate(SIZES):
-            eur = prices.get(str(h), {}).get(size)
-            purch = eur is not None and (active_h is None or h in active_h)
-            variants.append(dict(id=uid('var', pid, h, size), product_id=p['id'],
-                                 sku=f"VS-{cp['line']}-H{h}-{size.replace('x', '')}", size=size, height_cm=h,
-                                 price_cents=eur * 100 if purch else None,
-                                 availability='made_to_order' if purch else 'unavailable',
-                                 active=True, sort=h * 100 + j))
+            cents = r['prices'].get(size)
+            vid = uid('var', key, h, size) if kind == 'materasso' else uid('var', key, size) if kind == 'rete' else uid('var', 'topper', size)
+            sku = (f'VS-{line}-H{h}-{size.replace("x", "")}' if kind == 'materasso'
+                   else f'VS-RETE-{line}-{size.replace("x", "")}' if kind == 'rete'
+                   else f'VS-TOP-{line}-{size.replace("x", "")}')
+            variants.append(dict(id=vid, product_id=p['id'], sku=sku, size=size, height_cm=h, price_cents=cents,
+                                 availability='made_to_order' if cents else 'unavailable', active=True,
+                                 sort=(h or 0) * 100 + j))
 
-for c in data.get('price_conflicts', []):
-    for p in products:
-        if p['slug'] == c['product']:
-            p['internal_notes'] += (f" CONFLICT prezzo H{c['height_cm']} {c['size']}: listino recente €{c['latest_list_price_eur']}"
-                                    f" vs indicazione precedente €{c['previous_chat_price_eur']}. Usato €{c['latest_list_price_eur']}, da confermare.")
+for name, spec in MATTRESSES.items():
+    rows = [r for r in MATT if r['name'] == name]
+    priced = any(v for r in rows for v in r['prices'].values())
+    p = add_product(spec['key'], slug=spec['slug'], category_id=cat['materasso'], name=name,
+                    technical_name=rows[0]['tipologia'] if rows else '', short=spec['short'], description=spec['description'],
+                    composition=spec['composition'], highlights=spec['highlights'], claims=spec.get('claims', []),
+                    removable_cover=spec.get('removable_cover'), reversible=spec.get('summer_winter'),
+                    summer_winter=spec.get('summer_winter'), hybrid=spec.get('hybrid', False),
+                    firmness_display=spec.get('firmness'), line_code=spec['line'], sort=spec['sort'],
+                    status='published' if priced else 'draft', lead_time=LEAD if priced else None,
+                    match=spec.get('match'), internal_notes=spec.get('notes', ''))
+    add_variants(p, spec['key'], spec['line'], rows, 'materasso')
 
-BASES = {
-    'rete-flex': ('FLEX', "Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.",
-                  'Acciaio e doghe in legno, piedi inclusi.'),
-    'rete-strong': ('STRONG', "Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.",
-                    'Acciaio rinforzato e doghe in legno, piedi inclusi.'),
-}
-for i, b in enumerate(data['bases']):
-    line, desc, short = BASES[b['id']]
-    p = add_product(b['id'], category_id=cat['rete'], name=b['name'], technical_name=b['technical_name'],
-                    short=short, description=desc, composition=b['material'].capitalize() + '.',
-                    highlights=['Piedi inclusi', 'Telaio in acciaio', 'Doghe in legno'], line_code=line, sort=10 + i,
+for r in BASES_X:
+    spec = BASES.get(r['name'])
+    if not spec:
+        print('non pubblicata (nessun prezzo / non presente sul sito):', r['name'])
+        continue
+    p = add_product(spec['key'], category_id=cat['rete'], name=r['name'], technical_name=r['tipologia'],
+                    short=spec['short'], description=spec['description'], composition=spec['short'],
+                    highlights=['Piedi inclusi', 'Telaio in acciaio', 'Doghe in legno'], line_code=spec['line'], sort=spec['sort'],
                     internal_notes='Portata massima non verificata: non pubblicare un valore.')
-    for j, size in enumerate(SIZES):
-        eur = b['prices_eur'].get(size)
-        variants.append(dict(id=uid('var', b['id'], size), product_id=p['id'], sku=f'VS-RETE-{line}-{size.replace("x", "")}',
-                             size=size, height_cm=None, price_cents=eur * 100 if eur else None,
-                             availability='made_to_order' if eur else 'unavailable', active=True, sort=j))
+    add_variants(p, spec['key'], spec['line'], [r], 'rete')
 
-PILLOWS = {
-    'piuma': ('PIUMA', 'Guanciale in piuma, alto 12 cm.', 'Piuma'),
-    'memory-flakes': ('MFLAKES', 'Guanciale con imbottitura in fiocchi di Memory, alto 12 cm.', 'Fiocchi di Memory'),
-    'memory-classic': ('MCLASSIC', 'Guanciale classico in Memory, alto 15 cm.', 'Memory'),
-    'memory-cervical': ('MCERV', 'Guanciale cervicale in Memory Foam, alto 12 cm.', 'Memory Foam'),
-}
-for i, g in enumerate(data['pillows']):
-    line, short, mat = PILLOWS[g['id']]
-    slug = 'guanciale-' + g['id']
-    p = add_product(slug, category_id=cat['guanciale'], name=g['name'], technical_name=f"Guanciale {mat.lower()}",
-                    short=short, description=short,
-                    composition=mat + '.', highlights=[f"Altezza {g['height_cm']} cm", mat], line_code=line, sort=20 + i,
-                    internal_notes='Misure del guanciale PENDING: non pubblicarle finché non fornite.')
-    variants.append(dict(id=uid('var', slug), product_id=p['id'], sku=f'VS-GUA-{line}', size=None, height_cm=g['height_cm'],
-                         price_cents=g['price_eur'] * 100 if g.get('price_eur') else None,
-                         availability='made_to_order', active=True, sort=0))
+for r in TOPPER_X:
+    p = add_product('topper-memory-cloud-5', category_id=cat['topper'], name=r['name'], technical_name='Topper Memory Foam H5',
+                    short='Topper in Memory Foam alto 5 cm, sfoderabile.',
+                    description='Topper in Memory Foam alto 5 cm con rivestimento sfoderabile, nelle stesse misure dei nostri materassi.',
+                    composition='Memory Foam, altezza 5 cm.', highlights=['Altezza 5 cm', 'Sfoderabile'], removable_cover=True,
+                    line_code='MC5', sort=20, lead_time=LEAD,
+                    internal_notes='Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto.')
+    add_variants(p, 'topper', 'MC5', [r], 'topper')
 
-# Topper: prezzo PENDING -> bozza con varianti non valorizzate
-tp = add_product('topper-memory-cloud-5', category_id=cat['topper'], name='Vesuvio Topper Memory Cloud 5',
-                 technical_name='Topper Memory H5', short='Topper in Memory Foam alto 5 cm, sfoderabile.',
-                 description='Topper in Memory Foam alto 5 cm con rivestimento sfoderabile, in tutte le misure standard.',
-                 composition='Memory Foam.', highlights=['Altezza 5 cm', 'Sfoderabile'], removable_cover=True,
-                 line_code='MC5', status='draft', sort=30, internal_notes='Prezzi PENDING. SKU topper proposto (VS-TOP-…), da confermare.')
-for j, size in enumerate(SIZES):
-    variants.append(dict(id=uid('var', 'topper', size), product_id=tp['id'], sku=f'VS-TOP-MC5-{size.replace("x", "")}', size=size,
-                         height_cm=5, price_cents=None, availability='unavailable', active=True, sort=j))
-
-for slug, name, line in [('pocket-1600', 'Vesuvio Pocket 1600', 'P1600'), ('bonnell-classic', 'Vesuvio Bonnell Classic', 'BON')]:
-    add_product(slug, category_id=cat['materasso'], name=name, technical_name='Molle', line_code=line, status='draft', sort=40,
-                internal_notes='PENDING foto, prezzi e specifiche.')
+# Guanciali e letti a castello: nessun prezzo nel listino -> bozza, varianti senza prezzo
+PILLOWS = [('piuma', 'Vesuvio Piuma', 'PIUMA', 'Piuma'), ('memory-flakes', 'Vesuvio Memory Flakes', 'MFLAKES', 'Fiocchi di Memory'),
+           ('memory-classic', 'Vesuvio Memory Classic', 'MCLASSIC', 'Memory'), ('memory-cervical', 'Vesuvio Memory Cervical', 'MCERV', 'Memory Foam')]
+for i, (k, name, line, mat) in enumerate(PILLOWS):
+    slug = 'guanciale-' + k
+    p = add_product(slug, category_id=cat['guanciale'], name=name, technical_name=f'Guanciale {mat.lower()}',
+                    short=f'Guanciale in {mat.lower()}.', description=f'Guanciale in {mat.lower()}.', composition=mat + '.',
+                    highlights=[mat], line_code=line, sort=30 + i, status='draft',
+                    internal_notes='Sospeso: nessun prezzo nel listino del 15/11/2026.')
+    variants.append(dict(id=uid('var', slug), product_id=p['id'], sku=f'VS-GUA-{line}', size=None, height_cm=12,
+                         price_cents=None, availability='unavailable', active=True, sort=0))
 add_product('castello-steel', category_id=cat['letto'], name='Vesuvio Castello Steel', technical_name='Letto a castello in acciaio',
-            line_code='CAST', status='draft', sort=50, internal_notes='PENDING misure e prezzi (con e senza materassi H20).')
+            line_code='CAST', status='draft', sort=50, internal_notes='Sospeso: misure e prezzi non presenti nel listino.')
 
-pocket = next(p for p in products if p['slug'] == 'pocket-2400-elite')
+pid = lambda key: uid('prod', key)
+
+# ------------------------------------------------------------------ media
+# 1) immagini approvate del 15/11/2026 (MEDIA_MANIFEST.csv)
+IMG = json.load(open(os.path.join(ROOT, 'preview/img/prodotti/manifest.json')))
+FOLDER_KEY = {'vesuvio-essential-foam': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-2600-elite': 'pocket-2400-elite'}
+SLOT = {'hero': 'hero', 'exploded': 'exploded', 'detail': 'fabric'}
+ALT = {
+    ('essential-foam', 'hero'): 'Vesuvio Essential Foam, materasso con rivestimento bianco trapuntato',
+    ('essential-foam', 'exploded'): 'Vista esplosa del Vesuvio Essential Foam: rivestimento e anima in poliuretano espanso',
+    ('essential-foam', 'detail'): 'Dettaglio del rivestimento trapuntato del Vesuvio Essential Foam',
+    ('memory-duo', 'hero'): 'Vesuvio Memory Duo con piano trapuntato bianco e fascia laterale grigio scuro',
+    ('memory-duo', 'exploded'): 'Vista esplosa del Vesuvio Memory Duo: rivestimento, strato in Memory Foam e base in poliuretano',
+    ('memory-duo', 'detail'): 'Dettaglio del tessuto e della fascia grigio scuro del Vesuvio Memory Duo',
+    ('pocket-2400-elite', 'hero'): 'Vesuvio Pocket 2600 Elite con piano trapuntato e fascia laterale marrone chiaro',
+    ('pocket-2400-elite', 'exploded'): 'Vista esplosa del Vesuvio Pocket 2600 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate',
+    ('pocket-2400-elite', 'detail'): 'Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 2600 Elite',
+}
+ORDER = {'hero': 1, 'exploded': 2, 'detail': 3}
+for it in IMG:
+    key = FOLDER_KEY[it['prodotto']]
+    (big, bw, bh), (small, sw, sh) = it['files'][0], it['files'][1]
+    base = f"img/prodotti/{it['prodotto']}/"
+    white_bg = it['ruolo'] != 'detail'
+    media.append(dict(id=uid('media', 'catalogo-2026-11-15', it['prodotto'], it['ruolo']), product_id=pid(key),
+                      slot=SLOT[it['ruolo']], src=base + big, srcset=f'{base}{small} {sw}w, {base}{big} {bw}w', width=bw, height=bh,
+                      alt=ALT[(key, it['ruolo'])], caption='', illustrative=it['ruolo'] == 'exploded',
+                      fit='contain' if white_bg else 'cover', bg='white' if white_bg else None,
+                      is_cover=it['ruolo'] == 'hero', published=True, sort=ORDER[it['ruolo']], focal_x=50, focal_y=50))
+
+# 2) immagini precedenti del Pocket (riferite al 2400): restano in archivio, non pubblicate
 media += [
-    dict(id=uid('media', 'pocket', 'cutaway'), product_id=pocket['id'], slot='hero', src='img/pocket-2400-cutaway-1200.webp',
+    dict(id=uid('media', 'pocket', 'cutaway'), product_id=pid('pocket-2400-elite'), slot='extra', src='img/pocket-2400-cutaway-1200.webp',
          srcset='img/pocket-2400-cutaway-720.webp 720w, img/pocket-2400-cutaway-1200.webp 1200w', width=1200, height=800,
-         alt='Render del Vesuvio Pocket 2400 Elite con un angolo aperto che mostra lo strato in Memory e le molle insacchettate',
-         caption='Render illustrativo', illustrative=True, is_cover=True, published=True, sort=1, focal_x=50, focal_y=50),
-    dict(id=uid('media', 'pocket', 'exploded'), product_id=pocket['id'], slot='exploded', src='img/pocket-2400-esploso-1200.webp',
+         alt='Render precedente del Pocket Elite in sezione', caption='', illustrative=True, is_cover=False, published=False,
+         sort=90, focal_x=50, focal_y=50),
+    dict(id=uid('media', 'pocket', 'exploded'), product_id=pid('pocket-2400-elite'), slot='extra', src='img/pocket-2400-esploso-1200.webp',
          srcset='img/pocket-2400-esploso-720.webp 720w, img/pocket-2400-esploso-1200.webp 1200w', width=1200, height=800,
-         alt='Vista esplosa illustrativa del Vesuvio Pocket 2400 Elite: rivestimento, Memory Foam, poliuretano, molle insacchettate e base',
-         caption='Vista illustrativa a strati, non in scala', illustrative=True, is_cover=False, published=True, sort=2, focal_x=50, focal_y=50,
-         hotspots=[
-             dict(x=50, y=15, title='Rivestimento sfoderabile', text='Si apre con la cerniera. Lavaggio secondo le indicazioni in etichetta.'),
-             dict(x=56, y=34, title='Memory Foam', text='Lo strato di comfort, a contatto con il rivestimento.'),
-             dict(x=56, y=48, title='Poliuretano ad alta densità', text='Elementi di supporto e stabilizzazione.'),
-             dict(x=40, y=66, title='Molle indipendenti insacchettate', text='2400 molle nella misura 160×190; sulle altre misure il molleggio è proporzionato alla superficie.'),
-             dict(x=52, y=86, title='Base di stabilizzazione', text='Elementi in poliuretano ad alta densità che contengono il molleggio.'),
-         ]),
+         alt='Vista esplosa precedente del Pocket Elite', caption='', illustrative=True, is_cover=False, published=False,
+         sort=91, focal_x=50, focal_y=50),
 ]
 
-# Foto generate (render illustrativi) consegnate il 13/11/2026: input-vesuvio/asset/foto-generate
-from PIL import Image as _Img
-_FOTO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'preview/img/foto')
+# 3) foto generate del 13/11/2026 ancora pertinenti (reti; Memory Air 3D e guanciali restano col prodotto sospeso)
+_FOTO = os.path.join(ROOT, 'preview/img/foto')
 def foto(name):
-    big = _Img.open(os.path.join(_FOTO, f'{name}-1600.webp')) if os.path.exists(os.path.join(_FOTO, f'{name}-1600.webp')) else None
-    small_name = f'{name}-900.webp' if big else f'{name}-600.webp'
-    big_name = f'{name}-1600.webp' if big else f'{name}-900.webp'
-    b = _Img.open(os.path.join(_FOTO, big_name)); sm = _Img.open(os.path.join(_FOTO, small_name))
+    big_name = f'{name}-1600.webp' if os.path.exists(os.path.join(_FOTO, f'{name}-1600.webp')) else f'{name}-900.webp'
+    small_name = f'{name}-900.webp' if big_name.endswith('1600.webp') else f'{name}-600.webp'
+    b = Image.open(os.path.join(_FOTO, big_name)); sm = Image.open(os.path.join(_FOTO, small_name))
     return dict(src=f'img/foto/{big_name}', srcset=f'img/foto/{small_name} {sm.width}w, img/foto/{big_name} {b.width}w', width=b.width, height=b.height)
-def pid(slug):
-    return next(p['id'] for p in products if p['slug'] == slug)
-NEW_MEDIA = [
-    ('memory-air-3d', 'memory-air-3d-34', 'hero', True, 'Vesuvio Memory Air 3D in prospettiva, con la fascia perimetrale 3D traspirante sul lato'),
-    ('memory-air-3d', 'memory-air-3d-sezione', 'exploded', False, 'Vesuvio Memory Air 3D con un angolo aperto: Memory Foam azzurro sopra la base in poliuretano'),
-    ('memory-air-3d', 'memory-air-3d-tessuto', 'fabric', False, 'Dettaglio della fascia 3D a rete traspirante e del bordino blu'),
-    ('pocket-2400-elite', 'pocket-2400-elite-tessuto', 'fabric', False, 'Dettaglio del rivestimento trapuntato con bordino blu e cerniera laterale'),
-    ('rete-flex', 'rete-flex-34', 'hero', True, 'Rete Vesuvio Flex con telaio in acciaio scuro, doghe in legno chiaro e piedi'),
-    ('rete-flex', 'rete-flex-dettaglio', 'extra', False, "Dettaglio dell'angolo della rete Flex: doghe fissate al telaio e piede"),
-    ('rete-strong', 'rete-strong-34', 'hero', True, 'Rete Vesuvio Strong con telaio rinforzato in acciaio e doghe in legno'),
-    ('rete-strong', 'rete-strong-dettaglio', 'extra', False, 'Dettaglio del telaio rinforzato della rete Strong'),
-    ('guanciale-piuma', 'guanciale-piuma', 'hero', True, 'Guanciale in piuma con fodera bianca'),
-    ('guanciale-memory-flakes', 'guanciale-memory-flakes', 'hero', True, 'Guanciale Memory Flakes con fodera trapuntata e bordino blu'),
-    ('guanciale-memory-classic', 'guanciale-memory-classic', 'hero', True, 'Guanciale Memory Classic rettangolare con fodera trapuntata'),
-    ('guanciale-memory-cervical', 'guanciale-memory-cervical', 'hero', True, 'Guanciale cervicale in Memory con profilo a onda'),
+GEN = [
+    ('memory-air-3d', 'memory-air-3d-34', 'hero', True, True, 'Vesuvio Memory Air 3D in prospettiva, con la fascia perimetrale 3D traspirante sul lato'),
+    ('memory-air-3d', 'memory-air-3d-sezione', 'exploded', False, True, 'Vesuvio Memory Air 3D con un angolo aperto: Memory Foam sopra la base in poliuretano'),
+    ('memory-air-3d', 'memory-air-3d-tessuto', 'fabric', False, True, 'Dettaglio della fascia 3D a rete traspirante'),
+    ('pocket-2400-elite', 'pocket-2400-elite-tessuto', 'extra', False, False, 'Dettaglio precedente del rivestimento del Pocket Elite'),
+    ('rete-flex', 'rete-flex-34', 'hero', True, True, 'Vesuvio Rete Flex con telaio in acciaio scuro, doghe in legno chiaro e piedi'),
+    ('rete-flex', 'rete-flex-dettaglio', 'extra', False, True, "Dettaglio dell'angolo della Rete Flex: doghe fissate al telaio e piede"),
+    ('rete-strong', 'rete-strong-34', 'hero', True, True, 'Vesuvio Rete Strong con telaio rinforzato in acciaio e doghe in legno'),
+    ('rete-strong', 'rete-strong-dettaglio', 'extra', False, True, 'Dettaglio del telaio rinforzato della Rete Strong'),
+    ('guanciale-piuma', 'guanciale-piuma', 'hero', True, True, 'Guanciale in piuma con fodera bianca'),
+    ('guanciale-memory-flakes', 'guanciale-memory-flakes', 'hero', True, True, 'Guanciale Memory Flakes con fodera trapuntata'),
+    ('guanciale-memory-classic', 'guanciale-memory-classic', 'hero', True, True, 'Guanciale Memory Classic rettangolare con fodera trapuntata'),
+    ('guanciale-memory-cervical', 'guanciale-memory-cervical', 'hero', True, True, 'Guanciale cervicale in Memory con profilo a onda'),
 ]
-for i, (slug, name, slot, cover, alt) in enumerate(NEW_MEDIA):
-    media.append(dict(id=uid('media', 'foto', name), product_id=pid(slug), slot=slot, alt=alt, caption='Render illustrativo',
-                      illustrative=True, fit='cover', is_cover=cover, published=True, sort=10 + i, focal_x=50, focal_y=50, **foto(name)))
+for i, (key, name, slot, cover, published, alt) in enumerate(GEN):
+    media.append(dict(id=uid('media', 'foto', name), product_id=pid(key), slot=slot, alt=alt, caption='', illustrative=True,
+                      fit='cover', is_cover=cover, published=published, sort=10 + i, focal_x=50, focal_y=50, **foto(name)))
 
-settings = dict(
-    whatsapp_number='',
-    shipping_note='gratuita in tutta Italia, isole comprese',
-    show_claims=True,
-    payments=dict(stripe=False, paypal=False, klarna=False),
-)
+# ------------------------------------------------------------------ redirect e impostazioni
+redirects = [dict(old_slug='pocket-2400-elite', new_slug='pocket-2600-elite')]
+settings = dict(whatsapp_number='', shipping_note='gratuita in tutta Italia, isole comprese', show_claims=True,
+                payments=dict(stripe=False, paypal=False, klarna=False))
 
-seed = dict(version='seed-2026-11-13', categories=categories, products=products, variants=variants, media=media, settings=settings)
+# ------------------------------------------------------------------ controlli
+pub_cats = {c['id'] for c in categories if c['status'] == 'published'}
+pub_prods = {p['id']: p for p in products if p['status'] == 'published' and p['category_id'] in pub_cats}
+buyable = [v for v in variants if v['price_cents'] and v['product_id'] in pub_prods]
+by_kind = {}
+kind_of = {c['id']: c['kind'] for c in categories}
+for v in buyable:
+    k = kind_of[pub_prods[v['product_id']]['category_id']]
+    by_kind[k] = by_kind.get(k, 0) + 1
+assert len(buyable) == 130, len(buyable)
+assert by_kind == {'materasso': 91, 'rete': 26, 'topper': 13}, by_kind
+assert all(v['price_cents'] is None for v in variants if v['product_id'] not in pub_prods)
+assert len({v['sku'] for v in variants}) == len(variants), 'SKU duplicati'
+assert len({v['id'] for v in variants}) == len(variants), 'ID duplicati'
+covers = {}
+for m in media:
+    if m['is_cover']:
+        covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
+assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-root = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
-with open(os.path.join(root, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
-    f.write('// Generato da scripts/build_seed.py a partire da Vesuvio_Sleep_Site_Data_v1.0.json. Non modificare a mano.\n')
+seed = dict(version='seed-2026-11-15', catalog_version=CATALOG_VERSION, authoritative=True,
+            categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
+with open(os.path.join(ROOT, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
+    f.write('// Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.\n')
     f.write('export const SEED = ' + json.dumps(seed, ensure_ascii=False, indent=1) + ';\n')
 
+# ------------------------------------------------------------------ SQL
 def q(v):
     if v is None: return 'null'
     if isinstance(v, bool): return 'true' if v else 'false'
@@ -233,26 +330,59 @@ def q(v):
     if isinstance(v, (list, dict)): return "'" + json.dumps(v, ensure_ascii=False).replace("'", "''") + "'::jsonb"
     return "'" + str(v).replace("'", "''") + "'"
 
-out = ['-- Seed idempotente generato da scripts/build_seed.py. Rieseguibile: non duplica e non sovrascrive modifiche admin.', 'begin;']
+PCOLS = ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition', 'highlights', 'claims',
+         'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match']
+VCOLS = ['id', 'product_id', 'sku', 'size', 'height_cm', 'price_cents', 'availability', 'active', 'sort']
+MCOLS = ['id', 'product_id', 'slot', 'storage_path', 'alt', 'caption', 'illustrative', 'is_cover', 'published', 'sort', 'focal_x', 'focal_y', 'width', 'height', 'hotspots', 'fit', 'bg']
+def mrow(m):
+    d = dict(m, storage_path='seed/' + m['src'].replace('img/', ''), hotspots=m.get('hotspots'), fit=m.get('fit', 'contain'))
+    return d
+def ins(table, cols, row, conflict):
+    vals = ', '.join(q(row.get(c)) for c in cols)
+    return f"insert into public.{table} ({', '.join(cols)}) values ({vals}) {conflict};"
+def upd(cols, key='id'):
+    return 'on conflict (' + key + ') do update set ' + ', '.join(f'{c} = excluded.{c}' for c in cols if c != key)
+
+seed_sql = ['-- Seed idempotente generato da scripts/build_seed.py (installazione nuova). Non sovrascrive modifiche admin.', 'begin;']
 for c in categories:
-    out.append(f"insert into public.categories (id, slug, kind, name, description, sort, status) values ({q(c['id'])}, {q(c['slug'])}, {q(c['kind'])}, {q(c['name'])}, {q(c['description'])}, {c['sort']}, {q(c['status'])}) on conflict (id) do nothing;")
+    seed_sql.append(ins('categories', ['id', 'slug', 'kind', 'name', 'description', 'sort', 'status'], c, 'on conflict (id) do nothing'))
 for p in products:
-    out.append("insert into public.products (id, slug, category_id, name, technical_name, short, description, composition, highlights, claims, removable_cover, reversible, summer_winter, hybrid, firmness_display, line_code, status, sort, lead_time, match) values ("
-               + ', '.join(q(p[k]) for k in ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition']) + ', '
-               + f"{q(p['highlights'])}, {q(p['claims'])}, "
-               + ', '.join(q(p[k]) for k in ['removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time'])
-               + f", {q(p['match'])}) on conflict (id) do nothing;")
+    seed_sql.append(ins('products', PCOLS, p, 'on conflict (id) do nothing'))
     if p['internal_notes']:
-        out.append(f"insert into public.product_private (product_id, internal_notes) values ({q(p['id'])}, {q(p['internal_notes'])}) on conflict (product_id) do nothing;")
+        seed_sql.append(f"insert into public.product_private (product_id, internal_notes) values ({q(p['id'])}, {q(p['internal_notes'])}) on conflict (product_id) do nothing;")
 for v in variants:
-    out.append(f"insert into public.variants (id, product_id, sku, size, height_cm, price_cents, availability, active, sort) values ({q(v['id'])}, {q(v['product_id'])}, {q(v['sku'])}, {q(v['size'])}, {q(v['height_cm'])}, {q(v['price_cents'])}, {q(v['availability'])}, {q(v['active'])}, {v['sort']}) on conflict (id) do nothing;")
+    seed_sql.append(ins('variants', VCOLS, v, 'on conflict (id) do nothing'))
 for m in media:
-    out.append(f"insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots, fit) values ({q(m['id'])}, {q(m['product_id'])}, {q(m['slot'])}, {q('seed/' + os.path.basename(m['src']))}, {q(m['alt'])}, {q(m['caption'])}, {q(m['illustrative'])}, {q(m['is_cover'])}, {q(m['published'])}, {m['sort']}, {m['focal_x']}, {m['focal_y']}, {m['width']}, {m['height']}, {q(m.get('hotspots'))}, {q(m.get('fit', 'contain'))}) on conflict (id) do nothing;")
+    seed_sql.append(ins('media', MCOLS, mrow(m), 'on conflict (id) do nothing'))
+for r in redirects:
+    seed_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do nothing;")
 for k, v in settings.items():
     pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number') else 'false'
-    out.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")
-out.append('commit;')
-with open(os.path.join(root, 'supabase/seed.sql'), 'w', encoding='utf-8') as f:
-    f.write('\n'.join(out) + '\n')
+    seed_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")
+seed_sql.append('commit;')
+open(os.path.join(ROOT, 'supabase/seed.sql'), 'w', encoding='utf-8').write('\n'.join(seed_sql) + '\n')
+
+upd_sql = [
+    '-- Aggiornamento UFFICIALE del catalogo (15/11/2026) per un database già popolato.',
+    '-- Generato da scripts/build_seed.py. Upsert per ID: nessun duplicato, storico richieste intatto.',
+    '-- Eseguire dopo le migrazioni, una volta. Rieseguibile.',
+    'begin;',
+    '-- una sola copertina per prodotto: si azzerano prima quelle dei prodotti toccati',
+    'update public.media set is_cover = false where product_id in (' + ', '.join(sorted({q(m['product_id']) for m in media})) + ');',
+]
+for c in categories:
+    upd_sql.append(ins('categories', ['id', 'slug', 'kind', 'name', 'description', 'sort', 'status'], c, upd(['id', 'slug', 'kind', 'name', 'description', 'sort', 'status'])))
+for p in products:
+    upd_sql.append(ins('products', PCOLS, p, upd(PCOLS)))
+for v in variants:
+    upd_sql.append(ins('variants', VCOLS, v, upd(VCOLS)))
+for m in media:
+    upd_sql.append(ins('media', MCOLS, mrow(m), upd(MCOLS)))
+for r in redirects:
+    upd_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do update set new_slug = excluded.new_slug;")
+upd_sql.append('commit;')
+os.makedirs(os.path.join(ROOT, 'supabase/catalog'), exist_ok=True)
+open(os.path.join(ROOT, 'supabase/catalog/2026-11-15_catalogo_ufficiale.sql'), 'w', encoding='utf-8').write('\n'.join(upd_sql) + '\n')
+
 print(f'{len(categories)} categorie, {len(products)} prodotti, {len(variants)} varianti, {len(media)} media')
-print('acquistabili:', sum(1 for v in variants if v['price_cents']))
+print('acquistabili:', len(buyable), by_kind)

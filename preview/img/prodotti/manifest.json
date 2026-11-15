@@ -1,0 +1,146 @@
+[
+ {
+  "prodotto": "vesuvio-essential-foam",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "hero-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-essential-foam",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-essential-foam",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "detail-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-duo",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "hero-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-duo",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-duo",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "detail-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-pocket-2600-elite",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1536.webp",
+    1536,
+    1024
+   ],
+   [
+    "hero-900.webp",
+    900,
+    600
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-pocket-2600-elite",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-pocket-2600-elite",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "detail-720.webp",
+    720,
+    720
+   ]
+  ]
+ }
+]

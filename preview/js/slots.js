@@ -5,7 +5,7 @@ const f = (name, alt, { portrait = false } = {}) => ({
   src: `img/foto/${name}-${portrait ? 900 : 1600}.webp`,
   srcset: portrait ? `img/foto/${name}-600.webp 600w, img/foto/${name}-900.webp 900w` : `img/foto/${name}-900.webp 900w, img/foto/${name}-1600.webp 1536w`,
   alt,
-  caption: 'Immagine illustrativa',
+  caption: '',
 });
 
 export const SITE_SLOTS = [

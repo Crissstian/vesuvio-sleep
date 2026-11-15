@@ -1,6 +1,7 @@
 import type { Availability, CatalogSnapshot, Category, CategoryKind, Product, Variant } from './types.js';
 
-export const STANDARD_SIZES = ['80x190', '90x200', '120x190', '140x190', '160x190', '165x190', '170x200', '180x200'];
+/** Le 13 misure del listino confermato (15/11/2026), dal singolo 80×190 alla King Size 180×200. */
+export const STANDARD_SIZES = ['80x190', '80x200', '90x190', '90x200', '120x190', '120x200', '140x190', '140x200', '160x190', '160x200', '165x190', '170x200', '180x200'];
 
 const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
 export function formatCents(cents: number): string {
@@ -137,6 +138,12 @@ export class CatalogIndex {
   }
   findVariant(p: Product, size: string | null, height: number | null): Variant | undefined {
     return this.variantsOf(p).find((v) => (v.size ?? null) === (size ?? null) && (v.height_cm ?? null) === (height ?? null));
+  }
+  /** Misure vendibili, nell'ordine del listino: sul sito pubblico si mostrano solo queste. */
+  purchasableSizes(p: Product): string[] {
+    const s = new Set<string>();
+    for (const v of this.purchasableVariants(p)) if (v.size) s.add(v.size);
+    return STANDARD_SIZES.filter((x) => s.has(x)).concat([...s].filter((x) => !STANDARD_SIZES.includes(x)));
   }
   purchasableHeights(p: Product): number[] {
     const s = new Set<number>();

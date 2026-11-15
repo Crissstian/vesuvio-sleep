@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/admin.css">
   <script src="js/config.js"></script>
   <script>
-    // Anteprima: se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
+    // Se qualcosa si rompe, lo mostriamo invece di lasciare la pagina vuota.
     (function () {
       function show(msg) {
         var b = document.getElementById('vs-err');
@@ -30,7 +30,7 @@
           b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:999;background:#9b2c2c;color:#fff;font:14px/1.4 system-ui;padding:10px 14px;border-radius:12px';
           (document.body || document.documentElement).appendChild(b);
         }
-        b.textContent = 'Errore dell\'anteprima: ' + msg;
+        b.textContent = 'Si è verificato un errore: ' + msg;
       }
       window.addEventListener('error', function (e) { if (e.message) show(e.message); });
       window.addEventListener('unhandledrejection', function (e) { show(String((e.reason && e.reason.message) || e.reason)); });
@@ -79,7 +79,7 @@
         <button class="hero__dot is-active" data-act="hero-go" data-i="0" aria-label="Immagine 1: Una camera con vista sul Vesuvio" aria-current="true"><span></span></button><button class="hero__dot" data-act="hero-go" data-i="1" aria-label="Immagine 2: Dalla fabbrica a casa tua, anche a Napoli" aria-current="false"><span></span></button><button class="hero__dot" data-act="hero-go" data-i="2" aria-label="Immagine 3: Prodotti a Casoria dal 1986" aria-current="false"><span></span></button><button class="hero__dot" data-act="hero-go" data-i="3" aria-label="Immagine 4: Vieni a provarli nel nostro showroom" aria-current="false"><span></span></button>
         <button class="hero__pause" data-act="hero-pause" aria-pressed="false" aria-label="Metti in pausa le immagini"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path class="i-pause" d="M3 2h3v10H3zM8 2h3v10H8z"/><path class="i-play" d="M3 2l9 5-9 5z"/></svg></button>
       </div>
-      <span class="hero__badge" id="hero-badge">Immagine illustrativa</span>
+      <span class="hero__badge" id="hero-badge"></span>
     </div>
     <div class="hero__content">
       <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>
@@ -112,7 +112,7 @@
         <div><h3>Scegliere</h3><ul><li><a href="#sleep-match">Sleep Match</a></li><li><a href="#confronto">Confronta i materassi</a></li><li><a href="#guida-misure">Guida alle misure</a></li><li><a href="#fuori-misura">Fuori misura e hotel</a></li></ul></div>
         <div><h3>Showroom</h3><p style="margin:0">Via Raffaele Salierno 38<br>80026 Casoria (NA)</p><p>Lun–ven 09:00–18:00<br>Sab 10:00–14:00</p></div>
       </div>
-      <div class="footer__legal">MATERASSI D'AUTORE A.V. S.R.L.S. · P.IVA 10456501211 · REA NA-1107535 · Via Raffaele Salierno 38, 80026 Casoria (NA)</div>
+      <div class="footer__legal">MATERASSI D'AUTORE A.V. S.R.L.S. · P.IVA 10456501211 · REA NA-1107535 · Via Raffaele Salierno 38, 80026 Casoria (NA) · <a href="#admin">Area riservata</a></div>
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

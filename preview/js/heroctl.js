@@ -64,7 +64,7 @@ export function initHero(hero) {
       caption.textContent = next.dataset.caption || '';
       caption.classList.add('is-in');
     }
-    if (badge) badge.textContent = next.dataset.illustrative === '1' ? 'Immagine illustrativa' : '';
+
   }
 
   dots.forEach((d) => {

@@ -1,5 +1,16 @@
 # Changelog
 
+## Catalogo ufficiale (15/11/2026)
+- **Prezzi dal listino confermato** (`Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx`, unica fonte): 130 varianti acquistabili, IVA inclusa: 91 materassi, 26 reti, 13 topper. Le celle vuote restano senza prezzo (mai zero, mai interpolate) e non sono acquistabili. Misure standard da 8 a 13 (80×190 … 180×200).
+- **Pocket 2400 Elite → Pocket 2600 Elite**: stesso prodotto (stesso ID, nessun duplicato), nuovo nome, slug `pocket-2600-elite`, SKU `VS-P2600-…`, testi e stratigrafia con «2600 molle insacchettate». Il vecchio indirizzo porta al nuovo (tabella `slug_redirects`). Le vecchie immagini 2400 restano in archivio, non pubblicate.
+- **Nuovi prodotti pubblicati**: Vesuvio Pocket 1600 (H25), Memory Foam 3 strati (H27), Vesuvio Topper Memory Cloud 5 (H5). Testi limitati a quanto scritto nel listino.
+- **Sospesi (bozza admin)**: Memory Air 3D, Bonnell Classic, guanciali, Castello Steel. Non compaiono in categorie, ricerca, Sleep Match, abbinamenti, confronto o carrello. H30 di Memory Duo, Pocket 2600 e Pocket 1600 non sono mostrate. Rete a tavole non creata (nessun prezzo).
+- **Foto ufficiali** da `MEDIA_MANIFEST.csv` per Essential Foam, Memory Duo e Pocket 2600 Elite: hero (copertina), esploso, dettaglio tessuto, in WebP responsive. Le foto su fondo bianco si fondono con il riquadro. L'immagine Grafeno non è stata caricata né associata.
+- **Nessuna scritta provvisoria** sul sito pubblico: tolti «Anteprima concept», «WhatsApp da configurare», «Immagine/Render illustrativo», «Foto in arrivo», segnaposto, «non in scala», «non online», gli avvisi «a breve». L'accesso admin è nel footer («Area riservata»). Senza foto il prodotto mostra un disegno pulito, senza strati inventati.
+- Aggiornamento dei dati salvati: il catalogo ufficiale sostituisce prezzi e varianti per ID; restano richieste, impostazioni, foto caricate dall'admin e prodotti creati dall'admin.
+- Supabase: migrazione `20261115000005_catalogo_redirect.sql` (redirect e `media.bg`), script `supabase/catalog/2026-11-15_catalogo_ufficiale.sql` per aggiornare un database esistente (upsert, rieseguibile).
+- Test: 95 end-to-end, 46 SQL, 10 unitari.
+
 ## Foto e apertura animata (13/11/2026)
 - Integrate 23 foto generate (render illustrativi) in WebP responsive: Memory Air 3D (3/4, sezione, tessuto), tessuto del Pocket, reti Flex e Strong con dettagli, quattro guanciali, fabbrica, showroom, camera, consegna e testate delle categorie. Tutte etichettate «Render illustrativo» o «Immagine illustrativa».
 - Nuova apertura: strati blu che scorrono via mentre si disegna il profilo cucito del Vesuvio, poi una presentazione di foto con zoom lento, cambio a «telo» con cucitura che corre, pallini di avanzamento, pausa e swipe. Si ferma quando non è visibile; con movimento ridotto non parte da sola.

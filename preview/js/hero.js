@@ -40,7 +40,7 @@ export function heroHtml(slides = defaultSlides()) {
         <svg class="hero__mark" viewBox="0 0 180 90"><path pathLength="1" d="${MARK}"/></svg>
       </div>
       ${dots}
-      <span class="hero__badge" id="hero-badge">${slides.length ? (slides[0].illustrative ? 'Immagine illustrativa' : '') : 'Illustrazione provvisoria: qui andrà la foto di Napoli'}</span>
+      <span class="hero__badge" id="hero-badge"></span>
     </div>
     <div class="hero__content">
       <p class="hero__kicker">Fabbrica di materassi a Casoria, Napoli</p>

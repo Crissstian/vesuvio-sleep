@@ -15,6 +15,7 @@ import {
   localBusinessJsonLd,
   breadcrumbJsonLd,
   MAX_QTY,
+  resolveRedirect,
 } from './core/index.js';
 import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage } from './store.js';
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
@@ -55,6 +56,7 @@ function imgTag(m, { sizes = '(max-width: 700px) 92vw, 33vw', eager = false, cls
   const src = media.resolve(m);
   if (!src) return null;
   const focal = `object-position:${m.focal_x ?? 50}% ${m.focal_y ?? 50}%`;
+  if (m.bg === 'white') cls += ' blend';
   return `<img src="${esc(src)}" ${m.srcset ? `srcset="${esc(m.srcset)}" sizes="${esc(sizes)}"` : ''} alt="${esc(m.alt)}" ${m.width ? `width="${m.width}" height="${m.height}"` : ''} loading="${eager ? 'eager' : 'lazy'}" decoding="async" class="${cls}" style="${focal}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',innerHTML:window.__fb||''}))">`;
 }
 window.__fb = FALLBACK.materasso;
@@ -114,7 +116,7 @@ function renderChrome() {
   const run = msgs.map((m) => `<span>${esc(m)}</span>`).join('');
   $('#topbar').innerHTML = `<div class="wrap">
       <div class="ticker" aria-hidden="true"><div class="ticker__track">${run}${run}</div></div><span class="sr-only">${esc(msgs[0])}</span>
-      <span class="topbar__preview"><span class="topbar__label">Anteprima concept</span>${!wa.check.ok ? ' <span class="topbar__flag">WhatsApp da configurare</span>' : ''}${previewDrafts() ? ' <span class="topbar__flag">Bozze visibili</span>' : ''}<a href="#admin">Admin</a></span>
+      <span class="topbar__preview">${previewDrafts() ? '<span class="topbar__flag">Anteprima admin: bozze visibili</span>' : ''}</span>
     </div>`;
   $('#nav').innerHTML = nav.map((n) => `<a href="${n.href}" ${n.on ? 'aria-current="page"' : ''}>${esc(n.label)}</a>`).join('');
   $('#drawer-links').innerHTML = `<a href="#">Home</a>` + nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('') + `<a href="#confronto">Confronta i materassi</a><a href="#guida-misure">Guida alle misure</a><a href="#fuori-misura">Fuori misura</a><a href="#carrello">Carrello (${cart.count()})</a>`;
@@ -179,6 +181,9 @@ async function route() {
   if (!first && document.startViewTransition && !reducedMotion() && state.lastRoute !== r) {
     try {
       const vt = document.startViewTransition(render);
+      // una transizione interrotta da una navigazione successiva non è un errore
+      vt.ready.catch(() => {});
+      vt.finished.catch(() => {});
       await vt.updateCallbackDone;
     } catch {
       await render();
@@ -200,10 +205,10 @@ function productCard(idx, p, { compare = false, d = 0 } = {}) {
     ...(p.removable_cover ? ['Sfoderabile'] : []),
     ...(p.summer_winter ? ['Estate e inverno'] : []),
     ...(kind !== 'materasso' ? (p.highlights || []).slice(0, 2) : []),
-  ].slice(0, 3);
+  ].filter((x, i, a) => a.indexOf(x) === i).slice(0, 3);
   const cover = coverFor(idx, p);
   return `<article class="card rv" style="--d:${d}" data-pid="${esc(p.id)}">
-    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}${cover?.illustrative ? '<span class="card__note">Render illustrativo</span>' : cover ? '' : '<span class="card__note card__note--ph">' + icon('image', 14) + ' Foto in arrivo</span>'}</div>
+    <div class="card__media">${coverHtml(idx, p)}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}</div>
     <div class="card__body">
       <span class="card__tech">${esc(p.technical_name)}</span>
       <h3><a href="${href.product(p)}" data-act="to-product">${esc(p.name)}</a></h3>
@@ -242,7 +247,6 @@ function statementHtml() {
           <defs><mask id="sew2"><path class="reveal" pathLength="1" d="${RIDGE}"/></mask></defs>
           <path class="thread" d="${RIDGE}" mask="url(#sew2)"/></svg>
       </div>
-      <figcaption>Ambientazione illustrativa</figcaption>
     </figure>
     <div class="statement__text rv" style="--d:1">
       <h2 id="st-title">Il Vesuvio ce l'abbiamo davanti ogni mattina.</h2>
@@ -260,7 +264,6 @@ function layersHtml(idx, p) {
   return `<div class="layers" data-layers>
     <figure class="layers__fig">${src}
       ${m.hotspots.map((h, i) => `<button class="hot" style="left:${h.x}%;top:${h.y}%" data-act="layer" data-i="${i}" aria-pressed="${i === 0}" aria-label="${esc(h.title)}">${i + 1}</button>`).join('')}
-      <figcaption class="small muted" style="margin-top:8px">${esc(m.caption || 'Vista illustrativa')}: numero e spessore degli strati possono differire dal prodotto.</figcaption>
     </figure>
     <ol class="layers__list">${m.hotspots
       .map((h, i) => `<li><button data-act="layer" data-i="${i}" aria-pressed="${i === 0}"><span class="n" aria-hidden="true">${i + 1}</span><span><strong>${esc(h.title)}</strong><span class="d">${esc(h.text)}</span></span></button></li>`)
@@ -277,7 +280,6 @@ function labHtml(idx) {
   const ls = layersFor(cur);
   return `<div class="lab">
     <div class="lab__stage" id="lab-stage" data-autoexplode style="--ex:0">
-      <span class="lab__note">Schema illustrativo, non in scala</span>
       ${productIllustration(cur, 'materasso', { gap: 34 })}
       <label class="lab__slider">Chiuso <input type="range" min="0" max="100" value="0" data-act="lab-ex" aria-label="Apri gli strati"> Aperto</label>
     </div>
@@ -329,8 +331,7 @@ function showroomHtml(compact = false) {
         <path d="M250 300 C270 230 300 215 330 170 C350 150 370 160 400 140" fill="none" stroke="#c8785b" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
       </svg>
       <span class="pin-dot" aria-hidden="true"></span>
-      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 4px"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
-        <p class="small muted" style="margin:0">${CFG.mapEmbed ? '' : 'La mappa interattiva si attiva sul sito pubblicato, dopo il consenso ai cookie.'}</p></div>
+      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 0"><strong>Via Raffaele Salierno 38, Casoria</strong></p></div>
     </div></div>
   </div>`;
 }
@@ -349,7 +350,7 @@ function viewHome() {
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
     <div class="num rv" style="--d:1"><b data-count="1986" data-from="1950">1986</b><span>l'anno in cui abbiamo iniziato</span></div>
     <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
-    <div class="num rv" style="--d:3"><b data-count="8" data-from="0">8</b><span>misure standard, più il su misura</span></div>
+    <div class="num rv" style="--d:3"><b data-count="13" data-from="0">13</b><span>misure standard, più il su misura</span></div>
   </div></section>
 
   ${statementHtml()}
@@ -371,8 +372,8 @@ function viewHome() {
     ${(() => {
       const fbi = siteImage('fabbrica_panoramica');
       return fbi
-        ? `<div class="factory-band__img kb"><img src="${esc(fbi.src)}" ${fbi.srcset ? `srcset="${esc(fbi.srcset)}" sizes="100vw"` : ''} loading="lazy" decoding="async" alt="${esc(fbi.alt)}"></div>${fbi.uploaded ? '' : '<span class="factory-band__credit">Immagine illustrativa, non una foto della fabbrica</span>'}`
-        : `<div class="factory-band__img"><img src="img/lavorazione-1600.webp" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi"></div><span class="factory-band__credit">Scena illustrativa</span>`;
+        ? `<div class="factory-band__img kb"><img src="${esc(fbi.src)}" ${fbi.srcset ? `srcset="${esc(fbi.srcset)}" sizes="100vw"` : ''} loading="lazy" decoding="async" alt="${esc(fbi.alt)}"></div>`
+        : `<div class="factory-band__img"><img src="img/lavorazione-1600.webp" loading="lazy" alt="Scena illustrativa di un laboratorio di materassi"></div>`;
     })()}
     <span class="factory-band__year" aria-hidden="true">1986</span>
     <div class="wrap factory-band__body">
@@ -404,7 +405,7 @@ function viewHome() {
           .join('')}</div>
       </div>
       <div class="match2__img kb">${(() => {
-        const g = siteImage('guanciali_ambiente');
+        const g = siteImage('testata_materasso');
         return g ? `<img src="${esc(g.src)}" ${g.srcset ? `srcset="${esc(g.srcset)}" sizes="(max-width: 860px) 100vw, 45vw"` : ''} loading="lazy" decoding="async" alt="${esc(g.alt)}">` : '';
       })()}</div>
     </div>
@@ -473,7 +474,7 @@ function filmstripHtml() {
 
 /** Testata scura e trapuntata per le pagine interne, con foto quando c'è. */
 function pageHero(items, title, lead = '', art = '', photo = null) {
-  return `<header class="page-hero${photo ? ' page-hero--photo' : ''}">${photo ? `<div class="page-hero__bg kb"><img src="${esc(photo.src)}" ${photo.srcset ? `srcset="${esc(photo.srcset)}" sizes="100vw"` : ''} alt="" decoding="async"></div>` : ''}${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art && !photo ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}${photo && !photo.uploaded ? '<span class="page-hero__credit">Immagine illustrativa</span>' : ''}</header>`;
+  return `<header class="page-hero${photo ? ' page-hero--photo' : ''}">${photo ? `<div class="page-hero__bg kb"><img src="${esc(photo.src)}" ${photo.srcset ? `srcset="${esc(photo.srcset)}" sizes="100vw"` : ''} alt="" decoding="async"></div>` : ''}${crumbs(items)}<div class="wrap"><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${art && !photo ? `<div class="page-hero__art" aria-hidden="true">${art}</div>` : ''}</header>`;
 }
 
 // ---------------------------------------------------------------- CATEGORIA
@@ -522,18 +523,30 @@ function viewCategory(c) {
 // ---------------------------------------------------------------- SCHEDA
 function getSel(idx, p) {
   const s = state.sel[p.id] ?? {};
+  // sul sito pubblico esistono solo le combinazioni con prezzo
   const pv = idx.purchasableVariants(p);
-  const sizes = idx.sizesOf(p);
-  const heights = idx.heightsOf(p);
-  let size = s.size ?? (sizes.includes('160x190') && pv.some((v) => v.size === '160x190') ? '160x190' : pv[0]?.size ?? sizes[0] ?? null);
-  let height = s.height ?? (pv.some((v) => v.height_cm === 25 && v.size === size) ? 25 : pv.find((v) => v.size === size)?.height_cm ?? heights[0] ?? null);
-  if (!heights.length) height = idx.variantsOf(p)[0]?.height_cm ?? null;
+  const sizes = idx.purchasableSizes(p);
+  const heights = idx.purchasableHeights(p);
+  let size = s.size && sizes.includes(s.size) ? s.size : sizes.includes('160x190') ? '160x190' : sizes[0] ?? null;
+  let height = s.height && heights.includes(s.height) ? s.height : null;
+  if (height === null || (size && !pv.some((v) => v.size === size && v.height_cm === height))) {
+    height = pv.some((v) => v.height_cm === 25 && v.size === size) ? 25 : pv.find((v) => v.size === size)?.height_cm ?? heights[0] ?? null;
+  }
+  if (!heights.length) height = pv[0]?.height_cm ?? null;
   return (state.sel[p.id] = { size, height, qty: s.qty ?? 1 });
 }
 
 function viewProduct(slug) {
   const idx = pub();
   const p = idx.snap.products.find((x) => x.slug === slug && x.status === 'published');
+  if (!p) {
+    // vecchi indirizzi (es. pocket-2400-elite -> pocket-2600-elite)
+    const to = resolveRedirect(store.db.redirects ?? [], slug);
+    if (to) {
+      setTimeout(() => location.replace('#prodotto-' + to));
+      return '';
+    }
+  }
   const c = p && idx.category(p);
   if (!p || !c || c.status !== 'published') return viewNotFound();
   const kind = c.kind;
@@ -604,9 +617,6 @@ function galleryItems(idx, p, gallery) {
   const kind = idx.kind(p);
   const items = gallery.map((m) => ({ type: 'media', m }));
   if (!items.length) items.push({ type: 'illus' });
-  const have = new Set(gallery.map((m) => m.slot));
-  const slots = PRODUCT_SLOTS[kind] ?? PRODUCT_SLOTS.materasso;
-  for (const def of slots) if (!have.has(def.slot)) items.push({ type: 'ph', def });
   return items;
 }
 function galleryHtml(idx, p, gallery, i) {
@@ -615,9 +625,9 @@ function galleryHtml(idx, p, gallery, i) {
   const it = items[i] ?? items[0];
   let main;
   if (it.type === 'illus') {
-    const layered = kind === 'materasso' || kind === 'topper';
+    // le "aperture" degli strati solo dove la composizione è confermata
+    const layered = (kind === 'materasso' || kind === 'topper') && !!layersFor(p);
     main = `<div class="gallery__main" id="gal-stage" ${layered ? 'data-autoexplode' : ''} style="--ex:0">${productIllustration(p, kind, { gap: 34 })}
-      <span class="gallery__label" style="top:14px;bottom:auto">Schema illustrativo, non in scala</span>
       ${layered ? `<label class="gallery__ctrl">Chiuso <input type="range" min="0" max="100" value="0" data-act="gal-ex" aria-label="Apri gli strati"> Aperto</label>` : ''}</div>`;
   } else if (it.type === 'ph') {
     main = `<div class="gallery__main gallery__main--ph">${placeholderHtml({ ...it.def, ratio: '3 / 2' }, { cls: 'ph--fill' })}</div>`;
@@ -630,24 +640,23 @@ function galleryHtml(idx, p, gallery, i) {
   }
   const thumb = (t, j) => {
     const inner = t.type === 'media' ? imgTag(t.m, { sizes: '80px' }) || '' : t.type === 'illus' ? productIllustration(p, kind) : `<span class="thumb__ph">${icon('image', 18)}</span>`;
-    const label = t.type === 'media' ? t.m.alt : t.type === 'illus' ? 'Schema illustrativo' : `Spazio per foto: ${t.def.label}`;
+    const label = t.type === 'media' ? t.m.alt : `Illustrazione di ${p.name}`;
     return `<button class="thumb ${t.type === 'ph' ? 'thumb--ph' : ''}" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="${esc(label)}">${inner}</button>`;
   };
-  return `${main}<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>
-    ${gallery.length ? '' : '<p class="small muted" style="margin-top:8px">Le foto del prodotto saranno pubblicate appena disponibili.</p>'}`;
+  return `${main}${items.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>` : ''}
+`;
 }
 
 function renderBuy(idx, p) {
   const kind = idx.kind(p);
   const sel = getSel(idx, p);
-  const sizes = idx.sizesOf(p);
-  const heights = idx.heightsOf(p);
+  const sizes = idx.purchasableSizes(p);
+  const heights = idx.purchasableHeights(p);
   const pv = idx.purchasableVariants(p);
-  const v = idx.findVariant(p, sel.size, kind === 'materasso' || kind === 'topper' ? sel.height : idx.variantsOf(p)[0]?.height_cm ?? null) ?? (sizes.length ? undefined : idx.variantsOf(p)[0]);
+  const v = pv.find((x) => (x.size ?? null) === (sel.size ?? null) && (kind === 'materasso' || kind === 'topper' ? x.height_cm === sel.height : true));
   const ok = v && pv.includes(v);
   const sizeOk = (s) => pv.some((x) => x.size === s && (!heights.length || kind !== 'materasso' || x.height_cm === sel.height));
   const heightOk = (h) => pv.some((x) => x.height_cm === h);
-  const blockedHeights = heights.filter((h) => !heightOk(h));
   const selectable = kind === 'materasso' && heights.length > 1;
   $('#buy').innerHTML = `
     <span class="buy__tech">${esc(p.technical_name)}</span>
@@ -656,8 +665,8 @@ function renderBuy(idx, p) {
     <div class="buy__price" aria-live="polite">${ok ? `<span class="price"><span class="price-flip ${state.lastPrice?.[p.id] !== undefined && state.lastPrice[p.id] !== v.price_cents ? 'is-new' : ''}">${formatCents(v.price_cents)}</span></span><span class="small muted">IVA inclusa${sel.size ? `, ${formatSize(sel.size)}` : ''}${v.height_cm && kind === 'materasso' ? ` H${v.height_cm}` : ''}</span>` : `<span class="small">Questa configurazione non è acquistabile online.</span>`}</div>
     ${ok ? availabilityHtml(v) : ''}
     ${selectable ? `<fieldset class="opt"><legend>Altezza</legend><div class="seg seg--h">${heights
-      .map((h) => `<input type="radio" name="h" id="h${h}" value="${h}" data-act="pick-h" ${sel.height === h ? 'checked' : ''} ${heightOk(h) ? '' : 'disabled'}><label for="h${h}">H${h}${heightOk(h) ? '' : '<small>non online</small>'}</label>`)
-      .join('')}</div>${blockedHeights.length ? `<p class="small muted" style="margin:8px 0 0">H${blockedHeights.join(', H')}: non ancora acquistabile online. <a href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a>.</p>` : ''}</fieldset>` : ''}
+      .map((h) => `<input type="radio" name="h" id="h${h}" value="${h}" data-act="pick-h" ${sel.height === h ? 'checked' : ''} ${heightOk(h) ? '' : 'disabled'}><label for="h${h}">H${h}</label>`)
+      .join('')}</div></fieldset>` : ''}
     ${sizes.length ? `<fieldset class="opt"><legend>Misura <button type="button" class="link-btn" data-act="size-guide">Confronta due misure</button></legend><div class="seg">${sizes
       .map((s) => `<input type="radio" name="s" id="s${s}" value="${s}" data-act="pick-s" ${sel.size === s ? 'checked' : ''} ${sizeOk(s) ? '' : 'disabled'}><label for="s${s}">${formatSize(s)}</label>`)
       .join('')}</div>${footprint(sel.size)}</fieldset>` : ''}
@@ -835,7 +844,21 @@ function showCompareBar() {
 }
 
 // ---------------------------------------------------------------- MISURE
-const SIZE_NAMES = { '80x190': 'Singolo', '90x200': 'Singolo lungo', '120x190': 'Una piazza e mezza', '140x190': 'Francese', '160x190': 'Matrimoniale', '165x190': 'Matrimoniale', '170x200': 'Matrimoniale grande', '180x200': 'Matrimoniale grande' };
+const SIZE_NAMES = {
+  '80x190': 'Singolo',
+  '80x200': 'Singolo lungo',
+  '90x190': 'Singolo largo',
+  '90x200': 'Singolo largo, lungo',
+  '120x190': 'Una piazza e mezza',
+  '120x200': 'Una piazza e mezza, lungo',
+  '140x190': 'Francese',
+  '140x200': 'Francese lungo',
+  '160x190': 'Matrimoniale',
+  '160x200': 'Matrimoniale lungo',
+  '165x190': 'Matrimoniale',
+  '170x200': 'Matrimoniale grande',
+  '180x200': 'King Size',
+};
 function sizesSvg(a, b) {
   const A = parseSize(a);
   const B = parseSize(b);
@@ -908,7 +931,7 @@ function waBlock(plan, ref, kind) {
   return `<div class="form">
     ${plan.url
       ? `<a class="btn btn--wa" href="${esc(plan.url)}" target="_blank" rel="noopener" data-act="wa-open" data-ref="${esc(ref)}">${icon('wa', 20)} Invia la richiesta su WhatsApp</a>`
-      : `<div class="note note--warn" role="status"><strong>Invio su WhatsApp non ancora attivo.</strong> Copia il riepilogo e invialo a Vesuvio Sleep; il numero per le richieste sarà pubblicato a breve.${CFG.preview ? `<br><span class="small">Anteprima: configura il numero da Admin › Impostazioni (${esc(wa.check.ok ? '' : wa.check.reason)})</span>` : ''}</div>`}
+      : `<div class="note" role="status">Copia il riepilogo e invialo a Vesuvio Sleep: ti confermiamo disponibilità e consegna.</div>`}
     <button class="btn btn--ghost" data-act="copy-summary" data-ref="${esc(ref)}">${icon('copy', 20)} Copia il riepilogo</button>
     <textarea class="textarea" id="copy-fallback" hidden readonly aria-label="Riepilogo da copiare"></textarea>
     ${plan.short ? `<p class="small muted">Il carrello è lungo: su WhatsApp si apre un messaggio breve con il riferimento ${esc(ref)}. Incolla sotto il riepilogo completo che hai copiato.</p>` : ''}
@@ -1008,7 +1031,7 @@ function viewReview() {
       </tbody></table>
       <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
       <h2 style="font-size:1.2rem;margin-top:28px">Il messaggio che invierai</h2>
-      <pre class="msg-preview" aria-label="Anteprima del messaggio">${esc(plan.text)}</pre>
+      <pre class="msg-preview" aria-label="Testo del messaggio">${esc(plan.text)}</pre>
       <p class="small muted">Il messaggio contiene solo articoli, prezzi e riferimento: nessun dato personale.</p>
     </div>
     <aside class="summary" aria-label="Invio">
@@ -1208,8 +1231,8 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const sel = getSel(cp.idx, cp.p);
       const kind = cp.idx.kind(cp.p);
-      const v = cp.idx.findVariant(cp.p, sel.size, kind === 'materasso' || kind === 'topper' ? sel.height : cp.idx.variantsOf(cp.p)[0]?.height_cm ?? null);
-      if (!v || !cp.idx.purchasableVariants(cp.p).includes(v)) return toast('Questa configurazione non è acquistabile online');
+      const v = cp.idx.purchasableVariants(cp.p).find((x) => (x.size ?? null) === (sel.size ?? null) && (kind === 'materasso' || kind === 'topper' ? x.height_cm === sel.height : true));
+      if (!v) return toast('Questa configurazione non è acquistabile online');
       addVariant(v, sel.qty);
       $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="#carrello">Vai al carrello</a></p>`;
       break;
@@ -1365,6 +1388,27 @@ document.addEventListener('submit', (e) => {
   $('#quote-out h2').setAttribute('tabindex', '-1');
   $('#quote-out h2').focus();
 });
+
+// Strumento di verifica (sola lettura) usato dai test: conteggi e prezzi del catalogo pubblico
+window.__vs = {
+  stats() {
+    const idx = catalog();
+    const byKind = {};
+    let total = 0;
+    for (const p of idx.publicProducts()) {
+      const n = idx.purchasableVariants(p).length;
+      byKind[idx.kind(p)] = (byKind[idx.kind(p)] ?? 0) + n;
+      total += n;
+    }
+    return { total, byKind, products: idx.publicProducts().map((p) => p.slug) };
+  },
+  price(slug, height, size) {
+    const idx = catalog();
+    const p = idx.publicProducts().find((x) => x.slug === slug);
+    const v = p && idx.purchasableVariants(p).find((x) => x.size === size && (height === null || x.height_cm === height));
+    return v ? v.price_cents / 100 : null;
+  },
+};
 
 // ---------------------------------------------------------------- AVVIO
 $('#menu-btn').addEventListener('click', () => {
