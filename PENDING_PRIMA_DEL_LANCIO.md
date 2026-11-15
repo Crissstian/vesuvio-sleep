@@ -1,18 +1,20 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 15/11/2026 (catalogo ufficiale applicato). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 15/11/2026 sera (contatti, pagamenti, pagine legali e sito SEO). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
 
 ## Bloccanti
 
 | Voce | Stato | Cosa serve |
 | --- | --- | --- |
-| Numero WhatsApp per il checkout | **Mancante** | Confermare il numero aziendale con prefisso internazionale. Finché manca, il sito non mostra link WhatsApp e offre solo «Copia il riepilogo». Nella preview si imposta da Admin › Impostazioni o con `VS_CONFIG.whatsappNumber` (in produzione `NEXT_PUBLIC_…`/setting Supabase). |
-| Telefono ed email pubblici | **Mancante** | Dataset: `phone` e `contact_email` null. Il sito non li mostra. |
+| Numero WhatsApp, telefono, email | **Inseriti** | +39 366 121 8346 (WhatsApp e telefono), fdimaterassi@gmail.com. Modificabili da Admin › Impostazioni. Un indirizzo email sul dominio (es. info@vesuviosleep.it) darebbe un'immagine più professionale. |
+| Pagamenti | **Inseriti** | contrassegno o bonifico. **Da confermare**: eventuale costo aggiuntivo del contrassegno (il sito non ne indica); che con il bonifico la merce parta dopo il pagamento (così è scritto nelle condizioni). |
+| Testi legali | **Scritti** | (condizioni di vendita, recesso con modulo, garanzia, privacy, cookie) sul Codice del Consumo e sul GDPR. **Da far rivedere a un avvocato** prima del lancio: non sono un parere legale. Scelta mia da confermare: richieste non concluse conservate 12 mesi. |
+| Capitale sociale e PEC | **Mancanti** | per una S.R.L.S. il capitale sociale va indicato sul sito insieme a sede e REA (art. 2250 c.c.). Servono il capitale e, se vuoi mostrarla, la PEC. |
 | Claim antiacaro, ipoallergenico, Free Humidity | **Da verificare** | Mostrati nelle schede (spegnibili da Admin › Impostazioni). Vanno confrontati con l'etichetta reale del rivestimento. |
 | Made in Italy | **Da verificare** | Autorizzato dal titolare; confermare sui prodotti effettivamente venduti. |
 | Condizioni di spedizione | **Da riconfermare** | Mostrate: gratuita in Italia isole comprese; a Napoli furgone, consegna al piano, ritiro usato, montaggio reti; produzione circa 2 giorni. Riconfermare prima del lancio. |
-| Privacy, cookie, termini, resi | **Mancante** | iubenda non configurato; testi legali da far rivedere. La mappa Google è disattivata nella preview e va caricata solo dopo il consenso. |
-| Dominio e DNS | **Mancante** | La preview è `noindex` e non ha canonical verso `vesuviosleep.it`. |
+| Google Fonts | **Da sistemare al lancio** | I caratteri arrivano dai server di Google, che ricevono l'IP dei visitatori (dichiarato nella privacy). Meglio ospitarli sul sito: in questa sessione non si potevano scaricare. |
+| Dominio, hosting e DNS | **Mancante** | Il sito pubblico è pronto in `dist/` (Netlify o Cloudflare Pages): serve collegare `vesuviosleep.it`, poi inviare la sitemap a Search Console e creare la scheda Google Business. |
 
 ## Catalogo
 

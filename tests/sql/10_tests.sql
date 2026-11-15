@@ -36,7 +36,9 @@ select pg_temp.check(not exists (select 1 from public.products where slug in ('m
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
 select pg_temp.check((select count(*) from public.media) = 13, 'anon vede solo le foto pubblicate di prodotti pubblicati (13)');
 select pg_temp.check((select count(*) from storage.objects) = 1, 'anon scarica solo file di foto pubblicate (non la vecchia foto 2400)');
-select pg_temp.check((select count(*) from public.settings) = 3, 'anon legge solo le impostazioni pubbliche');
+select pg_temp.check((select count(*) from public.settings) = 6, 'anon legge solo le impostazioni pubbliche (contatti, pagamenti, spedizione, claim)');
+select pg_temp.check((select value #>> '{}' from public.settings where key = 'whatsapp_number') = '+39 366 121 8346', 'numero WhatsApp aziendale pubblico');
+select pg_temp.check((select value from public.settings where key = 'payment_methods') = '["contrassegno", "bonifico"]'::jsonb, 'pagamenti: contrassegno e bonifico');
 select pg_temp.check((select new_slug from public.slug_redirects where old_slug = 'pocket-2400-elite') = 'pocket-2600-elite', 'anon legge il redirect pocket-2400-elite -> pocket-2600-elite');
 select pg_temp.expect_error($q$insert into public.slug_redirects (old_slug, new_slug) values ('x', 'y')$q$, 'anon non scrive redirect');
 select pg_temp.expect_error('select * from public.requests', 'anon non legge le richieste');

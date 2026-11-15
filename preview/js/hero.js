@@ -47,8 +47,8 @@ export function heroHtml(slides = defaultSlides()) {
       <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
       <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
       <div class="btn-row">
-        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
-        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+        <a class="btn btn--primary" href="#/materassi/">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#/sleep-match/">Trova il tuo materasso</a>
       </div>
       ${slides.length ? `<p class="hero__caption" id="hero-caption"><span>${esc(slides[0].caption)}</span></p>` : ''}
     </div>

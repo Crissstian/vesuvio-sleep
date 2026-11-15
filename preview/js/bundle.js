@@ -381,6 +381,7 @@ function buildFullMessage(s) {
         '',
         `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
         ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
+        ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
         '',
         'Attendo la vostra conferma su disponibilità e consegna.',
     ].join('\n');
@@ -391,6 +392,7 @@ function buildShortMessage(s) {
         'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
         `Riferimento: ${s.ref}`,
         `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+        ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
         'Incollo qui sotto il riepilogo completo copiato dal sito.',
     ].join('\n');
 }
@@ -500,6 +502,9 @@ const BUSINESS = {
     region: 'NA',
     country: 'IT',
     since: 1986,
+    telephone: '+39 366 121 8346',
+    email: 'fdimaterassi@gmail.com',
+    whatsapp: '+393661218346',
     hours: [
         { days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '09:00', closes: '18:00' },
         { days: ['Saturday'], opens: '10:00', closes: '14:00' },
@@ -510,7 +515,27 @@ const AV = {
     in_production: 'https://schema.org/MadeToOrder',
     made_to_order: 'https://schema.org/MadeToOrder',
 };
-/** Dati strutturati prodotto: solo prezzi e stati reali, nessun rating. */
+/** Spedizione gratuita in Italia e reso entro 14 giorni: le due informazioni che Google mostra nei risultati prodotto. */
+function offerExtras(site) {
+    return {
+        seller: { '@type': 'Organization', name: BUSINESS.name },
+        shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: 'EUR' },
+            shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IT' },
+        },
+        hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'IT',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 14,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+            merchantReturnLink: site ? `${site}/resi-e-recesso/` : undefined,
+        },
+    };
+}
+/** Dati strutturati prodotto: solo prezzi e stati reali, nessuna recensione inventata. */
 function productJsonLd(idx, p, opts = {}) {
     const vs = idx.purchasableVariants(p);
     if (!vs.length)
@@ -518,16 +543,37 @@ function productJsonLd(idx, p, opts = {}) {
     const low = idx.minPrice(p);
     const high = idx.maxPrice(p);
     const avail = AV[vs[0].availability] ?? 'https://schema.org/MadeToOrder';
+    const extras = offerExtras(opts.site);
     const ld = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: p.name,
-        description: p.short,
+        description: [p.short, p.description].filter(Boolean).join(' '),
         brand: { '@type': 'Brand', name: BUSINESS.name },
+        manufacturer: { '@type': 'Organization', name: BUSINESS.legalName },
+        category: p.technical_name || undefined,
         sku: vs.length === 1 ? vs[0].sku : undefined,
         offers: vs.length === 1
-            ? { '@type': 'Offer', priceCurrency: 'EUR', price: (low / 100).toFixed(2), availability: avail, url: opts.url }
-            : { '@type': 'AggregateOffer', priceCurrency: 'EUR', lowPrice: (low / 100).toFixed(2), highPrice: (high / 100).toFixed(2), offerCount: vs.length, availability: avail },
+            ? { '@type': 'Offer', priceCurrency: 'EUR', price: (low / 100).toFixed(2), availability: avail, url: opts.url, itemCondition: 'https://schema.org/NewCondition', ...extras }
+            : {
+                '@type': 'AggregateOffer',
+                priceCurrency: 'EUR',
+                lowPrice: (low / 100).toFixed(2),
+                highPrice: (high / 100).toFixed(2),
+                offerCount: vs.length,
+                availability: avail,
+                url: opts.url,
+                offers: vs.map((v) => ({
+                    '@type': 'Offer',
+                    sku: v.sku,
+                    name: [p.name, v.size ? v.size.replace('x', '×') : '', v.height_cm && vs.some((x) => x.height_cm !== v.height_cm) ? `H${v.height_cm}` : ''].filter(Boolean).join(' '),
+                    priceCurrency: 'EUR',
+                    price: (v.price_cents / 100).toFixed(2),
+                    availability: AV[v.availability] ?? avail,
+                    itemCondition: 'https://schema.org/NewCondition',
+                    ...extras,
+                })),
+            },
     };
     if (opts.images?.length)
         ld.image = opts.images;
@@ -535,15 +581,23 @@ function productJsonLd(idx, p, opts = {}) {
         ld.url = opts.url;
     return JSON.parse(JSON.stringify(ld));
 }
-function localBusinessJsonLd(url) {
-    return {
+function localBusinessJsonLd(url, opts = {}) {
+    return JSON.parse(JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'FurnitureStore',
+        '@id': url ? `${url.replace(/\/$/, '')}/#azienda` : undefined,
         name: BUSINESS.name,
         legalName: BUSINESS.legalName,
-        vatID: BUSINESS.vat,
+        vatID: 'IT' + BUSINESS.vat,
         foundingDate: String(BUSINESS.since),
         url,
+        image: opts.image,
+        logo: opts.logo,
+        telephone: BUSINESS.telephone,
+        email: BUSINESS.email,
+        paymentAccepted: 'Contrassegno, bonifico bancario',
+        currenciesAccepted: 'EUR',
+        areaServed: { '@type': 'Country', name: 'Italia' },
         address: {
             '@type': 'PostalAddress',
             streetAddress: BUSINESS.street,
@@ -553,27 +607,42 @@ function localBusinessJsonLd(url) {
             addressCountry: BUSINESS.country,
         },
         openingHoursSpecification: BUSINESS.hours.map((h) => ({ '@type': 'OpeningHoursSpecification', dayOfWeek: h.days, opens: h.opens, closes: h.closes })),
-    };
+        contactPoint: {
+            '@type': 'ContactPoint',
+            contactType: 'customer service',
+            telephone: BUSINESS.telephone,
+            email: BUSINESS.email,
+            availableLanguage: 'Italian',
+        },
+    }));
 }
 function breadcrumbJsonLd(items) {
-    return {
+    return JSON.parse(JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: it.url })),
+    }));
+}
+function faqJsonLd(items) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: items.map((it) => ({ '@type': 'Question', name: it.q, acceptedAnswer: { '@type': 'Answer', text: it.a } })),
     };
 }
-/** Sitemap con sole pagine pubblicabili; da servire solo sul dominio reale, mai in preview. */
-function buildSitemap(idx, baseUrl, staticPaths = ['/', '/sleep-match', '/confronto', '/guida-misure', '/fuori-misura', '/showroom']) {
+function websiteJsonLd(site) {
+    return { '@context': 'https://schema.org', '@type': 'WebSite', name: BUSINESS.name, url: site + '/', inLanguage: 'it-IT' };
+}
+/** Sitemap con le sole pagine indicizzabili (anche immagini). Si pubblica solo sul dominio reale. */
+function buildSitemap(baseUrl, entries) {
     const base = baseUrl.replace(/\/$/, '');
-    const urls = [
-        ...staticPaths,
-        ...idx.commercialCategories().map((c) => `/${c.slug}`),
-        ...idx.publicProducts().map((p) => `/${idx.category(p).slug}/${p.slug}`),
-    ];
+    const x = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     return [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-        ...urls.map((u) => `  <url><loc>${base}${u}</loc></url>`),
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+        ...entries.map((e) => `  <url><loc>${x(base + e.path)}</loc>${e.lastmod ? `<lastmod>${e.lastmod}</lastmod>` : ''}${(e.images ?? [])
+            .map((i) => `<image:image><image:loc>${x(i)}</image:loc></image:image>`)
+            .join('')}</url>`),
         '</urlset>',
     ].join('\n');
 }
@@ -593,6 +662,8 @@ __exp.BUSINESS = BUSINESS;
 __exp.productJsonLd = productJsonLd;
 __exp.localBusinessJsonLd = localBusinessJsonLd;
 __exp.breadcrumbJsonLd = breadcrumbJsonLd;
+__exp.faqJsonLd = faqJsonLd;
+__exp.websiteJsonLd = websiteJsonLd;
 __exp.buildSitemap = buildSitemap;
 __exp.resolveRedirect = resolveRedirect;
 });
@@ -666,10 +737,639 @@ Object.assign(__exp, __req("core/payments.js"));
 
 
 });
+__def("nav.js", function (__exp) {
+// Indirizzi del sito.
+// Sul dominio reale (VS_CONFIG.routing = 'path') le pagine hanno URL veri, indicizzabili:
+//   /materassi/  /materassi/essential-foam/  /contatti/ ...
+// Nell'anteprima dentro l'artifact (frame isolato) gli stessi indirizzi vivono dopo il cancelletto:
+//   #/materassi/  #/materassi/essential-foam/ ...
+// I vecchi indirizzi (#materassi, #prodotto-xxx, #fuori-misura ...) restano validi e portano al nuovo.
+
+const CFG = window.VS_CONFIG ?? {};
+const MODE = CFG.routing === 'path' ? 'path' : 'hash';
+const SITE_URL = String(CFG.siteUrl || 'https://vesuviosleep.it').replace(/\/$/, '');
+const IS_PREVIEW = CFG.preview !== false;
+
+const P = {
+  home: '/',
+  sleepMatch: '/sleep-match/',
+  compare: '/confronta-materassi/',
+  sizes: '/guida-misure-materassi/',
+  quote: '/materassi-su-misura/',
+  showroom: '/showroom/',
+  cart: '/carrello/',
+  review: '/carrello/riepilogo/',
+  search: '/cerca/',
+  admin: '/admin/',
+  contacts: '/contatti/',
+  faq: '/domande-frequenti/',
+  about: '/chi-siamo/',
+  b2b: '/hotel-e-bb/',
+  naples: '/materassi-napoli/',
+  shipping: '/spedizioni-e-consegna/',
+  payments: '/pagamenti/',
+  returns: '/resi-e-recesso/',
+  warranty: '/garanzia/',
+  terms: '/condizioni-di-vendita/',
+  privacy: '/privacy/',
+  cookies: '/cookie/',
+  guides: '/guide/',
+};
+
+/** href per un percorso canonico ("/materassi/") nella modalità corrente. */
+const u = (path) => (MODE === 'path' ? path : '#' + path);
+/** URL assoluto (canonical, Open Graph, dati strutturati). */
+const abs = (path) => SITE_URL + path;
+/** URL assoluto di un file del sito (img/..., anche già assoluto). */
+const absAsset = (src) => (!src ? '' : /^https?:/.test(src) ? src : SITE_URL + '/' + src.replace(/^\.?\//, ''));
+
+const LEGACY = {
+  '': P.home,
+  'sleep-match': P.sleepMatch,
+  confronto: P.compare,
+  'guida-misure': P.sizes,
+  'fuori-misura': P.quote,
+  showroom: P.showroom,
+  carrello: P.cart,
+  riepilogo: P.review,
+};
+/** Vecchio indirizzo a cancelletto -> percorso canonico. */
+function legacyToPath(key, resolveProduct) {
+  key = decodeURIComponent(key || '');
+  if (key in LEGACY) return LEGACY[key];
+  if (key === 'admin') return P.admin;
+  if (key.startsWith('admin-')) return `/admin/${key.slice(6)}/`;
+  const m = /^prodotto-(.+)$/.exec(key);
+  if (m) return (resolveProduct && resolveProduct(m[1])) || `/prodotto/${m[1]}/`;
+  return `/${key}/`;
+}
+/** Percorso admin -> chiave usata dal pannello ("admin-catalogo"). */
+function adminKey(path = current().path) {
+  const rest = path.replace(/^\/admin\/?/, '').replace(/\/$/, '');
+  return rest ? 'admin-' + rest : 'admin';
+}
+
+/** Pagina corrente: percorso canonico e parametri. legacy = vecchio indirizzo da reindirizzare. */
+function current() {
+  let raw;
+  if (MODE === 'path') {
+    raw = location.pathname + location.search;
+    const h = location.hash.slice(1);
+    if (h && !h.startsWith('/') && !document.getElementById(h)) return { legacy: h, path: '/', query: {} };
+  } else {
+    raw = location.hash.slice(1);
+    if (!raw.startsWith('/')) return raw === '' ? { path: '/', query: {} } : { legacy: raw, path: '/', query: {} };
+  }
+  const [p, qs = ''] = raw.split('?');
+  let path = decodeURIComponent(p || '/');
+  if (!path.endsWith('/')) path += '/';
+  path = path.replace(/\/{2,}/g, '/');
+  return { path, query: Object.fromEntries(new URLSearchParams(qs)) };
+}
+
+let onNavigate = () => {};
+function setNavigator(fn) {
+  onNavigate = fn;
+}
+/** Vai a un percorso canonico. */
+function go(path, { replace = false } = {}) {
+  if (MODE === 'path') {
+    if (replace) history.replaceState(null, '', path);
+    else history.pushState(null, '', path);
+    onNavigate();
+  } else if (replace) {
+    location.replace('#' + path);
+  } else {
+    location.hash = path;
+  }
+}
+const isAt = (path) => current().path === path;
+
+/** Link interni: niente ricaricamento sul dominio reale, vecchi #indirizzi tradotti ovunque. */
+function interceptLinks(resolveProduct) {
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest?.('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+    const href = a.getAttribute('href');
+    if (href.startsWith('#')) {
+      const key = href.slice(1);
+      if (key.startsWith('/')) return; // anteprima: già canonico
+      const el = key && document.getElementById(key);
+      if (el) {
+        // ancora nella pagina
+        e.preventDefault();
+        el.scrollIntoView({ block: 'start' });
+        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+        el.focus({ preventScroll: true });
+        return;
+      }
+      e.preventDefault();
+      go(legacyToPath(key, resolveProduct));
+      return;
+    }
+    if (MODE === 'path' && href.startsWith('/') && !href.startsWith('//') && !/\.(xml|txt|pdf|webp|png|jpg)$/i.test(href.split('?')[0])) {
+      e.preventDefault();
+      if (href !== location.pathname + location.search) go(href);
+    }
+  });
+}
+
+__exp.MODE = MODE;
+__exp.SITE_URL = SITE_URL;
+__exp.IS_PREVIEW = IS_PREVIEW;
+__exp.P = P;
+__exp.u = u;
+__exp.abs = abs;
+__exp.absAsset = absAsset;
+__exp.legacyToPath = legacyToPath;
+__exp.adminKey = adminKey;
+__exp.current = current;
+__exp.setNavigator = setNavigator;
+__exp.go = go;
+__exp.isAt = isAt;
+__exp.interceptLinks = interceptLinks;
+});
+__def("pages.js", function (__exp) {
+// Pagine informative, legali e guide. Ogni pagina ha un URL canonico, titolo e descrizione
+// per i motori di ricerca, un H1 e il testo. I fatti vengono solo dai dati confermati
+// (listino, dataset aziendale, indicazioni del titolare del 15/11/2026): niente tempi di
+// consegna, certificazioni o garanzie aggiuntive non dichiarate.
+const {P, u} = __req("nav.js");
+const {normalizeWhatsAppNumber} = __req("core/index.js");
+
+const CONTACT = {
+  phone: '+39 366 121 8346',
+  phoneHref: 'tel:+393661218346',
+  phoneShort: '366 121 8346',
+  waDigits: '393661218346',
+  waShort: '366 121 8346',
+  email: 'fdimaterassi@gmail.com',
+  address: 'Via Raffaele Salierno 38, 80026 Casoria (NA)',
+  legalName: "MATERASSI D'AUTORE A.V. S.R.L.S.",
+  vat: '10456501211',
+  rea: 'NA-1107535',
+  mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent('Via Raffaele Salierno 38, 80026 Casoria NA'),
+};
+const shortNum = (digits) => (digits.startsWith('39') && digits.length === 12 ? `${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}` : '+' + digits);
+/** I contatti modificati in Admin › Impostazioni prevalgono sui valori di partenza. */
+function applySettings(st = {}) {
+  const w = normalizeWhatsAppNumber(st.whatsapp_number || '');
+  if (w.ok) {
+    CONTACT.waDigits = w.digits;
+    CONTACT.waShort = shortNum(w.digits);
+  }
+  const ph = normalizeWhatsAppNumber(st.public_phone || '');
+  if (ph.ok) {
+    CONTACT.phone = st.public_phone;
+    CONTACT.phoneHref = 'tel:+' + ph.digits;
+    CONTACT.phoneShort = shortNum(ph.digits);
+  }
+  if (st.contact_email && /@/.test(st.contact_email)) CONTACT.email = st.contact_email;
+}
+const waHref = (text = 'Ciao Vesuvio Sleep, vorrei qualche informazione.') => `https://wa.me/${CONTACT.waDigits}?text=${encodeURIComponent(text)}`;
+
+const PAYMENT_METHODS = [
+  {
+    id: 'contrassegno',
+    label: 'Contrassegno',
+    msg: 'contrassegno alla consegna',
+    text: 'Paghi alla consegna, direttamente a chi ti porta il materasso.',
+  },
+  {
+    id: 'bonifico',
+    label: 'Bonifico bancario',
+    msg: 'bonifico bancario',
+    text: 'Ti inviamo gli estremi su WhatsApp; dopo il bonifico ricevi poco dopo la bolla di spedizione.',
+  },
+];
+
+const LEGAL_UPDATED = '15 novembre 2026';
+
+const L = {
+  essential: '/materassi/essential-foam/',
+  duo: '/materassi/memory-duo/',
+  pocket: '/materassi/pocket-2600-elite/',
+  p1600: '/materassi/pocket-1600/',
+  mf3: '/materassi/memory-foam-3-strati/',
+  flex: '/reti/rete-flex/',
+  strong: '/reti/rete-strong/',
+  topper: '/topper/topper-memory-cloud-5/',
+};
+const a = (path, text) => `<a href="${u(path)}">${text}</a>`;
+const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+const mail = () => `<a href="mailto:${CONTACT.email}">${CONTACT.email}</a>`;
+const tel = () => `<a href="${CONTACT.phoneHref}">${CONTACT.phoneShort}</a>`;
+const wa = (t = 'WhatsApp') => ext(waHref(), t);
+const toc = (items) => `<nav class="toc" aria-label="In questa pagina"><p>In questa pagina</p><ol>${items.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join('')}</ol></nav>`;
+const sec = (id, title, body) => `<section id="${id}"><h2>${title}</h2>${body}</section>`;
+
+// ------------------------------------------------------------------ FAQ
+const FAQ = [
+  {
+    q: 'Come si ordina un materasso Vesuvio Sleep?',
+    a: () => `Scegli il modello, l'altezza e la misura e aggiungilo al carrello. Nel riepilogo scegli come pagare e invii la richiesta su WhatsApp con un clic: il messaggio contiene articoli, prezzi e un numero di riferimento. Ti rispondiamo noi per confermare disponibilità, consegna e pagamento. Aprire WhatsApp non è ancora un ordine: l'ordine è confermato solo quando te lo confermiamo per iscritto.`,
+  },
+  {
+    q: 'Come si paga?',
+    a: () => `In due modi: in <strong>contrassegno</strong>, pagando alla consegna, oppure con <strong>bonifico bancario</strong>: ti mandiamo gli estremi su WhatsApp e, dopo il bonifico, ricevi poco dopo la bolla di spedizione. Sul sito non si paga e non si inseriscono carte. Dettagli nella pagina ${a(P.payments, 'Pagamenti')}.`,
+  },
+  {
+    q: 'Quanto costa la spedizione?',
+    a: () => `Niente: la spedizione è gratuita in tutta Italia, isole comprese. Fuori Napoli consegna il corriere, con il tracciamento della spedizione. Tutti i dettagli in ${a(P.shipping, 'Spedizioni e consegna')}.`,
+  },
+  {
+    q: 'Quanto tempo ci vuole?',
+    a: () => `I materassi sono prodotti su ordinazione nella nostra fabbrica di Casoria: servono circa 2 giorni di lavorazione prima della spedizione. I tempi del corriere te li indichiamo con la conferma dell'ordine.`,
+  },
+  {
+    q: 'Consegnate a Napoli?',
+    a: () => `Sì, a Napoli consegniamo con il nostro furgone: consegna al piano gratuita, ritiro del vecchio materasso e montaggio delle reti. Vedi ${a(P.naples, 'Materassi a Napoli')}.`,
+  },
+  {
+    q: 'Posso provare i materassi prima di comprarli?',
+    a: () => `Sì. Fabbrica, esposizione e showroom sono nello stesso posto, in Via Raffaele Salierno 38 a Casoria: lunedì–venerdì 9:00–18:00, sabato 10:00–14:00. ${a(P.showroom, 'Come arrivare')}.`,
+  },
+  {
+    q: 'Fate materassi su misura?',
+    a: () => `Sì, fuori misura e altezze personalizzate. Indica prodotto e misure nella pagina ${a(P.quote, 'Materassi su misura')}: ti mandiamo il preventivo su WhatsApp, senza pagamenti anticipati.`,
+  },
+  {
+    q: 'Quali misure sono disponibili?',
+    a: () => `Tredici misure standard, dal singolo 80×190 al King Size 180×200, passando per piazza e mezza, francese e matrimoniale. La ${a(P.sizes, 'guida alle misure')} le confronta in scala.`,
+  },
+  {
+    q: 'Il rivestimento è sfoderabile?',
+    a: () => `Dipende dal modello: Memory Duo, Pocket 2600 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Essential Foam no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento.`,
+  },
+  {
+    q: 'Posso restituire il materasso?',
+    a: () => `Per le misure standard hai 14 giorni dalla consegna per recedere, senza dover dare una motivazione; le spese di restituzione sono a tuo carico. Il recesso non vale per i prodotti fatti su misura, salvo difetti. Come fare: ${a(P.returns, 'Resi e recesso')}.`,
+  },
+  {
+    q: 'Che garanzia hanno i prodotti?',
+    a: () => `Tutti i prodotti hanno la garanzia legale di conformità di 2 anni dalla consegna, prevista dal Codice del Consumo. Come funziona: ${a(P.warranty, 'Garanzia')}.`,
+  },
+  {
+    q: 'Fornite hotel e B&B?',
+    a: () => `Sì, anche in grandi quantità e fuori misura, con prezzi su preventivo. Vedi ${a(P.b2b, 'Hotel e B&B')}.`,
+  },
+  {
+    q: 'Come vi contatto?',
+    a: () => `Su WhatsApp e al telefono al ${CONTACT.phoneShort}, per email a ${CONTACT.email}, oppure in showroom a Casoria. Tutti i recapiti in ${a(P.contacts, 'Contatti')}.`,
+  },
+];
+const stripTags = (h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+const faqForLd = () => FAQ.map((f) => ({ q: f.q, a: stripTags(f.a()) }));
+
+// ------------------------------------------------------------------ testi delle categorie
+const CATEGORY_SEO = {
+  materasso: {
+    metaTitle: 'Materassi Memory Foam, a molle e in poliuretano',
+    description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
+    html: () => `<h2>Come scegliere tra i nostri materassi</h2>
+      <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
+      <p>Chi cerca un sostegno più deciso o dorme in due guarda ai modelli a molle: il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} unisce 2600 molle insacchettate e Memory Foam, il ${a(L.p1600, 'Vesuvio Pocket 1600')} è a molle insacchettate, alto 25 cm.</p>
+      <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
+  },
+  rete: {
+    metaTitle: 'Reti a doghe in legno con telaio in acciaio',
+    description: (from) => `Reti a doghe in legno con telaio in acciaio, piedi inclusi${from ? `, da ${from}` : ''}. Nelle stesse 13 misure dei nostri materassi, spedizione gratuita in Italia e montaggio a Napoli.`,
+    html: () => `<h2>Quale rete scegliere</h2>
+      <p>Le nostre reti hanno telaio in acciaio e doghe in legno, con i piedi già inclusi. La ${a(L.flex, 'Vesuvio Rete Flex')} distribuisce il carico in modo uniforme; la ${a(L.strong, 'Vesuvio Rete Strong')} ha una struttura rinforzata, per chi cerca un supporto più robusto.</p>
+      <p>Sono disponibili nelle stesse misure dei materassi: scegli la rete della stessa misura del materasso. A Napoli la montiamo noi alla consegna.</p>`,
+  },
+  topper: {
+    metaTitle: 'Topper in Memory Foam alto 5 cm',
+    description: (from) => `Topper in Memory Foam alto 5 cm, sfoderabile${from ? `, da ${from}` : ''}. In tutte le 13 misure dei nostri materassi, prodotto a Casoria e spedito gratis in Italia.`,
+    html: () => `<h2>A cosa serve un topper</h2>
+      <p>Il topper si appoggia sopra il materasso e ne cambia l'accoglienza senza sostituirlo. Il ${a(L.topper, 'Vesuvio Topper Memory Cloud 5')} è in Memory Foam, alto 5 cm, con rivestimento sfoderabile, nelle stesse misure dei nostri materassi: scegli la misura del materasso su cui lo appoggerai.</p>`,
+  },
+};
+
+// ------------------------------------------------------------------ pagine
+// photo: chiave di un'immagine del sito (slots.js) per la testata
+const PAGES = {
+  [P.contacts]: {
+    nav: 'Contatti',
+    h1: 'Contatti',
+    metaTitle: 'Contatti: WhatsApp, telefono e showroom a Casoria',
+    description: `Scrivi a Vesuvio Sleep su WhatsApp o chiama il ${CONTACT.phoneShort}, email ${CONTACT.email}. Showroom e fabbrica in Via Raffaele Salierno 38, Casoria (Napoli).`,
+    lead: 'Per ordini, preventivi su misura, hotel e B&B: rispondiamo noi, dalla fabbrica.',
+    photo: 'showroom',
+    type: 'contact',
+    body: () => `<div class="contact-cards">
+        <a class="contact-card" href="${waHref()}" target="_blank" rel="noopener"><span class="contact-card__k">WhatsApp</span><strong>${CONTACT.waShort}</strong><span>Il modo più veloce: ordini, preventivi, informazioni</span></a>
+        <a class="contact-card" href="${CONTACT.phoneHref}"><span class="contact-card__k">Telefono</span><strong>${CONTACT.phoneShort}</strong><span>Negli orari dello showroom</span></a>
+        <a class="contact-card contact-card--mail" href="mailto:${CONTACT.email}"><span class="contact-card__k">Email</span><strong>${CONTACT.email}</strong><span>Per documenti, fatture e richieste scritte</span></a>
+      </div>
+      ${sec('showroom-c', 'Showroom e fabbrica', `<p>Fabbrica, esposizione e showroom sono nello stesso posto: puoi provare i materassi e parlare con chi li produce.</p>
+        <p><strong>Vesuvio Sleep</strong><br>Via Raffaele Salierno 38<br>80026 Casoria (NA)</p>
+        <dl class="hours"><dt>Lunedì–venerdì</dt><dd>09:00–18:00</dd><dt>Sabato</dt><dd>10:00–14:00</dd><dt>Domenica</dt><dd>Chiuso</dd></dl>
+        <p class="btn-row"><a class="btn btn--primary" href="${CONTACT.mapsUrl}" target="_blank" rel="noopener">Indicazioni stradali</a></p>`)}
+      ${sec('dati', 'Dati aziendali', `<p>${CONTACT.legalName}<br>Sede: ${CONTACT.address}<br>Partita IVA ${CONTACT.vat} · REA ${CONTACT.rea}</p>`)}`,
+  },
+
+  [P.faq]: {
+    nav: 'Domande frequenti',
+    h1: 'Domande frequenti',
+    metaTitle: 'Domande frequenti: ordini, pagamenti, consegna e resi',
+    description: 'Come si ordina, come si paga (contrassegno o bonifico), spedizione gratuita, consegna a Napoli, misure, resi e garanzia: le risposte di Vesuvio Sleep.',
+    lead: 'Ordini, pagamenti, consegna, resi. Se non trovi la risposta, scrivici su WhatsApp.',
+    type: 'faq',
+    body: () => `<div class="faq">${FAQ.map((f, i) => `<details class="faq__item" ${i === 0 ? 'open' : ''}><summary><h2>${f.q}</h2></summary><div class="faq__a"><p>${f.a()}</p></div></details>`).join('')}</div>`,
+  },
+
+  [P.about]: {
+    nav: 'Chi siamo',
+    h1: 'Una fabbrica di materassi a Casoria, dal 1986',
+    metaTitle: 'Chi siamo: fabbrica di materassi a Casoria dal 1986',
+    description: 'Vesuvio Sleep produce materassi a Casoria, alle porte di Napoli, dal 1986 e li vende direttamente, senza intermediari: fabbrica, esposizione e showroom nello stesso posto.',
+    lead: 'Produciamo materassi alle porte di Napoli e li vendiamo direttamente, a prezzo di fabbrica.',
+    photo: 'fabbrica_panoramica',
+    body: () => `${sec('fabbrica', 'Fabbrica, esposizione e showroom nello stesso posto', `<p>Vesuvio Sleep è il marchio di ${CONTACT.legalName}. Dal 1986 produciamo materassi a Casoria, in Via Raffaele Salierno 38: qui tagliamo, assembliamo e cuciamo, e qui c'è lo showroom dove puoi provarli.</p>
+        <p>Vendiamo direttamente, senza intermediari. Per questo il prezzo che vedi è il prezzo di fabbrica, IVA inclusa, e la spedizione in Italia è gratuita.</p>`)}
+      ${sec('cosa', 'Cosa produciamo', `<p>${a('/materassi/', 'Materassi')} in poliuretano espanso, Memory Foam e molle insacchettate, ${a('/reti/', 'reti a doghe')} con telaio in acciaio e ${a('/topper/', 'topper in Memory Foam')}. Ogni materasso è prodotto su ordinazione, in 13 misure standard; su richiesta realizziamo ${a(P.quote, 'fuori misura e altezze personalizzate')}.</p>`)}
+      ${sec('come', 'Come lavoriamo', `<p>Gli ordini arrivano su WhatsApp e li confermiamo noi, uno per uno. Paghi in contrassegno o con bonifico, mai online. A Napoli consegniamo con il nostro furgone, al piano e con il ritiro del vecchio materasso; nel resto d'Italia spediamo con corriere.</p>
+        <p>Lavoriamo anche per ${a(P.b2b, 'hotel, B&B e strutture ricettive')}.</p>`)}`,
+  },
+
+  [P.b2b]: {
+    nav: 'Hotel e B&B',
+    h1: 'Materassi per hotel, B&B e strutture ricettive',
+    metaTitle: 'Materassi per hotel e B&B dalla fabbrica',
+    description: 'Forniture di materassi, reti e topper per hotel, B&B e strutture ricettive, anche fuori misura e in grandi quantità, direttamente dalla fabbrica di Casoria (Napoli).',
+    lead: 'Forniture dirette dalla fabbrica, anche in grandi quantità e fuori misura.',
+    photo: 'camera',
+    body: () => `${sec('fornitura', 'Una fornitura senza intermediari', `<p>Produciamo noi i materassi, a Casoria: per una struttura ricettiva vuol dire trattare direttamente con chi li fa, su quantità, misure e tempi.</p>
+        <ul class="ticks"><li>Materassi, reti e topper della nostra gamma, nelle 13 misure standard</li><li>Fuori misura e altezze personalizzate per letti particolari</li><li>Grandi quantità, con un unico referente</li><li>A Napoli consegna con il nostro furgone e ritiro dei materassi usati</li></ul>`)}
+      ${sec('preventivo', 'Come chiedere un preventivo', `<p>Per le strutture i prezzi sono su preventivo. Indica il numero di camere, le misure dei letti e i modelli che ti interessano: puoi farlo dal modulo ${a(P.quote + '?hotel=1', 'Materassi su misura')} (spunta "È per un hotel, un B&B o una struttura ricettiva") oppure scriverci direttamente.</p>
+        <p>Se la struttura ha requisiti specifici sui materiali, indicali nella richiesta: ti diciamo con precisione cosa possiamo fornire.</p>
+        <p class="btn-row"><a class="btn btn--primary" href="${u(P.quote + '?hotel=1')}">Richiedi un preventivo</a><a class="btn btn--ghost" href="${waHref('Ciao Vesuvio Sleep, vorrei un preventivo per una struttura ricettiva.')}" target="_blank" rel="noopener">Scrivici su WhatsApp</a></p>`)}`,
+  },
+
+  [P.naples]: {
+    nav: 'Materassi a Napoli',
+    h1: 'Materassi a Napoli, dalla fabbrica di Casoria',
+    metaTitle: 'Materassi a Napoli: fabbrica e showroom a Casoria',
+    description: 'Materassi di fabbrica a Napoli: showroom a Casoria, consegna con il nostro furgone, al piano gratuita, ritiro del vecchio materasso e montaggio delle reti.',
+    lead: 'Li produciamo a Casoria, alle porte di Napoli, e te li portiamo noi.',
+    photo: 'consegna',
+    type: 'local',
+    body: () => `${sec('consegna-na', 'A Napoli consegniamo noi', `<p>A Napoli non usiamo il corriere: consegniamo con il nostro furgone. Il servizio comprende:</p>
+        <ul class="ticks"><li>consegna al piano gratuita</li><li>ritiro del vecchio materasso</li><li>montaggio delle reti</li></ul>
+        <p>Come nel resto d'Italia, la spedizione è gratuita. Paghi alla consegna in contrassegno oppure con bonifico.</p>`)}
+      ${sec('showroom-na', 'Provali in showroom', `<p>Lo showroom è nella fabbrica, in Via Raffaele Salierno 38 a Casoria: aperto dal lunedì al venerdì 9:00–18:00 e il sabato 10:00–14:00. Puoi provare i materassi e scegliere con chi li produce. ${a(P.showroom, 'Come arrivare')}.</p>`)}
+      ${sec('gamma-na', 'I materassi più richiesti', `<p>Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano, in tre altezze; il ${a(L.duo, 'Vesuvio Memory Duo')}, reversibile estate-inverno; il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} con 2600 molle insacchettate e Memory Foam. Completa il letto con una ${a('/reti/', 'rete a doghe')}: a Napoli la montiamo noi.</p>`)}`,
+  },
+
+  [P.shipping]: {
+    nav: 'Spedizioni e consegna',
+    h1: 'Spedizioni e consegna',
+    metaTitle: 'Spedizioni e consegna gratuite in tutta Italia',
+    description: 'Spedizione gratuita in tutta Italia, isole comprese, con tracciamento. A Napoli consegna al piano, ritiro dell’usato e montaggio reti.',
+    lead: 'Gratuita in tutta Italia, isole comprese.',
+    photo: 'consegna',
+    body: () => `${sec('costi', 'Quanto costa', `<p>La spedizione è <strong>gratuita in tutta Italia, isole comprese</strong>. Non ci sono supplementi per le isole. Al momento spediamo solo in Italia.</p>`)}
+      ${sec('tempi', 'Tempi', `<p>I materassi sono prodotti su ordinazione: servono circa <strong>2 giorni di lavorazione</strong> prima della spedizione. Con la conferma dell'ordine ti indichiamo i tempi di consegna.</p>`)}
+      ${sec('italia', 'Nel resto d’Italia: corriere', `<p>Fuori Napoli consegna il corriere, con il <strong>tracciamento</strong> della spedizione. Se paghi con bonifico, poco dopo il pagamento ricevi la bolla di spedizione.</p>`)}
+      ${sec('napoli', 'A Napoli: il nostro furgone', `<p>A Napoli consegniamo noi, con il nostro furgone: <strong>consegna al piano gratuita</strong>, <strong>ritiro del vecchio materasso</strong> e <strong>montaggio delle reti</strong>. ${a(P.naples, 'Materassi a Napoli')}.</p>`)}
+      ${sec('ricevere', 'Al momento della consegna', `<p>Controlla che l'imballo sia integro e che i colli corrispondano. Se l'imballo è danneggiato, accetta la merce con riserva specifica sul documento del corriere e scrivici subito su ${wa()} o a ${mail()} con qualche foto.</p>`)}`,
+  },
+
+  [P.payments]: {
+    nav: 'Pagamenti',
+    h1: 'Pagamenti',
+    metaTitle: 'Pagamenti: contrassegno o bonifico bancario',
+    description: 'Da Vesuvio Sleep paghi in contrassegno alla consegna oppure con bonifico bancario. Nessun pagamento sul sito: confermi l’ordine con noi su WhatsApp.',
+    lead: 'Contrassegno o bonifico. Sul sito non si paga e non si inseriscono carte.',
+    body: () => `${sec('come', 'Come funziona', `<p>Invii il riepilogo del carrello su WhatsApp, indicando come preferisci pagare. Ti rispondiamo per confermare disponibilità e consegna: l'ordine è confermato solo con la nostra conferma scritta. Tutti i prezzi sono in euro, IVA inclusa.</p>`)}
+      ${sec('contrassegno', 'Contrassegno', `<p>Paghi al momento della consegna, a chi ti porta la merce: il corriere nel resto d'Italia, il nostro incaricato a Napoli. Non paghi nulla in anticipo.</p>`)}
+      ${sec('bonifico', 'Bonifico bancario', `<p>Ti inviamo gli estremi per il bonifico su WhatsApp, insieme alla conferma dell'ordine. Dopo il bonifico ricevi poco dopo la bolla di spedizione.</p>`)}
+      ${sec('online', 'Pagamenti online', `<p>Sul sito non ci sono pagamenti online: non ti chiediamo mai numeri di carta, né sul sito né su WhatsApp. Se qualcuno te li chiede a nome di Vesuvio Sleep, non è un nostro messaggio: chiamaci al ${tel()}.</p>`)}`,
+  },
+
+  [P.returns]: {
+    nav: 'Resi e recesso',
+    h1: 'Resi e diritto di recesso',
+    metaTitle: 'Resi e diritto di recesso entro 14 giorni',
+    description: 'Hai 14 giorni dalla consegna per recedere dall’acquisto delle misure standard. Come comunicarlo, come restituire il prodotto e quando arriva il rimborso. Modulo di recesso.',
+    lead: 'Per le misure standard hai 14 giorni dalla consegna per ripensarci.',
+    legal: true,
+    body: () => `${toc([['chi', 'Chi può recedere'], ['esclusioni', 'Quando non si applica'], ['come', 'Come comunicarlo'], ['restituzione', 'Come restituire il prodotto'], ['rimborso', 'Rimborso'], ['modulo', 'Modulo di recesso']])}
+      ${sec('chi', 'Chi può recedere', `<p>Se hai acquistato come consumatore (per uso personale, non per un'attività), hai diritto di recedere dal contratto entro <strong>14 giorni</strong> senza dover dare alcuna motivazione, come previsto dagli articoli 52 e seguenti del Codice del Consumo (D.lgs. 206/2005). Il termine decorre dal giorno in cui tu, o una persona da te indicata diversa dal corriere, ricevi il prodotto. Se un ordine comprende più prodotti consegnati separatamente, decorre dalla consegna dell'ultimo.</p>`)}
+      ${sec('esclusioni', 'Quando non si applica', `<p>Il diritto di recesso è escluso per i beni <strong>confezionati su misura o chiaramente personalizzati</strong> (art. 59, lettera c, del Codice del Consumo): materassi fuori misura, altezze personalizzate e ogni prodotto realizzato su tue specifiche. Restano comunque la ${a(P.warranty, 'garanzia legale')} e i diritti per i difetti.</p>
+        <p>I prodotti nelle misure standard del catalogo, anche se prodotti su ordinazione, si possono restituire.</p>
+        <p>Il diritto di recesso non spetta a chi acquista per la propria attività (ad esempio hotel e B&B con partita IVA).</p>`)}
+      ${sec('come', 'Come comunicarlo', `<p>Prima della scadenza dei 14 giorni inviaci una dichiarazione esplicita della tua decisione di recedere, indicando il riferimento dell'ordine: per email a ${mail()} oppure su ${wa()}. Puoi usare il modulo qui sotto, ma non è obbligatorio. Ti confermiamo la ricezione senza ritardo.</p>`)}
+      ${sec('restituzione', 'Come restituire il prodotto', `<p>Devi restituire il prodotto entro 14 giorni dalla comunicazione del recesso, all'indirizzo: ${CONTACT.legalName}, ${CONTACT.address}. <strong>Le spese di restituzione sono a tuo carico.</strong> Ti indichiamo noi come imballarlo e, se ti è utile, come organizzare il ritiro.</p>
+        <p>Il prodotto va restituito integro e protetto. Rispondi della diminuzione di valore dovuta a un uso diverso da quello necessario per verificarne natura e caratteristiche: puoi provarlo come faresti in negozio, non usarlo.</p>`)}
+      ${sec('rimborso', 'Rimborso', `<p>Ti rimborsiamo l'importo pagato, compresi gli eventuali costi di consegna standard, entro 14 giorni dal giorno in cui riceviamo la tua comunicazione di recesso. Possiamo sospendere il rimborso finché non riceviamo il prodotto o la prova della spedizione.</p>
+        <p>Rimborsiamo con lo stesso mezzo di pagamento usato: con bonifico, sullo stesso conto. Se hai pagato in contrassegno, ti rimborsiamo con bonifico sull'IBAN che ci indichi. Il rimborso non ha costi per te.</p>`)}
+      ${sec('modulo', 'Modulo di recesso', `<p>Compila e inviaci questo modulo solo se vuoi recedere dal contratto.</p>
+        <div class="legal-form"><p>Destinatario: ${CONTACT.legalName}, ${CONTACT.address}, ${CONTACT.email}</p>
+        <p>Con la presente io/noi (*) notifico/notifichiamo (*) il recesso dal mio/nostro (*) contratto di vendita dei seguenti beni:</p>
+        <p>Riferimento dell'ordine: ____________________</p>
+        <p>Ordinato il (*) / ricevuto il (*): ____________________</p>
+        <p>Nome del/dei consumatore/i: ____________________</p>
+        <p>Indirizzo del/dei consumatore/i: ____________________</p>
+        <p>Firma del/dei consumatore/i (solo se il modulo è inviato su carta): ____________________</p>
+        <p>Data: ____________________</p>
+        <p class="small">(*) Cancellare la dicitura inutile.</p></div>
+        <p><button class="btn btn--ghost btn--sm" type="button" data-act="print">Stampa il modulo</button></p>`)}
+      <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
+  },
+
+  [P.warranty]: {
+    nav: 'Garanzia',
+    h1: 'Garanzia legale di conformità',
+    metaTitle: 'Garanzia legale di 2 anni sui materassi',
+    description: 'Tutti i prodotti Vesuvio Sleep hanno la garanzia legale di conformità di 2 anni prevista dal Codice del Consumo. Cosa copre e come segnalare un difetto.',
+    lead: 'Due anni dalla consegna, come prevede il Codice del Consumo.',
+    legal: true,
+    body: () => `${toc([['cosa', 'Cosa copre'], ['durata', 'Durata e termini'], ['rimedi', 'Cosa ti spetta'], ['segnalare', 'Come segnalare un difetto']])}
+      ${sec('cosa', 'Cosa copre', `<p>Se hai acquistato come consumatore, tutti i prodotti godono della garanzia legale di conformità prevista dagli articoli 128 e seguenti del Codice del Consumo (D.lgs. 206/2005). Copre i difetti di conformità: il prodotto deve corrispondere alla descrizione, avere le qualità dichiarate ed essere idoneo all'uso.</p>
+        <p>Non copre i danni dovuti a uso improprio, incidenti, mancato rispetto delle indicazioni di cura riportate in etichetta, né la normale usura.</p>`)}
+      ${sec('durata', 'Durata e termini', `<p>La garanzia dura <strong>2 anni dalla consegna</strong>. Si presume, salvo prova contraria, che i difetti che si manifestano entro un anno dalla consegna esistessero già al momento della consegna. Il difetto va segnalato entro due mesi da quando lo scopri.</p>`)}
+      ${sec('rimedi', 'Cosa ti spetta', `<p>In caso di difetto hai diritto, senza spese, alla riparazione o alla sostituzione del prodotto. Se non sono possibili o non avvengono in tempi ragionevoli, puoi chiedere una riduzione del prezzo o la risoluzione del contratto. Le spese di spedizione per i prodotti difettosi sono a nostro carico.</p>`)}
+      ${sec('segnalare', 'Come segnalare un difetto', `<p>Scrivici su ${wa()} o a ${mail()} con il riferimento dell'ordine, una breve descrizione e qualche foto. Ti rispondiamo con la soluzione.</p>
+        <p>Chi acquista per la propria attività è soggetto alla garanzia prevista dal Codice civile, secondo le condizioni concordate.</p>`)}
+      <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
+  },
+
+  [P.terms]: {
+    nav: 'Condizioni di vendita',
+    h1: 'Condizioni generali di vendita',
+    metaTitle: 'Condizioni generali di vendita',
+    description: 'Condizioni generali di vendita di Vesuvio Sleep (Materassi d’Autore A.V. S.R.L.S.): ordini via WhatsApp, prezzi, pagamenti, consegna, recesso, garanzia e controversie.',
+    lead: 'Le regole delle vendite a distanza di Vesuvio Sleep.',
+    legal: true,
+    body: () => `${toc([['venditore', 'Venditore'], ['ambito', 'Ambito'], ['prodotti', 'Prodotti e prezzi'], ['contratto', 'Come si conclude il contratto'], ['pagamento', 'Pagamento'], ['consegna', 'Consegna'], ['misura', 'Prodotti su misura'], ['recesso', 'Recesso'], ['garanzia', 'Garanzia'], ['dati', 'Dati personali'], ['controversie', 'Reclami e controversie'], ['legge', 'Legge applicabile']])}
+      ${sec('venditore', '1. Venditore', `<p>I prodotti presentati sul sito sono venduti da ${CONTACT.legalName}, con sede in ${CONTACT.address}, Partita IVA ${CONTACT.vat}, REA ${CONTACT.rea}, che opera con il marchio Vesuvio Sleep (di seguito "Vesuvio Sleep"). Contatti: telefono e WhatsApp ${CONTACT.phoneShort}, email ${CONTACT.email}.</p>`)}
+      ${sec('ambito', '2. Ambito', `<p>Queste condizioni regolano le vendite a distanza concluse a partire dal sito. Se acquisti come consumatore si applicano anche le norme del Codice del Consumo (D.lgs. 206/2005), che prevalgono su qualsiasi clausola meno favorevole. Le forniture a imprese, hotel e strutture ricettive seguono le condizioni del preventivo accettato.</p>`)}
+      ${sec('prodotti', '3. Prodotti e prezzi', `<p>Le caratteristiche dei prodotti sono descritte nelle schede. Le immagini servono a rappresentare il prodotto; colori e resa possono variare leggermente a seconda dello schermo. I prezzi sono in euro e comprendono l'IVA. La spedizione in Italia è gratuita. Il prezzo applicato è quello indicato nella nostra conferma d'ordine.</p>`)}
+      ${sec('contratto', '4. Come si conclude il contratto', `<p>Il riepilogo che invii su WhatsApp dal sito è una richiesta d'ordine, non un ordine concluso. Il contratto si conclude quando Vesuvio Sleep ti invia la conferma scritta (su WhatsApp o per email) con prodotti, prezzo totale, modalità di pagamento e di consegna. Fino ad allora nessuna delle due parti è vincolata. Conserva la conferma: è il riepilogo del contratto.</p>`)}
+      ${sec('pagamento', '5. Pagamento', `<p>Puoi pagare in contrassegno, al momento della consegna, oppure con bonifico bancario sugli estremi indicati nella conferma d'ordine. Nel caso del bonifico, la merce viene spedita dopo il pagamento e ricevi la bolla di spedizione. Sul sito non si effettuano pagamenti. ${a(P.payments, 'Dettagli sui pagamenti')}.</p>`)}
+      ${sec('consegna', '6. Consegna', `<p>Consegniamo in Italia, isole comprese, senza costi di spedizione. I materassi sono prodotti su ordinazione; i tempi indicativi sono comunicati con la conferma d'ordine. A Napoli consegniamo con il nostro furgone, con consegna al piano, ritiro dell'usato e montaggio delle reti. Il rischio di perdita o danneggiamento passa a te quando ricevi il prodotto. ${a(P.shipping, 'Spedizioni e consegna')}.</p>`)}
+      ${sec('misura', '7. Prodotti su misura', `<p>I prodotti fuori misura o con altezze personalizzate sono realizzati su tue specifiche, in base a un preventivo che accetti espressamente. Controlla con attenzione le misure prima della conferma: per questi prodotti il diritto di recesso è escluso, salvo difetti.</p>`)}
+      ${sec('recesso', '8. Recesso', `<p>Il consumatore ha 14 giorni dalla consegna per recedere dall'acquisto dei prodotti in misura standard. Le spese di restituzione sono a carico del consumatore. Condizioni, esclusioni e modulo: ${a(P.returns, 'Resi e recesso')}.</p>`)}
+      ${sec('garanzia', '9. Garanzia', `<p>Si applica la garanzia legale di conformità di 2 anni prevista dal Codice del Consumo. ${a(P.warranty, 'Come funziona')}.</p>`)}
+      ${sec('dati', '10. Dati personali', `<p>I dati personali sono trattati come descritto nell'${a(P.privacy, 'informativa sulla privacy')}.</p>`)}
+      ${sec('controversie', '11. Reclami e controversie', `<p>Per qualsiasi reclamo scrivici a ${CONTACT.email} o su WhatsApp: rispondiamo nel più breve tempo possibile.</p>
+        <p>Il consumatore può ricorrere alle procedure di risoluzione extragiudiziale delle controversie (ADR) presso gli organismi iscritti nell'elenco tenuto dal Ministero delle Imprese e del Made in Italy, consultabile sul sito del Ministero. Resta fermo il diritto di rivolgersi al giudice ordinario.</p>
+        <p>Per le controversie con un consumatore è competente il giudice del luogo di residenza o domicilio del consumatore.</p>`)}
+      ${sec('legge', '12. Legge applicabile', `<p>Il contratto è regolato dalla legge italiana, fatte salve le norme più favorevoli al consumatore. Il contratto è concluso in lingua italiana.</p>`)}
+      <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
+  },
+
+  [P.privacy]: {
+    nav: 'Privacy',
+    h1: 'Informativa sulla privacy',
+    metaTitle: 'Informativa sulla privacy',
+    description: 'Come Vesuvio Sleep tratta i dati di chi visita il sito, chiede un preventivo o ordina: finalità, basi giuridiche, conservazione e diritti.',
+    lead: 'Raccogliamo solo i dati che servono a risponderti e a consegnare.',
+    legal: true,
+    body: () => `${toc([['titolare', 'Titolare'], ['quali', 'Quali dati trattiamo'], ['perche', 'Finalità e basi giuridiche'], ['terzi', 'Servizi di terzi'], ['destinatari', 'A chi li comunichiamo'], ['conservazione', 'Per quanto tempo'], ['diritti', 'I tuoi diritti']])}
+      ${sec('titolare', 'Titolare del trattamento', `<p>${CONTACT.legalName}, ${CONTACT.address}, Partita IVA ${CONTACT.vat}. Per ogni richiesta sulla privacy: ${mail()}, telefono ${tel()}.</p>`)}
+      ${sec('quali', 'Quali dati trattiamo', `<p><strong>Navigazione.</strong> Come ogni sito, i server che ospitano il sito registrano dati tecnici delle visite (indirizzo IP, data e ora, pagina richiesta, tipo di browser), usati per far funzionare il sito e per la sua sicurezza.</p>
+        <p><strong>Carrello e preferenze.</strong> Il carrello e alcune impostazioni sono salvati solo nel tuo browser (memoria locale): non ci vengono inviati finché non li mandi tu. Le risposte allo Sleep Match restano nella pagina e non vengono salvate.</p>
+        <p><strong>Richieste dal sito.</strong> Quando invii un riepilogo o una richiesta di preventivo, registriamo prodotti, misure, prezzi, note che scrivi e un numero di riferimento. Il sito non ti chiede nome, telefono o indirizzo.</p>
+        <p><strong>Comunicazioni e ordini.</strong> Se ci scrivi su WhatsApp, per email o ci chiami, trattiamo i dati che ci fornisci: nome, numero di telefono, indirizzo di consegna, eventuali dati per la fattura e il contenuto dei messaggi.</p>`)}
+      ${sec('perche', 'Finalità e basi giuridiche', `<ul><li>Rispondere alle tue richieste, preparare preventivi, gestire ordini, consegne, resi e garanzia: esecuzione di un contratto o di misure precontrattuali (art. 6.1.b GDPR).</li><li>Adempiere agli obblighi fiscali e contabili: obbligo di legge (art. 6.1.c).</li><li>Proteggere il sito da abusi e difendere i nostri diritti: legittimo interesse (art. 6.1.f).</li></ul>
+        <p>Non usiamo i tuoi dati per pubblicità, non li vendiamo e non facciamo profilazione. Non prendiamo decisioni basate unicamente su trattamenti automatizzati.</p>`)}
+      ${sec('terzi', 'Servizi di terzi', `<p><strong>WhatsApp.</strong> Se scegli di inviare la richiesta su WhatsApp, lasci il nostro sito e usi il servizio di WhatsApp (Meta), che tratta i dati secondo la propria informativa. Puoi sempre scegliere email o telefono.</p>
+        <p><strong>Caratteri tipografici.</strong> Il sito carica i caratteri dal servizio Google Fonts: il tuo browser si collega ai server di Google, che ricevono il tuo indirizzo IP.</p>
+        <p><strong>Mappe.</strong> I pulsanti "Indicazioni stradali" aprono Google Maps o Apple Mappe in una nuova pagina: nel nostro sito non c'è nessuna mappa incorporata.</p>
+        <p>Questi servizi possono trasferire dati fuori dall'Unione Europea, in particolare negli Stati Uniti, sulla base del Data Privacy Framework UE-USA o di clausole contrattuali standard.</p>`)}
+      ${sec('destinatari', 'A chi li comunichiamo', `<p>Solo a chi ci serve per fornirti il servizio: corrieri per la consegna, banca per i pagamenti, consulenti fiscali, fornitori tecnici del sito (hosting). Agiscono come responsabili del trattamento o come titolari autonomi. Non diffondiamo i tuoi dati.</p>`)}
+      ${sec('conservazione', 'Per quanto tempo', `<p>I dati di ordini e fatture sono conservati per 10 anni, come prevede la legge. Le richieste e i preventivi che non diventano ordini sono conservati per 12 mesi. I dati di navigazione sono conservati per il tempo strettamente necessario alla sicurezza del sito.</p>`)}
+      ${sec('diritti', 'I tuoi diritti', `<p>Puoi chiedere in qualsiasi momento l'accesso ai tuoi dati, la rettifica, la cancellazione, la limitazione del trattamento, la portabilità e opporti al trattamento basato sul legittimo interesse (artt. 15–22 GDPR), scrivendo a ${mail()}. Hai il diritto di proporre reclamo al Garante per la protezione dei dati personali (garanteprivacy.it).</p>`)}
+      <p>Per gli strumenti di memorizzazione usati dal sito vedi la ${a(P.cookies, 'cookie policy')}.</p>
+      <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
+  },
+
+  [P.cookies]: {
+    nav: 'Cookie',
+    h1: 'Cookie policy',
+    metaTitle: 'Cookie policy',
+    description: 'Il sito Vesuvio Sleep usa solo strumenti tecnici necessari (carrello e preferenze salvati nel browser): nessun cookie di profilazione o di statistica di terze parti.',
+    lead: 'Solo strumenti tecnici: nessuna profilazione, nessuna pubblicità.',
+    legal: true,
+    body: () => `${sec('cosa', 'Cosa usa il sito', `<p>Il sito non usa cookie di profilazione, pubblicitari o di statistica. Usa solo strumenti tecnici, necessari a farlo funzionare, che salvano dati nel tuo browser:</p>
+        <div class="table-scroll"><table class="size-table"><thead><tr><th>Nome</th><th>Tipo</th><th>A cosa serve</th><th>Durata</th></tr></thead><tbody>
+        <tr><td>vs-cart-v1</td><td>Memoria locale</td><td>Ricorda gli articoli nel carrello</td><td>Finché non svuoti il carrello o i dati del browser</td></tr>
+        <tr><td>vs-preview-db-v1</td><td>Memoria locale</td><td>Copia del catalogo per caricare le pagine più velocemente</td><td>Finché non cancelli i dati del browser</td></tr>
+        <tr><td>vs-review</td><td>Memoria di sessione</td><td>Collega il riepilogo al suo numero di riferimento</td><td>Fino alla chiusura della scheda</td></tr>
+        </tbody></table></div>
+        <p>Per gli strumenti tecnici non serve il consenso, per questo il sito non mostra un banner. Se in futuro aggiungeremo strumenti di statistica o di marketing, ti chiederemo prima il consenso.</p>`)}
+      ${sec('terzi', 'Servizi esterni', `<p>Il sito carica i caratteri tipografici da Google Fonts, che riceve l'indirizzo IP del tuo browser. I collegamenti a WhatsApp, Google Maps e Apple Mappe aprono servizi esterni, con le loro regole sui cookie. Vedi l'${a(P.privacy, 'informativa sulla privacy')}.</p>`)}
+      ${sec('gestire', 'Come cancellarli', `<p>Puoi cancellare in qualsiasi momento i dati salvati dal sito dalle impostazioni del browser (cronologia o dati dei siti). In quel caso il carrello si svuota.</p>`)}
+      <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
+  },
+
+  [P.guides]: {
+    nav: 'Guide',
+    h1: 'Guide per scegliere il materasso',
+    metaTitle: 'Guide: come scegliere materasso, misura e tecnologia',
+    description: 'Come scegliere il materasso giusto, le differenze tra Memory Foam, molle insacchettate e poliuretano, e le misure dei materassi spiegate dalla fabbrica Vesuvio Sleep.',
+    lead: 'Quello che diciamo ai clienti in showroom, scritto.',
+    type: 'guides',
+    body: () => `<div class="guide-list">
+      <a class="guide-card" href="${u('/guide/come-scegliere-il-materasso/')}"><h2>Come scegliere il materasso</h2><p>Posizione nel sonno, corporatura, chi dorme in due, caldo e freddo: i criteri che contano davvero.</p><span>Leggi la guida</span></a>
+      <a class="guide-card" href="${u('/guide/materasso-memory-molle-o-poliuretano/')}"><h2>Memory, molle o poliuretano?</h2><p>Le tre tecnologie a confronto, con pregi e limiti di ciascuna.</p><span>Leggi la guida</span></a>
+      <a class="guide-card" href="${u(P.sizes)}"><h2>Le misure dei materassi</h2><p>Singolo, piazza e mezza, francese, matrimoniale, King Size: le 13 misure in scala.</p><span>Apri la guida</span></a>
+    </div>`,
+  },
+
+  '/guide/come-scegliere-il-materasso/': {
+    nav: 'Come scegliere il materasso',
+    parent: [P.guides, 'Guide'],
+    h1: 'Come scegliere il materasso',
+    metaTitle: 'Come scegliere il materasso: la guida della fabbrica',
+    description: 'Come scegliere il materasso giusto: posizione nel sonno, corporatura, rigidità, chi dorme in due, caldo e freddo, misura e altezza. La guida di Vesuvio Sleep.',
+    lead: 'I criteri che usiamo in showroom, in ordine di importanza.',
+    type: 'article',
+    body: () => `${toc([['posizione', 'Come dormi'], ['corporatura', 'Corporatura e sostegno'], ['coppia', 'Se dormite in due'], ['temperatura', 'Caldo o freddo'], ['misura', 'Misura e altezza'], ['provare', 'Provarlo'], ['rete', 'Non dimenticare la rete']])}
+      <p>Non esiste il materasso migliore in assoluto: esiste quello giusto per come dormi tu. Questi sono i criteri da considerare, nell'ordine in cui li valutiamo con i clienti in showroom.</p>
+      ${sec('posizione', '1. Come dormi', `<p>Chi dorme <strong>sul fianco</strong> carica spalle e fianchi: in genere sta meglio con una superficie che accoglie, come il Memory Foam, che si adatta alla forma del corpo. Chi dorme <strong>sulla schiena</strong> cerca un equilibrio tra sostegno e comfort. Chi dorme <strong>a pancia in giù</strong> di solito preferisce un materasso più sostenuto, che non lasci affondare il bacino.</p>`)}
+      ${sec('corporatura', '2. Corporatura e sostegno', `<p>Più il peso è elevato, più conta il sostegno: un materasso troppo morbido cede e la schiena non resta allineata. Per corporature robuste valuta un modello sostenuto o un'altezza maggiore. Una corporatura leggera può invece apprezzare un materasso più accogliente.</p>`)}
+      ${sec('coppia', '3. Se dormite in due', `<p>Se uno dei due si muove molto, contano l'indipendenza delle zone e la stabilità. Le <strong>molle insacchettate</strong> lavorano una per una e trasmettono meno movimento; anche le schiume ad alta densità sono stabili. Se avete esigenze diverse, scegliete un modello di compromesso e una misura generosa: un matrimoniale da 160 o un 180×200.</p>`)}
+      ${sec('temperatura', '4. Caldo o freddo', `<p>Il Memory Foam avvolge e tende a trattenere più calore; le molle lasciano circolare più aria. Un materasso reversibile, con un lato invernale e uno estivo, come il ${a(L.duo, 'Vesuvio Memory Duo')}, aiuta a gestire le stagioni.</p>`)}
+      ${sec('misura', '5. Misura e altezza', `<p>Il materasso va scelto sulla misura <strong>interna</strong> del letto o della rete, non su quella esterna della struttura. Per la lunghezza, conta almeno 15–20 cm in più della tua altezza: per chi è alto, meglio un 200 cm. Le ${a(P.sizes, '13 misure standard')} si confrontano in scala; se il letto non è standard, c'è il ${a(P.quote, 'materasso su misura')}.</p>
+        <p>L'altezza del materasso incide sul comfort percepito e sul sostegno; verifica anche che il letto la possa contenere.</p>`)}
+      ${sec('provare', '6. Provarlo', `<p>La prova resta il metodo migliore: sdraiati qualche minuto nella posizione in cui dormi davvero. Nel nostro ${a(P.showroom, 'showroom di Casoria')} puoi provare tutti i modelli. Se non puoi venire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande.</p>`)}
+      ${sec('rete', '7. Non dimenticare la rete', `<p>Un buon materasso su una rete stanca o deformata lavora male. Una ${a('/reti/', 'rete a doghe')} della stessa misura completa il letto.</p>`)}
+      <p class="small muted">Questa guida dà indicazioni generali di comfort. In caso di dolori o problemi alla schiena, chiedi consiglio al tuo medico.</p>`,
+  },
+
+  '/guide/materasso-memory-molle-o-poliuretano/': {
+    nav: 'Memory, molle o poliuretano',
+    parent: [P.guides, 'Guide'],
+    h1: 'Materasso in Memory Foam, a molle o in poliuretano?',
+    metaTitle: 'Memory Foam, molle o poliuretano: differenze',
+    description: 'Le differenze tra materassi in Memory Foam, a molle insacchettate e in poliuretano espanso: sostegno, accoglienza, calore e per chi è adatto ciascuno.',
+    lead: 'Tre tecnologie, tre caratteri diversi.',
+    type: 'article',
+    body: () => `${toc([['poliuretano', 'Poliuretano espanso'], ['memory', 'Memory Foam'], ['molle', 'Molle insacchettate'], ['confronto', 'In sintesi']])}
+      ${sec('poliuretano', 'Poliuretano espanso', `<p>È una schiuma che, ad alta densità, offre un sostegno uniforme e stabile. Non si modella sul corpo come il Memory: risponde in modo più diretto. È la scelta più essenziale e conveniente, adatta a chi cerca un letto solido e a chi preferisce non "affondare".</p>
+        <p>Il nostro modello: ${a(L.essential, 'Vesuvio Essential Foam')}, anima monoblocco in poliuretano ad alta densità, in tre altezze (H20, H25, H30).</p>`)}
+      ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
+        <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
+      ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
+        <p>I nostri modelli: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con Memory Foam; ${a(L.p1600, 'Vesuvio Pocket 1600')}, a molle insacchettate.</p>`)}
+      ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
+        <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
+        <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
+        <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}, ${a(L.p1600, 'Pocket 1600')}</td></tr>
+        </tbody></table></div>
+        <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
+  },
+};
+
+/** Testo aggiuntivo per pagine già esistenti (guida misure, su misura, showroom, sleep match, confronto). */
+const VIEW_SEO = {
+  home: {
+    metaTitle: 'Materassi di fabbrica a Napoli, dal 1986',
+    description: 'Materassi prodotti a Casoria (Napoli) e venduti a prezzo di fabbrica: Memory Foam, molle e poliuretano. Spedizione gratuita, paghi alla consegna.',
+  },
+  [P.sleepMatch]: {
+    metaTitle: 'Sleep Match: trova il materasso adatto a te',
+    description: 'Rispondi a qualche domanda su come dormi: Sleep Match ti propone un solo materasso Vesuvio Sleep, con il perché. Le risposte non vengono salvate.',
+  },
+  [P.compare]: {
+    metaTitle: 'Confronta i materassi: caratteristiche e prezzi',
+    description: 'Confronta i materassi Vesuvio Sleep fianco a fianco: tecnologia, composizione, altezze, rivestimento, rigidità indicativa e prezzi di fabbrica.',
+  },
+  [P.sizes]: {
+    metaTitle: 'Misure dei materassi: guida e confronto in scala',
+    description: 'Le 13 misure dei materassi, dal singolo 80×190 al King Size 180×200: nomi, dimensioni e confronto in scala vista dall’alto. Come misurare il letto.',
+  },
+  [P.quote]: {
+    metaTitle: 'Materassi su misura e fuori misura: preventivo',
+    description: 'Materassi su misura e con altezze personalizzate, prodotti nella fabbrica di Casoria (Napoli). Indica misure e modello: ti mandiamo il preventivo su WhatsApp.',
+  },
+  [P.showroom]: {
+    metaTitle: 'Showroom e fabbrica di materassi a Casoria (Napoli)',
+    description: 'Prova i materassi nello showroom della fabbrica Vesuvio Sleep, Via Raffaele Salierno 38, Casoria (NA). Aperto lun–ven 9–18 e sabato 10–14.',
+  },
+};
+
+__exp.CONTACT = CONTACT;
+__exp.applySettings = applySettings;
+__exp.waHref = waHref;
+__exp.PAYMENT_METHODS = PAYMENT_METHODS;
+__exp.LEGAL_UPDATED = LEGAL_UPDATED;
+__exp.FAQ = FAQ;
+__exp.faqForLd = faqForLd;
+__exp.CATEGORY_SEO = CATEGORY_SEO;
+__exp.PAGES = PAGES;
+__exp.VIEW_SEO = VIEW_SEO;
+});
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-15",
+ "version": "seed-2026-11-15b",
  "catalog_version": "catalogo-2026-11-15",
  "authoritative": true,
  "categories": [
@@ -4061,7 +4761,13 @@ const SEED = {
   }
  ],
  "settings": {
-  "whatsapp_number": "",
+  "whatsapp_number": "+39 366 121 8346",
+  "public_phone": "+39 366 121 8346",
+  "contact_email": "fdimaterassi@gmail.com",
+  "payment_methods": [
+   "contrassegno",
+   "bonifico"
+  ],
   "shipping_note": "gratuita in tutta Italia, isole comprese",
   "show_claims": true,
   "payments": {
@@ -4209,6 +4915,10 @@ if (db.seed_version !== SEED.version) {
     db.audit?.unshift({ id: rid0(), at: nowIso(), action: 'catalogo', entity: SEED.catalog_version, detail: 'Catalogo ufficiale applicato (prezzi, varianti, stati, foto)' });
   }
   db.redirects = clone(SEED.redirects ?? []);
+  // impostazioni nuove (contatti, pagamenti): si aggiungono, quelle già scelte dall'admin restano
+  for (const [k, v] of Object.entries(SEED.settings ?? {})) {
+    if (db.settings[k] === undefined || db.settings[k] === '' || db.settings[k] === null) db.settings[k] = clone(v);
+  }
   db.seed_version = SEED.version;
   writeLS(DB_KEY, db);
 }
@@ -4623,6 +5333,9 @@ const ICONS = {
   truck: '<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>',
   ruler: '<path d="M3 15.5L15.5 3l5.5 5.5L8.5 21z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  phone: '<path d="M6.6 3.5h2.7l1.4 4-2 1.4a11 11 0 0 0 6.4 6.4l1.4-2 4 1.4v2.7a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/>',
+  mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
   image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8"/>',
 };
 function icon(name, size = 22) {
@@ -5045,8 +5758,8 @@ function heroHtml(slides = defaultSlides()) {
       <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
       <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
       <div class="btn-row">
-        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
-        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+        <a class="btn btn--primary" href="#/materassi/">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#/sleep-match/">Trova il tuo materasso</a>
       </div>
       ${slides.length ? `<p class="hero__caption" id="hero-caption"><span>${esc(slides[0].caption)}</span></p>` : ''}
     </div>
@@ -5329,6 +6042,7 @@ __def("admin.js", function (__exp) {
 // CRUD categorie/prodotti/varianti, media, richieste, impostazioni, storico.
 // L'accesso qui è locale al browser (PBKDF2 + sessione); in produzione è Supabase Auth + RLS.
 
+const {adminKey, go, P, legacyToPath} = __req("nav.js");
 const {formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex} = __req("core/index.js");
 const {store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api} = __req("store.js");
 const {SITE_SLOTS} = __req("slots.js");
@@ -5784,8 +6498,13 @@ function viewSettings() {
     <form id="adm-settings" class="form" novalidate>
       <section class="adm-card"><h2 class="adm-h2">WhatsApp per le richieste</h2>
         ${wa.source === 'env' ? `<p class="note">Il numero è impostato dalla configurazione d'ambiente e prevale su questo campo.</p>` : ''}
-        <div class="field"><label for="s-wa">Numero WhatsApp aziendale</label><input class="input" id="s-wa" name="whatsapp_number" value="${esc(s.whatsapp_number)}" placeholder="+39 …" inputmode="tel" aria-describedby="s-wa-h"><span class="hint" id="s-wa-h">Con prefisso internazionale. Da confermare prima del lancio: finché è vuoto il sito offre solo "Copia il riepilogo".</span></div>
+        <div class="field"><label for="s-wa">Numero WhatsApp aziendale</label><input class="input" id="s-wa" name="whatsapp_number" value="${esc(s.whatsapp_number)}" placeholder="+39 …" inputmode="tel" aria-describedby="s-wa-h"><span class="hint" id="s-wa-h">Con prefisso internazionale. Se è vuoto il sito offre solo "Copia il riepilogo".</span></div>
         <p class="${wa.check.ok ? 'note note--ok' : 'note note--warn'} small" id="wa-check">${wa.check.ok ? `Attivo: i link si aprono su wa.me/${esc(wa.check.digits)}` : esc(wa.check.reason)}</p>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Contatti pubblici</h2>
+        <div class="field"><label for="s-phone">Telefono</label><input class="input" id="s-phone" name="public_phone" value="${esc(s.public_phone || '')}" placeholder="+39 …" inputmode="tel"></div>
+        <div class="field"><label for="s-mail">Email</label><input class="input" id="s-mail" name="contact_email" type="email" value="${esc(s.contact_email || '')}"></div>
+        <p class="small muted">Compaiono nel footer, nella pagina Contatti, nelle condizioni di vendita e nell'informativa privacy.</p>
       </section>
       <section class="adm-card"><h2 class="adm-h2">Testi e condizioni</h2>
         <div class="field"><label for="s-ship">Spedizione (testo pubblico)</label><input class="input" id="s-ship" name="shipping_note" value="${esc(s.shipping_note)}"></div>
@@ -5819,7 +6538,7 @@ function viewAudit() {
 async function render(app) {
   root = app;
   bind();
-  const r = location.hash.slice(1);
+  const r = adminKey();
   if (!isLogged()) return viewLogin();
   let m;
   if (r === 'admin') viewOverview();
@@ -5929,6 +6648,20 @@ function bind() {
       if (s.whatsapp_number !== raw) store.audit('impostazioni', 'WhatsApp', raw ? 'Numero aggiornato' : 'Numero rimosso');
       s.whatsapp_number = raw;
       s.shipping_note = String(fd.get('shipping_note') || '').trim() || s.shipping_note;
+      const phone = String(fd.get('public_phone') || '').trim();
+      if (phone && !normalizeWhatsAppNumber(phone).ok) {
+        $('#s-phone').setAttribute('aria-invalid', 'true');
+        toast('Telefono: usa il prefisso internazionale, es. +39 …');
+        return $('#s-phone').focus();
+      }
+      const mail = String(fd.get('contact_email') || '').trim();
+      if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+        $('#s-mail').setAttribute('aria-invalid', 'true');
+        toast('Email non valida');
+        return $('#s-mail').focus();
+      }
+      s.public_phone = phone;
+      s.contact_email = mail;
       s.show_claims = fd.get('show_claims') === 'on';
       store.commit('settings');
       toast('Impostazioni salvate');
@@ -6053,7 +6786,7 @@ function bind() {
       case 'logout':
         sessionStorage.removeItem(SESSION);
         sessionStorage.removeItem('vs-preview-drafts');
-        location.hash = '';
+        go(P.home);
         break;
       case 'new-product': {
         const cat = d.categories[0];
@@ -6061,7 +6794,7 @@ function bind() {
         d.products.push(np);
         store.audit('nuovo prodotto', np.name, 'Creato in bozza');
         store.commit('catalog');
-        location.hash = 'admin-prodotto-' + np.id;
+        go(`/admin/prodotto-${np.id}/`);
         break;
       }
       case 'status': {
@@ -6095,13 +6828,13 @@ function bind() {
         store.audit('eliminazione', p.name, 'Bozza eliminata definitivamente');
         store.commit('catalog');
         toast('Bozza eliminata');
-        location.hash = 'admin-catalogo';
+        go('/admin/catalogo/');
         break;
       }
       case 'preview':
         if ($('#adm-product') && !saveProduct($('#adm-product'), { silent: true })) return;
         sessionStorage.setItem('vs-preview-drafts', '1');
-        location.hash = 'prodotto-' + p.slug;
+        go(legacyToPath('prodotto-' + p.slug));
         break;
       case 'var-add': {
         if (!saveProduct($('#adm-product'), { silent: true })) return;
@@ -6280,7 +7013,8 @@ function bind() {
       case 'sitemap': {
         const out = $('#sm-out');
         out.hidden = false;
-        out.value = buildSitemap(catalog(), $('#sm-base').value.trim() || 'https://vesuviosleep.it');
+        // stessa sitemap che scripts/build_site.mjs pubblica con il sito
+        out.value = buildSitemap($('#sm-base').value.trim() || 'https://vesuviosleep.it', window.__vs.routes().map((r) => ({ path: r.path, images: r.images })));
         break;
       }
       case 'export': {
@@ -6319,7 +7053,11 @@ const {formatCents,
   localBusinessJsonLd,
   breadcrumbJsonLd,
   MAX_QTY,
-  resolveRedirect,} = __req("core/index.js");
+  resolveRedirect,
+  faqJsonLd,
+  websiteJsonLd,} = __req("core/index.js");
+const {MODE, P, u, abs, absAsset, current, go, isAt, legacyToPath, setNavigator, interceptLinks, IS_PREVIEW} = __req("nav.js");
+const {PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_METHODS, applySettings} = __req("pages.js");
 const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage} = __req("store.js");
 const {esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion} = __req("ui.js");
 const {productIllustration, layersFor} = __req("illustrations.js");
@@ -6338,6 +7076,7 @@ const state = {
   sm: null, // Sleep Match: risposte solo in memoria
   sizes: ['160x190', '180x200'],
   lastRoute: undefined,
+  pay: 'contrassegno',
   labModel: null,
 };
 const KIND_PLURAL = { materasso: 'Materassi', rete: 'Reti', guanciale: 'Guanciali', topper: 'Topper', letto: 'Letti a castello' };
@@ -6371,20 +7110,79 @@ function coverHtml(idx, p, opts = {}) {
 }
 
 // ---------------------------------------------------------------- helpers
+const catOf = (p) => catalog().snap.categories.find((c) => c.id === p.category_id);
+const catPath = (c) => `/${c.slug}/`;
+const prodPath = (p, c = catOf(p)) => (c ? `/${c.slug}/${p.slug}/` : `/prodotto/${p.slug}/`);
 const href = {
-  product: (p) => `#prodotto-${p.slug}`,
-  category: (c) => `#${c.slug}`,
+  product: (p) => u(prodPath(p)),
+  category: (c) => u(catPath(c)),
 };
+/** Percorso canonico di un prodotto (anche da un vecchio slug rinominato). */
+function resolveProductPath(slug) {
+  const idx = catalog();
+  let p = idx.snap.products.find((x) => x.slug === slug);
+  if (!p) {
+    const to = resolveRedirect(store.db.redirects ?? [], slug);
+    if (to) p = idx.snap.products.find((x) => x.slug === to);
+  }
+  return p ? prodPath(p) : null;
+}
 function priceFrom(idx, p) {
   const min = idx.minPrice(p);
   const max = idx.maxPrice(p);
   if (min === null) return '';
   return min === max ? `<span class="price">${formatCents(min)}</span>` : `<span class="price"><small>da</small>${formatCents(min)}</span>`;
 }
-function setMeta(title, desc, ld = []) {
-  document.title = title ? `${title} | Vesuvio Sleep` : 'Vesuvio Sleep | Materassi di fabbrica a Napoli, dal 1986';
-  $('meta[name="description"]').setAttribute('content', desc || 'Materassi prodotti a Casoria (Napoli) dal 1986 e venduti a prezzo di fabbrica: Memory Foam, poliuretano e molle insacchettate, reti e guanciali. Misure su richiesta.');
-  $('#ld').textContent = JSON.stringify(ld.length === 1 ? ld[0] : ld);
+const DEFAULT_DESC = VIEW_SEO.home.description;
+const SHARE_IMG = 'img/social/vesuvio-sleep-condividi.jpg';
+function metaTag(attr, key, content) {
+  let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute(attr, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content', content);
+}
+/**
+ * Titolo, descrizione, robots, canonical, Open Graph e dati strutturati della pagina.
+ * opts: { noindex, image, type, path }
+ */
+function setMeta(title, desc, ld = [], opts = {}) {
+  const full = title ? `${title} | Vesuvio Sleep` : `${VIEW_SEO.home.metaTitle} | Vesuvio Sleep`;
+  const description = desc || DEFAULT_DESC;
+  document.title = full.length <= 70 || !title ? full : title;
+  metaTag('name', 'description', description);
+  const path = opts.path ?? current().path;
+  metaTag('name', 'robots', IS_PREVIEW ? 'noindex, nofollow, noarchive' : opts.noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large');
+  let canon = document.head.querySelector('link[rel="canonical"]');
+  if (MODE === 'path' && !opts.noindex) {
+    if (!canon) {
+      canon = Object.assign(document.createElement('link'), { rel: 'canonical' });
+      document.head.appendChild(canon);
+    }
+    canon.setAttribute('href', abs(path));
+  } else canon?.remove();
+  const og = {
+    'og:type': opts.type || 'website',
+    'og:site_name': 'Vesuvio Sleep',
+    'og:locale': 'it_IT',
+    'og:title': title || VIEW_SEO.home.metaTitle,
+    'og:description': description,
+    'og:url': abs(path),
+    'og:image': absAsset(opts.image || SHARE_IMG),
+  };
+  for (const [k, v] of Object.entries(og)) metaTag('property', k, v);
+  metaTag('name', 'twitter:card', 'summary_large_image');
+  const list = ld.filter(Boolean);
+  $('#ld').textContent = JSON.stringify(list.length === 1 ? list[0] : list);
+}
+/** Briciole: link per la pagina e dati strutturati con URL assoluti. items: [{name, path}] */
+function trail(items) {
+  return {
+    ui: items.map((it, i) => ({ name: it.name, href: i < items.length - 1 && it.path ? u(it.path) : undefined })),
+    ld: breadcrumbJsonLd(items.map((it) => ({ name: it.name, url: abs(it.path ?? current().path) }))),
+  };
 }
 function crumbs(items) {
   return `<nav class="crumbs wrap" aria-label="Percorso"><ol>${items
@@ -6406,67 +7204,117 @@ const pub = () => catalog({ drafts: previewDrafts() });
 
 // ---------------------------------------------------------------- layout
 function renderChrome() {
+  applySettings(store.db.settings);
   const idx = catalog();
   const cats = idx.commercialCategories();
-  const route = location.hash.slice(1);
-  const wa = whatsappStatus();
+  const here = current().path;
+  const on = (p) => (here === p || (p !== '/' && here.startsWith(p)) ? 'aria-current="page"' : '');
   const nav = [
-    ...cats.map((c) => ({ href: `#${c.slug}`, label: c.name, on: route === c.slug })),
-    { href: '#sleep-match', label: 'Sleep Match', on: route === 'sleep-match' },
-    { href: '#showroom', label: 'Showroom', on: route === 'showroom' },
+    ...cats.map((c) => ({ path: catPath(c), label: c.name })),
+    { path: P.sleepMatch, label: 'Sleep Match' },
+    { path: P.showroom, label: 'Showroom' },
   ];
-  const msgs = [`Spedizione ${store.db.settings.shipping_note || ''}`, 'Produciamo materassi a Casoria dal 1986', 'Fuori misura e altezze personalizzate su richiesta', 'A Napoli consegna al piano gratuita', 'Showroom aperto lun–ven 9–18, sabato 10–14'];
+  const msgs = [
+    `Spedizione ${store.db.settings.shipping_note || ''}`,
+    CONTACT.waShort === CONTACT.phoneShort ? `WhatsApp e telefono ${CONTACT.phoneShort}` : `WhatsApp ${CONTACT.waShort}`,
+    'Produciamo materassi a Casoria dal 1986',
+    'Paghi alla consegna o con bonifico',
+    'A Napoli consegna al piano gratuita',
+    'Fuori misura e altezze personalizzate su richiesta',
+  ];
   const run = msgs.map((m) => `<span>${esc(m)}</span>`).join('');
   $('#topbar').innerHTML = `<div class="wrap">
       <div class="ticker" aria-hidden="true"><div class="ticker__track">${run}${run}</div></div><span class="sr-only">${esc(msgs[0])}</span>
       <span class="topbar__preview">${previewDrafts() ? '<span class="topbar__flag">Anteprima admin: bozze visibili</span>' : ''}</span>
     </div>`;
-  $('#nav').innerHTML = nav.map((n) => `<a href="${n.href}" ${n.on ? 'aria-current="page"' : ''}>${esc(n.label)}</a>`).join('');
-  $('#drawer-links').innerHTML = `<a href="#">Home</a>` + nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('') + `<a href="#confronto">Confronta i materassi</a><a href="#guida-misure">Guida alle misure</a><a href="#fuori-misura">Fuori misura</a><a href="#carrello">Carrello (${cart.count()})</a>`;
+  $('#nav').innerHTML = nav.map((n) => `<a href="${u(n.path)}" ${on(n.path)}>${esc(n.label)}</a>`).join('');
+  $('#drawer-links').innerHTML =
+    `<a href="${u(P.home)}">Home</a>` +
+    nav.map((n) => `<a href="${u(n.path)}">${esc(n.label)}</a>`).join('') +
+    `<a href="${u(P.compare)}">Confronta i materassi</a><a href="${u(P.sizes)}">Misure dei materassi</a><a href="${u(P.quote)}">Materassi su misura</a><a href="${u(P.faq)}">Domande frequenti</a><a href="${u(P.contacts)}">Contatti</a><a href="${u(P.search)}">Cerca</a><a href="${u(P.cart)}">Carrello (${cart.count()})</a>`;
   const n = cart.count();
+  $('#cart-link').setAttribute('href', u(P.cart));
   $('#cart-link').innerHTML = `${icon('cart')}<span class="sr-only">Carrello, ${n} articoli</span>${n ? `<span class="badge-count" aria-hidden="true">${n}</span>` : ''}`;
-  $('#foot-cats').innerHTML = cats.map((c) => `<li><a href="#${c.slug}">${esc(c.name)}</a></li>`).join('');
+  $('#search-link')?.setAttribute('href', u(P.search));
+  $('.brand')?.setAttribute('href', u(P.home));
+  $('#footer-main').innerHTML = footerHtml(cats);
+  let fl = $('#wa-float');
+  if (!fl) {
+    fl = document.createElement('a');
+    fl.id = 'wa-float';
+    fl.className = 'wa-float';
+    fl.target = '_blank';
+    fl.rel = 'noopener';
+    fl.setAttribute('aria-label', 'Scrivici su WhatsApp');
+    fl.innerHTML = `${icon('wa', 24)}<span>Scrivici</span>`;
+    document.body.appendChild(fl);
+  }
+  fl.href = waHref();
+}
+function footerHtml(cats) {
+  const li = (path, t) => `<li><a href="${u(path)}">${esc(t)}</a></li>`;
+  return `<div class="footer__grid footer__grid--5">
+      <div>
+        <span class="footer__logo"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep" loading="lazy"></span>
+        <p style="margin-top:14px">Materassi di fabbrica dal 1986, prodotti a Casoria (Napoli).</p>
+        <ul class="footer__contacts">
+          <li><a href="${waHref()}" target="_blank" rel="noopener">${icon('wa', 18)} WhatsApp ${CONTACT.waShort}</a></li>
+          <li><a href="${CONTACT.phoneHref}">${icon('phone', 18)} ${CONTACT.phoneShort}</a></li>
+          <li><a href="mailto:${CONTACT.email}">${icon('mail', 18)} ${CONTACT.email}</a></li>
+        </ul>
+      </div>
+      <div><h2>Catalogo</h2><ul>${cats.map((c) => li(catPath(c), c.name)).join('')}${li(P.quote, 'Materassi su misura')}${li(P.b2b, 'Hotel e B&B')}</ul></div>
+      <div><h2>Scegliere</h2><ul>${li(P.sleepMatch, 'Sleep Match')}${li(P.compare, 'Confronta i materassi')}${li(P.sizes, 'Misure dei materassi')}${li(P.guides, 'Guide')}${li(P.naples, 'Materassi a Napoli')}</ul></div>
+      <div><h2>Assistenza</h2><ul>${li(P.contacts, 'Contatti')}${li(P.faq, 'Domande frequenti')}${li(P.shipping, 'Spedizioni e consegna')}${li(P.payments, 'Pagamenti')}${li(P.returns, 'Resi e recesso')}${li(P.warranty, 'Garanzia')}</ul></div>
+      <div><h2>Showroom</h2><p style="margin:0">Via Raffaele Salierno 38<br>80026 Casoria (NA)</p><p>Lun–ven 09:00–18:00<br>Sab 10:00–14:00</p><ul>${li(P.showroom, 'Come arrivare')}${li(P.about, 'Chi siamo')}</ul></div>
+    </div>
+    <div class="footer__legal"><span>${esc(CONTACT.legalName)} · P.IVA ${CONTACT.vat} · REA ${CONTACT.rea} · ${esc(CONTACT.address)}</span>
+      <span class="footer__legal-links"><a href="${u(P.terms)}">Condizioni di vendita</a> · <a href="${u(P.privacy)}">Privacy</a> · <a href="${u(P.cookies)}">Cookie</a>${IS_PREVIEW ? ' · ' : ''}${IS_PREVIEW ? `<a href="${u(P.admin)}" rel="nofollow">Area riservata</a>` : ''}</span></div>`;
 }
 
 // ---------------------------------------------------------------- router
-const routes = [
-  [/^$/, viewHome],
-  [/^prodotto-(.+)$/, (m) => viewProduct(m[1])],
-  [/^sleep-match$/, viewSleepMatch],
-  [/^confronto$/, viewCompare],
-  [/^guida-misure$/, viewSizes],
-  [/^fuori-misura$/, viewQuote],
-  [/^showroom$/, viewShowroom],
-  [/^carrello$/, viewCart],
-  [/^riepilogo$/, viewReview],
-  [/^admin.*$/, async () => (await Promise.resolve(__req("admin.js"))).render(app)],
-];
+async function dispatch(cur) {
+  const { path, query } = cur;
+  if (path.startsWith(P.admin)) return (await Promise.resolve(__req("admin.js"))).render(app);
+  const fixed = {
+    [P.home]: viewHome,
+    [P.sleepMatch]: viewSleepMatch,
+    [P.compare]: viewCompare,
+    [P.sizes]: viewSizes,
+    [P.quote]: () => viewQuote(query),
+    [P.showroom]: viewShowroom,
+    [P.cart]: viewCart,
+    [P.review]: viewReview,
+    [P.search]: () => viewSearch(query.q || ''),
+  };
+  if (fixed[path]) return fixed[path]();
+  if (PAGES[path]) return viewPage(path, PAGES[path]);
+  const seg = path.split('/').filter(Boolean);
+  if (seg.length === 1) {
+    const c = pub().snap.categories.find((x) => x.slug === seg[0]);
+    if (c && (c.status === 'published' || previewDrafts())) return viewCategory(c);
+  }
+  if (seg.length === 2) return viewProduct(seg[1], seg[0]);
+  return viewNotFound();
+}
 async function route() {
-  const r = decodeURIComponent(location.hash.slice(1));
+  const cur = current();
+  if (cur.legacy !== undefined) {
+    // vecchio indirizzo (#materassi, #prodotto-xxx ...): si passa a quello nuovo
+    return go(legacyToPath(cur.legacy, resolveProductPath), { replace: true });
+  }
+  const r = cur.path + (Object.keys(cur.query).length ? '?' + new URLSearchParams(cur.query) : '');
   const render = async () => {
     closeDrawer();
     document.body.classList.remove('has-sticky');
     $('.compare-bar')?.remove();
-    const isAdmin = r.startsWith('admin');
+    const isAdmin = cur.path.startsWith(P.admin);
     document.body.classList.toggle('is-admin', isAdmin);
-    let done = false;
-    for (const [re, fn] of routes) {
-      const m = re.exec(r);
-      if (m) {
-        await fn(m);
-        done = true;
-        break;
-      }
-    }
-    if (!done) {
-      const idx = pub();
-      const c = idx.snap.categories.find((x) => x.slug === r);
-      if (c) viewCategory(c);
-      else viewNotFound();
-    }
+    await dispatch(cur);
     document.body.classList.toggle('on-hero', !!$('#app > .hero'));
     document.body.classList.toggle('on-dark', !!$('#app > .page-hero'));
     renderChrome();
+    if (MODE === 'path') $$('a[href^="#/"]').forEach((el) => el.setAttribute('href', el.getAttribute('href').slice(1)));
     if (state.lastRoute !== r) {
       window.scrollTo(0, 0);
       const h1 = $('#app h1');
@@ -6478,7 +7326,7 @@ async function route() {
     enhance(app);
     tiltCards(app);
     // la barra di confronto compare solo dove si selezionano i modelli
-    if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
+    if (!isAdmin && state.compare.size && (cur.path === P.home || cur.path === '/materassi/')) showCompareBar();
   };
   const first = state.lastRoute === undefined;
   if (!first && document.startViewTransition && !reducedMotion() && state.lastRoute !== r) {
@@ -6554,7 +7402,7 @@ function statementHtml() {
     <div class="statement__text rv" style="--d:1">
       <h2 id="st-title">Il Vesuvio ce l'abbiamo davanti ogni mattina.</h2>
       <p>Per questo il nostro marchio ha il suo profilo, e per questo cuciamo ogni materasso come si faceva in bottega: a mano dove serve, con materiali scelti e controllati in fabbrica.</p>
-      <a class="btn btn--primary" href="#materassi">Scegli il tuo materasso</a>
+      <a class="btn btn--primary" href="${u('/materassi/')}">Scegli il tuo materasso</a>
     </div>
   </div></section>`;
 }
@@ -6644,7 +7492,7 @@ function viewHome() {
   const cats = idx.commercialCategories();
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
-  setMeta('', '', [localBusinessJsonLd()]);
+  setMeta(VIEW_SEO.home.metaTitle, VIEW_SEO.home.description, [websiteJsonLd(abs('')), localBusinessJsonLd(abs('/'), { image: absAsset(SHARE_IMG), logo: absAsset('img/logo.png') })], { path: P.home });
   const slides = heroSlides();
   const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
   app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
@@ -6661,7 +7509,7 @@ function viewHome() {
   <section class="section" aria-labelledby="cat-title">
     <div class="wrap">
       <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi IVA inclusa per la misura e l'altezza che scegli. Passa sopra un materasso per aprirne gli strati.</p></div>
-        <a class="btn btn--ghost btn--sm" href="#confronto">Confronta i materassi</a></div>
+        <a class="btn btn--ghost btn--sm" href="${u(P.compare)}">Confronta i materassi</a></div>
       <div class="seg-tabs" role="tablist" aria-label="Categorie">${cats
         .map((c) => `<button class="tab" role="tab" id="tab-${c.kind}" aria-selected="${c.kind === state.homeKind}" aria-controls="home-grid" data-act="home-tab" data-kind="${c.kind}" tabindex="${c.kind === state.homeKind ? 0 : -1}">${esc(c.name)}<small>${idx.publicProducts(c.kind).length}</small></button>`)
         .join('')}<span class="seg-tabs__thumb" aria-hidden="true"></span></div>
@@ -6685,7 +7533,7 @@ function viewHome() {
       <dl>
         <div class="rv" style="--d:2"><dt>Produzione diretta</dt><dd>Circa 2 giorni di lavorazione prima della spedizione.</dd></div>
         <div class="rv" style="--d:3"><dt>Su misura, se serve</dt><dd>Fuori misura e altezze personalizzate, su preventivo.</dd></div>
-        <div class="rv" style="--d:4"><dt>Hotel e B&amp;B</dt><dd>Forniture anche in grandi quantità. <a href="#fuori-misura">Richiedi un preventivo</a>.</dd></div>
+        <div class="rv" style="--d:4"><dt>Hotel e B&amp;B</dt><dd>Forniture anche in grandi quantità. <a href="${u(P.quote)}">Richiedi un preventivo</a>.</dd></div>
       </dl>
     </div>
   </section>
@@ -6743,7 +7591,7 @@ function heroSlides() {
 function homeGrid(idx) {
   const items = idx.publicProducts(state.homeKind);
   return `<div class="grid grid--stagger">${items.map((p, i) => productCard(idx, p, { compare: state.homeKind === 'materasso', d: i })).join('')}</div>
-    <p style="margin-top:22px"><a href="#${idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
+    <p style="margin-top:22px"><a href="${u('/' + idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug + '/')}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
 }
 function moveThumb() {
   const th = $('.seg-tabs__thumb');
@@ -6786,9 +7634,20 @@ function viewCategory(c) {
   const all = idx.publicProducts(c.kind);
   const f = state.filters;
   const isM = c.kind === 'materasso';
-  setMeta(c.seo_title || `${c.name} di fabbrica`, c.seo_description || c.description, [
-    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }]),
-  ]);
+  const seo = CATEGORY_SEO[c.kind];
+  const minAll = all.map((p) => idx.minPrice(p)).filter((x) => x !== null);
+  const from = minAll.length ? formatCents(Math.min(...minAll)) : '';
+  const tr = trail([{ name: 'Home', path: P.home }, { name: c.name, path: catPath(c) }]);
+  const firstImg = all.map((p) => coverFor(idx, p)).find(Boolean);
+  setMeta(c.seo_title || seo?.metaTitle || `${c.name} di fabbrica`, c.seo_description || seo?.description(from) || c.description, [
+    tr.ld,
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: c.name,
+      itemListElement: all.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(prodPath(p, c)), name: p.name })),
+    },
+  ], { image: firstImg ? media.resolve(firstImg) : undefined });
   const body = () => {
     let list = all.slice();
     if (isM) {
@@ -6799,15 +7658,15 @@ function viewCategory(c) {
     if (f.sort === 'asc') list.sort((a, b) => idx.minPrice(a) - idx.minPrice(b));
     if (f.sort === 'desc') list.sort((a, b) => idx.minPrice(b) - idx.minPrice(a));
     if (!all.length)
-      return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="#fuori-misura">Chiedi un preventivo</a></div>`;
+      return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
   const head = siteImage({ materasso: 'testata_materasso', rete: 'testata_rete', guanciale: 'testata_guanciale' }[c.kind]);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
+  app.innerHTML = `${pageHero(tr.ui, c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
   <div class="wrap" style="padding-top:28px">
     <div class="toolbar">
       ${isM ? `<div class="chips" role="group" aria-label="Tecnologia">${chip('tech', 'all', 'Tutti')}${chip('tech', 'foam', 'Poliuretano')}${chip('tech', 'memory', 'Memory Foam')}${chip('tech', 'molle', 'Molle')}</div>
@@ -6818,7 +7677,8 @@ function viewCategory(c) {
         <option value="desc" ${f.sort === 'desc' ? 'selected' : ''}>Prezzo decrescente</option></select></label>
     </div>
     <div id="cat-body">${body()}</div>
-    ${isM ? `<p style="margin-top:28px" class="muted">Cerchi una misura o un'altezza diversa? <a href="#fuori-misura">Chiedi un preventivo fuori misura</a>.</p>` : ''}
+    ${isM ? `<p style="margin-top:28px" class="muted">Cerchi una misura o un'altezza diversa? <a href="${u(P.quote)}">Chiedi un preventivo fuori misura</a>.</p>` : ''}
+    ${seo ? `<section class="seo-text prose">${seo.html()}</section>` : ''}
   </div>`;
   state.catBody = body;
 }
@@ -6839,27 +7699,50 @@ function getSel(idx, p) {
   return (state.sel[p.id] = { size, height, qty: s.qty ?? 1 });
 }
 
-function viewProduct(slug) {
+const PRODUCT_PHRASE = {
+  rete: () => 'rete a doghe in legno',
+  topper: () => 'topper in Memory Foam',
+  guanciale: () => 'guanciale',
+  letto: () => 'letto a castello',
+  materasso: (p) =>
+    p.match?.tech === 'molle' ? (p.hybrid ? 'materasso a molle insacchettate e Memory' : 'materasso a molle insacchettate') : p.match?.tech === 'memory' ? 'materasso in Memory Foam' : 'materasso in poliuretano espanso',
+};
+function productSeo(idx, p, kind) {
+  const min = idx.minPrice(p);
+  const sizes = idx.purchasableSizes(p).length;
+  const hs = kind === 'materasso' ? idx.purchasableHeights(p) : [];
+  const title = `${p.name}, ${PRODUCT_PHRASE[kind]?.(p) ?? kind}`;
+  const parts = [
+    p.short,
+    min !== null ? `Da ${formatCents(min)} IVA inclusa.` : '',
+    sizes ? `${sizes} ${sizes === 1 ? 'misura' : 'misure'}${hs.length ? ', H' + hs.join('/H') : ''}.` : '',
+    'Spedizione gratuita.',
+  ].filter(Boolean);
+  // massimo circa 160 caratteri: si tolgono prima le informazioni meno importanti
+  while (parts.join(' ').length > 160 && parts.length > 2) parts.splice(parts.length - 2, 1);
+  return { title, desc: parts.join(' ') };
+}
+function viewProduct(slug, catSlug) {
   const idx = pub();
-  const p = idx.snap.products.find((x) => x.slug === slug && x.status === 'published');
+  const p = idx.snap.products.find((x) => x.slug === slug && (x.status === 'published' || previewDrafts()));
   if (!p) {
-    // vecchi indirizzi (es. pocket-2400-elite -> pocket-2600-elite)
-    const to = resolveRedirect(store.db.redirects ?? [], slug);
-    if (to) {
-      setTimeout(() => location.replace('#prodotto-' + to));
-      return '';
-    }
+    // vecchi indirizzi (es. pocket-2400-elite -> pocket-2600-elite): redirect permanente
+    const to = resolveProductPath(slug);
+    if (to && to !== current().path) return go(to, { replace: true });
   }
   const c = p && idx.category(p);
-  if (!p || !c || c.status !== 'published') return viewNotFound();
+  if (!p || !c || (c.status !== 'published' && !previewDrafts())) return viewNotFound();
+  if (catSlug !== c.slug) return go(prodPath(p, c), { replace: true });
   const kind = c.kind;
   const ms = mediaFor(idx, p);
   const gallery = ms.length ? ms : [];
   const urlImgs = gallery.map((m) => media.resolve(m)).filter((u) => u && !u.startsWith('blob:'));
-  setMeta(p.seo_title || p.name, p.seo_description || p.short, [
-    productJsonLd(idx, p, { images: urlImgs }),
-    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }, { name: p.name }]),
-  ].filter(Boolean));
+  const tr = trail([{ name: 'Home', path: P.home }, { name: c.name, path: catPath(c) }, { name: p.name, path: prodPath(p, c) }]);
+  const seo = productSeo(idx, p, kind);
+  setMeta(p.seo_title || seo.title, p.seo_description || seo.desc, [
+    productJsonLd(idx, p, { images: urlImgs.map(absAsset), url: abs(prodPath(p, c)), site: abs('') }),
+    tr.ld,
+  ], { image: urlImgs[0], type: 'product' });
   const purchasable = idx.isProductPurchasable(p);
   const showClaims = store.db.settings.show_claims && p.claims?.length;
   const factsRows = [
@@ -6874,7 +7757,7 @@ function viewProduct(slug) {
     p.lead_time ? ['Produzione', p.lead_time] : null,
   ].filter((r) => r && r[1]);
 
-  app.innerHTML = `${crumbs([{ name: 'Home', href: '#' }, { name: c.name, href: `#${c.slug}` }, { name: p.name }])}
+  app.innerHTML = `${crumbs(tr.ui)}
   <div class="wrap" style="padding-top:22px">
     <div class="pdp">
       <div class="gallery" data-gallery>${galleryHtml(idx, p, gallery, 0)}</div>
@@ -6889,7 +7772,7 @@ function viewProduct(slug) {
     <section class="section--tight" id="pairings" aria-labelledby="pair-t"></section>
     <section class="section--tight"><div class="delivery">
       <div><h3>${icon('truck')} Consegna</h3><ul><li>Spedizione ${esc(store.db.settings.shipping_note)}</li><li>A Napoli consegna al piano, ritiro dell'usato${kind === 'rete' ? ' e montaggio' : ''}</li></ul></div>
-      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
+      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
     </div></section>
   </div>
   ${purchasable ? `<div class="sticky-buy" id="sticky-buy" aria-hidden="true"></div>` : ''}`;
@@ -6979,9 +7862,10 @@ function renderBuy(idx, p) {
       <button class="btn btn--primary" id="add-btn" data-act="add" ${ok ? '' : 'disabled'}>Aggiungi al carrello</button>
     </div>
     <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
+    <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
     <div class="buy__extra">
-      <a href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
-      ${kind === 'materasso' ? `<a href="#confronto" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
+      <a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
+      ${kind === 'materasso' ? `<a href="${u(P.compare)}" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
     </div>`;
   state.lastPrice = { ...(state.lastPrice ?? {}), [p.id]: ok ? v.price_cents : null };
   const fp = $('.footprint__box span');
@@ -7062,7 +7946,7 @@ function setK(o, k, v) {
   cur[parts[0]] = v;
 }
 function viewSleepMatch() {
-  setMeta('Sleep Match: trova il tuo materasso', 'Qualche domanda su come dormi e ti proponiamo un solo materasso Vesuvio Sleep, con il perché. Senza budget e senza salvare le risposte.');
+  setMeta(VIEW_SEO[P.sleepMatch].metaTitle, VIEW_SEO[P.sleepMatch].description, [trail([{ name: 'Home', path: P.home }, { name: 'Sleep Match', path: P.sleepMatch }]).ld]);
   state.sm ??= { step: 0, a: { me: {} } };
   renderSM();
 }
@@ -7086,7 +7970,7 @@ function renderSM(animate = false) {
     if (a.sleepers !== 'couple') delete a.partner;
     const idx = pub();
     const r = sleepMatch(idx, a);
-    if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="#showroom">Contatti e showroom</a></div>`;
+    if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="${u(P.showroom)}">Contatti e showroom</a></div>`;
     else {
       state.sel[r.product.id] = { ...(state.sel[r.product.id] ?? {}), height: r.height };
       inner = `<p class="small muted">Il tuo risultato</p><div class="result">
@@ -7099,7 +7983,7 @@ function renderSM(animate = false) {
           <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
     }
   }
-  const html = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Sleep Match' }], 'Sleep Match', 'Rispondi a qualche domanda: ti proponiamo un solo materasso, con il perché.')}<div class="wrap section--tight"><div class="quiz" id="quiz">${inner}</div></div>`;
+  const html = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Sleep Match' }], 'Sleep Match', 'Rispondi a qualche domanda: ti proponiamo un solo materasso, con il perché.')}<div class="wrap section--tight"><div class="quiz" id="quiz">${inner}</div></div>`;
   if (animate && $('#quiz')) {
     swap($('#quiz'), inner);
     $('#quiz input, #quiz h2, #quiz button')?.focus({ preventScroll: true });
@@ -7112,7 +7996,7 @@ function viewCompare() {
   const all = idx.publicProducts('materasso');
   if (state.compare.size === 0) all.slice(0, 3).forEach((p) => state.compare.add(p.id));
   const chosen = all.filter((p) => state.compare.has(p.id)).slice(0, 3);
-  setMeta('Confronta i materassi', 'Confronto tra i materassi Vesuvio Sleep: tecnologia, composizione, altezze, prezzi e rivestimento.');
+  setMeta(VIEW_SEO[P.compare].metaTitle, VIEW_SEO[P.compare].description, [trail([{ name: 'Home', path: P.home }, { name: 'Confronta i materassi', path: P.compare }]).ld]);
   const yes = (b) => (b === true ? 'Sì' : b === false ? 'No' : '—');
   const rows = [
     ['Tecnologia', (p) => esc(p.technical_name)],
@@ -7126,7 +8010,7 @@ function viewCompare() {
     ['Rigidità indicativa', (p) => esc(p.firmness_display ?? '—')],
     ['', (p) => `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Vai alla scheda</a>`],
   ];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Confronto' }], 'Confronta i materassi', 'Solo dati confermati dalla fabbrica, senza punteggi. Scegli fino a tre modelli.')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Confronto' }], 'Confronta i materassi', 'Solo dati confermati dalla fabbrica, senza punteggi. Scegli fino a tre modelli.')}
   <div class="wrap" style="padding-top:28px">
     <div class="chips" role="group" aria-label="Modelli da confrontare" style="margin-bottom:20px">${all
       .map((p) => `<button class="chip" data-act="cmp-toggle" data-id="${esc(p.id)}" aria-pressed="${state.compare.has(p.id)}">${esc(p.name.replace('Vesuvio ', ''))}</button>`)
@@ -7142,7 +8026,7 @@ function showCompareBar() {
   const n = state.compare.size;
   const bar = document.createElement('div');
   bar.className = 'compare-bar';
-  bar.innerHTML = `<span>${n} ${n === 1 ? 'modello' : 'modelli'} da confrontare</span><a class="btn btn--sm" href="#confronto">Confronta</a><button class="icon-btn" style="color:#fff" data-act="cmp-clear" aria-label="Svuota il confronto">${icon('close', 18)}</button>`;
+  bar.innerHTML = `<span>${n} ${n === 1 ? 'modello' : 'modelli'} da confrontare</span><a class="btn btn--sm" href="${u(P.compare)}">Confronta</a><button class="icon-btn" style="color:#fff" data-act="cmp-clear" aria-label="Svuota il confronto">${icon('close', 18)}</button>`;
   document.body.append(bar);
 }
 
@@ -7181,10 +8065,10 @@ function sizesSvg(a, b) {
     </g></svg>`;
 }
 function viewSizes() {
-  setMeta('Guida alle misure dei materassi', 'Le misure standard dei materassi Vesuvio Sleep a confronto in scala: singolo, piazza e mezza, matrimoniale. Fuori misura su richiesta.');
+  setMeta(VIEW_SEO[P.sizes].metaTitle, VIEW_SEO[P.sizes].description, [trail([{ name: 'Home', path: P.home }, { name: 'Misure dei materassi', path: P.sizes }]).ld]);
   const [a, b] = state.sizes;
   const opt = (sel) => STANDARD_SIZES.map((s) => `<option value="${s}" ${s === sel ? 'selected' : ''}>${formatSize(s)} – ${SIZE_NAMES[s]}</option>`).join('');
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Guida alle misure' }], 'Guida alle misure', "Metti a confronto due misure in scala, vista dall'alto. La selezione resta quando torni alla scheda.")}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Guida alle misure' }], 'Misure dei materassi', "Le 13 misure standard e il confronto in scala, vista dall'alto. La selezione resta quando torni alla scheda.")}
   <div class="wrap two-col" style="padding-top:28px">
     <div class="sizes-fig">
       <div class="row-2" style="margin-bottom:12px">
@@ -7196,17 +8080,26 @@ function viewSizes() {
       <p class="small muted" style="margin:10px 0 0">Differenza: ${Math.abs(parseSize(a).w - parseSize(b).w)} cm in larghezza, ${Math.abs(parseSize(a).l - parseSize(b).l)} cm in lunghezza.</p>
     </div>
     <div><table class="size-table"><thead><tr><th>Misura (cm)</th><th>Formato</th></tr></thead><tbody>${STANDARD_SIZES.map((s) => `<tr><td><strong>${formatSize(s)}</strong></td><td>${SIZE_NAMES[s]}</td></tr>`).join('')}</tbody></table>
-      <p style="margin-top:18px">Il materasso va scelto sulla misura interna del letto o della rete. Se non corrisponde a una misura standard, <a href="#fuori-misura">chiedi un preventivo fuori misura</a>.</p></div>
-  </div>`;
+      <p style="margin-top:18px">Il materasso va scelto sulla misura interna del letto o della rete. Se non corrisponde a una misura standard, <a href="${u(P.quote)}">chiedi un preventivo fuori misura</a>.</p></div>
+  </div>
+  <div class="wrap"><section class="seo-text prose">
+    <h2>Come misurare il letto</h2>
+    <p>Misura <strong>l'interno</strong> del letto o della rete, da sponda a sponda, in larghezza e in lunghezza: è lì che va il materasso. Le misure esterne della struttura non contano. Se le due misure non coincidono con una misura standard, il materasso si fa su misura.</p>
+    <h2>Singolo, piazza e mezza, francese, matrimoniale</h2>
+    <p>Il <strong>singolo</strong> è largo 80 o 90 cm; la <strong>piazza e mezza</strong> 120 cm; il <strong>francese</strong> 140 cm, comodo per una persona e possibile per due; il <strong>matrimoniale</strong> 160 o 165 cm; il <strong>170×200</strong> e il <strong>King Size 180×200</strong> danno più spazio a chi dorme in due. Ogni larghezza esiste in lunghezza 190 o 200 cm: per chi supera 1,80 m conviene la lunghezza 200.</p>
+    <h2>Rete e topper della stessa misura</h2>
+    <p>Le nostre <a href="${u('/reti/')}">reti a doghe</a> e il <a href="${u('/topper/')}">topper in Memory Foam</a> esistono nelle stesse 13 misure dei materassi. Per scegliere il modello, leggi la guida <a href="${u('/guide/come-scegliere-il-materasso/')}">Come scegliere il materasso</a>.</p>
+  </section></div>`;
 }
 
 // ---------------------------------------------------------------- FUORI MISURA
-function viewQuote() {
+function viewQuote(query = {}) {
   const idx = pub();
-  setMeta('Materassi su misura e fuori misura', 'Richiedi un preventivo per un materasso fuori misura o con altezza personalizzata: ti rispondiamo su WhatsApp, senza pagamenti anticipati.');
+  const hotel = query.hotel === '1';
+  setMeta(VIEW_SEO[P.quote].metaTitle, VIEW_SEO[P.quote].description, [trail([{ name: 'Home', path: P.home }, { name: 'Materassi su misura', path: P.quote }]).ld]);
   const prods = [...idx.publicProducts('materasso'), ...idx.publicProducts('rete'), ...idx.publicProducts('topper')];
   const pre = state.quoteFor && prods.find((p) => p.id === state.quoteFor);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Fuori misura' }], 'Fuori misura e altezze personalizzate', 'Indica prodotto e misure. Ti mandiamo il prezzo su WhatsApp: niente pagamento online, la conferma avviene con noi.')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Materassi su misura' }], 'Materassi su misura e altezze personalizzate', 'Indica prodotto e misure. Ti mandiamo il prezzo su WhatsApp: niente pagamento online, la conferma avviene con noi.')}
   <div class="wrap two-col" style="padding-top:28px">
     <form class="form" id="quote-form" novalidate>
       <div class="field"><label for="q-prod">Prodotto</label><select id="q-prod" name="product" required>${prods.map((p) => `<option value="${esc(p.id)}" ${pre?.id === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}<option value="altro">Altro / non so ancora</option></select></div>
@@ -7215,8 +8108,8 @@ function viewQuote() {
         <div class="field"><label for="q-l">Lunghezza (cm)</label><input class="input" id="q-l" name="l" inputmode="numeric" required></div>
         <div class="field"><label for="q-h">Altezza (cm)</label><input class="input" id="q-h" name="h" inputmode="numeric" placeholder="Facoltativa"></div>
       </div>
-      <label class="check"><input type="checkbox" name="b2b" id="q-b2b"> È per un hotel, un B&amp;B o una struttura ricettiva</label>
-      <div class="row-2" id="b2b-fields" hidden>
+      <label class="check"><input type="checkbox" name="b2b" id="q-b2b" ${hotel ? 'checked' : ''}> È per un hotel, un B&amp;B o una struttura ricettiva</label>
+      <div class="row-2" id="b2b-fields" ${hotel ? '' : 'hidden'}>
         <div class="field"><label for="q-rooms">Camere o posti letto</label><input class="input" id="q-rooms" name="rooms" inputmode="numeric"></div>
         <div class="field"><label for="q-qty">Quantità di materassi</label><input class="input" id="q-qty" name="qty" inputmode="numeric"></div>
       </div>
@@ -7246,10 +8139,10 @@ function waBlock(plan, ref, kind) {
 function viewCart() {
   const v = api.validateCart(cart.items);
   const idx = catalog();
-  setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep.');
+  setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep: verifica gli articoli e invia il riepilogo su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
-    app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
-    <div class="wrap section--tight"><div class="empty"><h3>Il carrello è vuoto</h3><p>Scegli un materasso e la misura: troverai qui il riepilogo da inviare su WhatsApp.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="#materassi">Esplora i materassi</a><a class="btn btn--ghost" href="#sleep-match">Trova il tuo materasso</a></div></div></div>`;
+    app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello' }], 'Carrello')}
+    <div class="wrap section--tight"><div class="empty"><h2>Il carrello è vuoto</h2><p>Scegli un materasso e la misura: troverai qui il riepilogo da inviare su WhatsApp.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="${u('/materassi/')}">Esplora i materassi</a><a class="btn btn--ghost" href="${u(P.sleepMatch)}">Trova il tuo materasso</a></div></div></div>`;
     return;
   }
   // funzione extra: rete della stessa misura se nel carrello c'è un materasso senza rete
@@ -7259,7 +8152,7 @@ function viewCart() {
   const reteSugg = missing.length
     ? idx.publicProducts('rete').map((p) => ({ p, v: idx.cheapestAtSize(p, missing[0]) })).filter((x) => x.v)
     : [];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello' }], 'Carrello')}
   <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li aria-current="step">Carrello</li><li>Verifica</li><li>WhatsApp</li></ol></div>
   <div class="wrap cart">
     <div>
@@ -7268,10 +8161,10 @@ function viewCart() {
     </div>
     <aside class="summary" aria-label="Totale">
       <dl><dt>Articoli</dt><dd>${cart.count()}</dd><dt>Spedizione</dt><dd>Gratuita in Italia</dd><div class="tot" style="display:contents"><dt>Totale</dt><dd>${formatCents(v.total_cents)}</dd></div></dl>
-      <p class="small muted">IVA inclusa. Nessun pagamento online: invii il riepilogo su WhatsApp e confermi con noi.</p>
+      <p class="small muted">IVA inclusa. Paghi alla consegna in contrassegno oppure con bonifico: nessun pagamento online. <a href="${u(P.payments)}">Come funziona</a></p>
       ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
-      <a class="btn btn--primary" style="width:100%" href="#riepilogo" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
-      <p style="margin:12px 0 0;text-align:center"><a href="#materassi" class="small">Continua a scegliere</a></p>
+      <a class="btn btn--primary" style="width:100%" href="${u(P.review)}" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
+      <p style="margin:12px 0 0;text-align:center"><a href="${u('/materassi/')}" class="small">Continua a scegliere</a></p>
     </aside>
   </div>`;
 }
@@ -7297,17 +8190,17 @@ function cartSignature(items) {
   return items.map((i) => `${i.variant_id}:${i.qty}:${i.seen_price_cents}`).sort().join('|');
 }
 function viewReview() {
-  setMeta('Verifica il riepilogo', 'Controlla il riepilogo e invialo a Vesuvio Sleep su WhatsApp.');
+  setMeta('Verifica il riepilogo', 'Controlla il riepilogo, scegli come pagare e invialo a Vesuvio Sleep su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
-    location.hash = 'carrello';
+    go(P.cart, { replace: true });
     return;
   }
   const v = api.validateCart(cart.items); // ricontrollo "lato server"
-  const head = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello', href: '#carrello' }, { name: 'Verifica' }], 'Verifica il riepilogo')}
+  const head = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello', href: u(P.cart) }, { name: 'Verifica' }], 'Verifica il riepilogo')}
     <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
   if (!v.canSubmit) {
     app.innerHTML = `${head}<div class="wrap"><div class="note note--warn" role="alert"><strong>Abbiamo ricontrollato il carrello e qualcosa è cambiato.</strong> Correggi gli articoli segnalati e riprova.</div>
-      <div>${v.lines.map((l) => cartLine(catalog(), l)).join('')}</div><p style="margin-top:20px"><a class="btn btn--ghost" href="#carrello">Torna al carrello</a></p></div>`;
+      <div>${v.lines.map((l) => cartLine(catalog(), l)).join('')}</div><p style="margin-top:20px"><a class="btn btn--ghost" href="${u(P.cart)}">Torna al carrello</a></p></div>`;
     return;
   }
   const sig = cartSignature(cart.items);
@@ -7324,7 +8217,8 @@ function viewReview() {
   } catch {
     /* ignora */
   }
-  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note };
+  const pay = PAYMENT_METHODS.find((m) => m.id === state.pay) ?? PAYMENT_METHODS[0];
+  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note, payment: pay.msg };
   const plan = planWhatsApp(whatsappStatus().raw, summary);
   state.lastSummary = plan.fullText;
   app.innerHTML = `${head}<div class="wrap cart">
@@ -7332,16 +8226,19 @@ function viewReview() {
       <table class="size-table" aria-label="Articoli"><thead><tr><th>Articolo</th><th>Q.tà</th><th style="text-align:right">Prezzo</th></tr></thead><tbody>
       ${summary.lines.map((l) => `<tr><td><strong>${esc(l.name)}</strong><br><span class="small muted">${[l.size ? formatSize(l.size) : '', l.height_cm && l.size ? 'H' + l.height_cm : ''].filter(Boolean).join(' · ')}${l.size ? ' · ' : ''}SKU ${esc(l.sku)}</span></td><td>${l.qty}</td><td style="text-align:right">${formatCents(l.unit_cents * l.qty)}</td></tr>`).join('')}
       </tbody></table>
-      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
+      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Pagamento</dt><dd>${esc(pay.label)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
       <h2 style="font-size:1.2rem;margin-top:28px">Il messaggio che invierai</h2>
       <pre class="msg-preview" aria-label="Testo del messaggio">${esc(plan.text)}</pre>
       <p class="small muted">Il messaggio contiene solo articoli, prezzi e riferimento: nessun dato personale.</p>
     </div>
     <aside class="summary" aria-label="Invio">
       <h2 style="font-size:1.2rem">Invia la richiesta</h2>
+      <fieldset class="pay-opt"><legend>Come preferisci pagare?</legend>
+        ${PAYMENT_METHODS.map((m) => `<label class="pay"><input type="radio" name="pay" value="${m.id}" ${m.id === pay.id ? 'checked' : ''}><span><strong>${esc(m.label)}</strong><small>${esc(m.text)}</small></span></label>`).join('')}
+      </fieldset>
       <div id="wa-status" aria-live="polite">${req.status === 'in_attesa_contatto' ? sentNote() : ''}</div>
       ${waBlock(plan, req.ref, 'cart')}
-      <p class="small" style="margin-top:14px"><a href="#carrello">Modifica il carrello</a></p>
+      <p class="small" style="margin-top:14px"><a href="${u(P.cart)}">Modifica il carrello</a></p>
     </aside></div>`;
 }
 function sentNote() {
@@ -7350,12 +8247,78 @@ function sentNote() {
 
 // ---------------------------------------------------------------- ALTRE
 function viewShowroom() {
-  setMeta('Showroom e fabbrica a Casoria', 'Vesuvio Sleep, Via Raffaele Salierno 38, Casoria (NA). Orari dello showroom e indicazioni stradali.', [localBusinessJsonLd()]);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
+  setMeta(VIEW_SEO[P.showroom].metaTitle, VIEW_SEO[P.showroom].description, [localBusinessJsonLd(abs('/'), { image: absAsset(siteImage('showroom')?.src), logo: absAsset('img/logo.png') }), trail([{ name: 'Home', path: P.home }, { name: 'Showroom', path: P.showroom }]).ld], { image: siteImage('showroom')?.src });
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
 }
 function viewNotFound() {
-  setMeta('Pagina non trovata', '');
-  app.innerHTML = `<div class="wrap section"><h1>Questa pagina non c'è</h1><p class="lead">Il prodotto potrebbe non essere più in catalogo o il link è incompleto.</p><div class="btn-row"><a class="btn btn--primary" href="#materassi">Vai ai materassi</a><a class="btn btn--ghost" href="#">Torna alla home</a></div></div>`;
+  setMeta('Pagina non trovata', 'La pagina che cerchi non esiste o è stata spostata.', [], { noindex: true });
+  app.innerHTML = `<div class="wrap section"><h1>Questa pagina non c'è</h1><p class="lead">Il prodotto potrebbe non essere più in catalogo o il link è incompleto. Prova a cercarlo: <a href="${u(P.search)}">cerca nel sito</a>.</p><div class="btn-row"><a class="btn btn--primary" href="${u('/materassi/')}">Vai ai materassi</a><a class="btn btn--ghost" href="${u(P.home)}">Torna alla home</a></div></div>`;
+}
+
+// ---------------------------------------------------------------- PAGINE INFORMATIVE
+function asideHtml(path, def) {
+  const links = def.legal
+    ? [[P.terms, 'Condizioni di vendita'], [P.returns, 'Resi e recesso'], [P.warranty, 'Garanzia'], [P.privacy, 'Privacy'], [P.cookies, 'Cookie']]
+    : [[P.faq, 'Domande frequenti'], [P.shipping, 'Spedizioni e consegna'], [P.payments, 'Pagamenti'], [P.returns, 'Resi e recesso'], [P.guides, 'Guide']];
+  return `<aside class="page-aside" aria-label="Assistenza">
+    <div class="help-card"><h2>Hai una domanda?</h2><p>Ti rispondiamo noi, dalla fabbrica.</p>
+      <a class="btn btn--wa btn--sm" href="${waHref()}" target="_blank" rel="noopener">${icon('wa', 18)} WhatsApp</a>
+      <p class="help-card__line">${icon('phone', 16)} <a href="${CONTACT.phoneHref}">${CONTACT.phoneShort}</a></p>
+      <p class="help-card__line">${icon('mail', 16)} <a href="mailto:${CONTACT.email}">${CONTACT.email}</a></p></div>
+    <nav class="side-links" aria-label="Pagine correlate"><ul>${links.filter(([p]) => p !== path).map(([p, t]) => `<li><a href="${u(p)}">${t}</a></li>`).join('')}</ul></nav>
+  </aside>`;
+}
+function viewPage(path, def) {
+  const items = [{ name: 'Home', path: P.home }, ...(def.parent ? [{ name: def.parent[1], path: def.parent[0] }] : []), { name: def.nav, path }];
+  const tr = trail(items);
+  const photo = def.photo ? siteImage(def.photo) : null;
+  const ld = [tr.ld];
+  if (def.type === 'faq') ld.push(faqJsonLd(faqForLd()));
+  if (def.type === 'contact' || def.type === 'local')
+    ld.push({ ...localBusinessJsonLd(abs('/'), { image: absAsset(photo?.src || SHARE_IMG), logo: absAsset('img/logo.png') }), ...(def.type === 'local' ? { areaServed: [{ '@type': 'City', name: 'Napoli' }, { '@type': 'Country', name: 'Italia' }] } : {}) });
+  if (def.type === 'article')
+    ld.push({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: def.h1,
+      description: def.description,
+      inLanguage: 'it-IT',
+      datePublished: '2026-11-15',
+      dateModified: '2026-11-15',
+      mainEntityOfPage: abs(path),
+      author: { '@type': 'Organization', name: 'Vesuvio Sleep', url: abs('/') },
+      publisher: { '@type': 'Organization', name: 'Vesuvio Sleep', logo: { '@type': 'ImageObject', url: absAsset('img/logo.png') } },
+    });
+  setMeta(def.metaTitle, def.description, ld, { type: def.type === 'article' ? 'article' : 'website', image: photo?.src });
+  app.innerHTML = `${pageHero(tr.ui, def.h1, def.lead, '', photo)}
+  <div class="wrap page-layout${def.legal ? ' page-layout--legal' : ''}"><article class="prose">${def.body()}</article>${asideHtml(path, def)}</div>`;
+}
+
+// ---------------------------------------------------------------- RICERCA
+const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/×/g, 'x');
+function viewSearch(q) {
+  const idx = pub();
+  const terms = norm(q).split(/[^a-z0-9]+/).filter((x) => x.length > 1);
+  const match = (hay) => terms.length && terms.every((t) => norm(hay).includes(t));
+  const prods = terms.length
+    ? idx.publicProducts().filter((p) => match([p.name, p.technical_name, p.short, p.description, p.composition, (p.highlights || []).join(' '), idx.category(p)?.name, idx.purchasableSizes(p).join(' '), idx.purchasableHeights(p).map((h) => 'h' + h).join(' ')].join(' ')))
+    : [];
+  const pages = terms.length
+    ? Object.entries({ ...PAGES }).filter(([, d]) => match([d.h1, d.nav, d.description, d.lead].join(' '))).slice(0, 8)
+    : [];
+  setMeta(q ? `Risultati per "${q}"` : 'Cerca nel sito', 'Cerca materassi, reti, topper e informazioni su Vesuvio Sleep.', [], { noindex: true });
+  const n = prods.length + pages.length;
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Cerca' }], 'Cerca nel sito')}
+  <div class="wrap section--tight">
+    <form class="search-form" id="search-form" role="search"><label class="sr-only" for="q">Cerca</label>
+      <input class="input" type="search" id="q" name="q" value="${esc(q)}" placeholder="Es. memory, molle, 160x190, spedizione" autocomplete="off">
+      <button class="btn btn--primary" type="submit">${icon('search', 18)} Cerca</button></form>
+    ${q ? `<p class="small muted" aria-live="polite">${n ? `${n} ${n === 1 ? 'risultato' : 'risultati'} per "${esc(q)}"` : `Nessun risultato per "${esc(q)}".`}</p>` : ''}
+    ${prods.length ? `<h2 class="sr-only">Prodotti</h2><div class="grid">${prods.map((p) => productCard(idx, p)).join('')}</div>` : ''}
+    ${pages.length ? `<h2 style="font-size:1.3rem;margin-top:32px">Pagine</h2><ul class="search-pages">${pages.map(([p, d]) => `<li><a href="${u(p)}"><strong>${esc(d.h1)}</strong><span>${esc(d.description)}</span></a></li>`).join('')}</ul>` : ''}
+    ${q && !n ? `<div class="empty"><p>Prova con un'altra parola, oppure scrivici: ti aiutiamo noi.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="${u('/materassi/')}">Vedi i materassi</a><a class="btn btn--ghost" href="${waHref()}" target="_blank" rel="noopener">Scrivici su WhatsApp</a></div></div>` : ''}
+    ${!q ? `<p class="muted">Più cercati: <a href="${u(P.search + '?q=memory')}">memory</a> · <a href="${u(P.search + '?q=molle')}">molle</a> · <a href="${u(P.search + '?q=160x190')}">160×190</a> · <a href="${u(P.search + '?q=rete')}">rete</a> · <a href="${u(P.search + '?q=spedizione')}">spedizione</a></p>` : ''}
+  </div>`;
 }
 
 // ---------------------------------------------------------------- EVENTI
@@ -7364,10 +8327,11 @@ function closeDrawer() {
   $('#menu-btn')?.setAttribute('aria-expanded', 'false');
 }
 function currentProduct() {
-  const m = /^prodotto-(.+)$/.exec(location.hash.slice(1));
-  if (!m) return null;
+  const seg = current().path.split('/').filter(Boolean);
+  if (seg.length !== 2) return null;
   const idx = pub();
-  return { idx, p: idx.snap.products.find((x) => x.slug === m[1]) };
+  const p = idx.snap.products.find((x) => x.slug === seg[1]);
+  return p ? { idx, p } : null;
 }
 function addVariant(v, qty = 1) {
   cart.set(addToCart(cart.items, v, qty));
@@ -7419,9 +8383,12 @@ document.addEventListener('click', async (e) => {
       } else delete st.dataset.focus;
       break;
     }
+    case 'print':
+      window.print();
+      break;
     case 'sm-start':
       state.sm = { step: 0, a: { me: {}, position: t.dataset.v } };
-      location.hash = 'sleep-match';
+      go(P.sleepMatch);
       break;
     case 'to-product': {
       // morph della card nella galleria della scheda (View Transitions)
@@ -7480,7 +8447,7 @@ document.addEventListener('click', async (e) => {
     }
     case 'quote-for':
       state.quoteFor = t.dataset.id;
-      if (location.hash === '#fuori-misura') viewQuote();
+      if (isAt(P.quote)) viewQuote(current().query);
       break;
     case 'layer': {
       const box = t.closest('[data-layers]');
@@ -7520,7 +8487,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const s = state.sel[cp.p.id]?.size;
       if (s) state.sizes = [s, s === '180x200' ? '160x190' : '180x200'];
-      location.hash = 'guida-misure';
+      go(P.sizes);
       break;
     }
     case 'qty': {
@@ -7537,7 +8504,7 @@ document.addEventListener('click', async (e) => {
       const v = cp.idx.purchasableVariants(cp.p).find((x) => (x.size ?? null) === (sel.size ?? null) && (kind === 'materasso' || kind === 'topper' ? x.height_cm === sel.height : true));
       if (!v) return toast('Questa configurazione non è acquistabile online');
       addVariant(v, sel.qty);
-      $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="#carrello">Vai al carrello</a></p>`;
+      $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="${u(P.cart)}">Vai al carrello</a></p>`;
       break;
     }
     case 'add-variant': {
@@ -7546,7 +8513,7 @@ document.addEventListener('click', async (e) => {
       const p = v && idx.products.get(v.product_id);
       if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
       addVariant(v, 1);
-      if (location.hash === '#carrello') viewCart();
+      if (isAt(P.cart)) viewCart();
       break;
     }
     case 'sm-next':
@@ -7570,13 +8537,13 @@ document.addEventListener('click', async (e) => {
     }
     case 'cart-remove':
       cart.set(cart.items.filter((i) => i.variant_id !== t.dataset.id));
-      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      isAt(P.review) ? viewReview() : viewCart();
       toast('Articolo rimosso');
       break;
     case 'accept-price': {
       const v = catalog().variants.get(t.dataset.id);
       cart.set(cart.items.map((i) => (i.variant_id === t.dataset.id ? { ...i, seen_price_cents: v.price_cents } : i)));
-      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      isAt(P.review) ? viewReview() : viewCart();
       break;
     }
     case 'blocked':
@@ -7598,7 +8565,7 @@ document.addEventListener('click', async (e) => {
         /* ignora */
       }
       toast('Carrello svuotato');
-      location.hash = '';
+      go(P.home);
       break;
   }
 });
@@ -7635,6 +8602,13 @@ document.addEventListener('change', (e) => {
     $('#' + (act === 'size-a' ? 'sz-a' : 'sz-b')).focus();
   }
   if (t.id === 'q-b2b') $('#b2b-fields').hidden = !t.checked;
+  if (t.name === 'pay') {
+    state.pay = t.value;
+    const y = window.scrollY;
+    viewReview();
+    window.scrollTo(0, y);
+    $(`input[name="pay"][value="${CSS.escape(t.value)}"]`)?.focus();
+  }
 });
 
 document.addEventListener('input', (e) => {
@@ -7658,6 +8632,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('submit', (e) => {
+  if (e.target.id === 'search-form') {
+    e.preventDefault();
+    const q = String(new FormData(e.target).get('q') || '').trim();
+    go(P.search + (q ? '?q=' + encodeURIComponent(q) : ''));
+    return;
+  }
   if (e.target.id !== 'quote-form') return;
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -7705,6 +8685,18 @@ window.__vs = {
     }
     return { total, byKind, products: idx.publicProducts().map((p) => p.slug) };
   },
+  /** Pagine indicizzabili e relative immagini: usato da scripts/build_site.mjs per generare il sito e la sitemap. */
+  routes() {
+    const idx = catalog();
+    const imgs = (p) => mediaFor(idx, p).map((m) => media.resolve(m)).filter((x) => x && !/^(blob|idb):/.test(x)).map(absAsset);
+    return [
+      { path: P.home, images: [absAsset(SHARE_IMG)] },
+      ...idx.commercialCategories().map((c) => ({ path: catPath(c) })),
+      ...idx.publicProducts().map((p) => ({ path: prodPath(p), images: imgs(p) })),
+      ...[P.sleepMatch, P.compare, P.sizes, P.quote, P.showroom].map((path) => ({ path })),
+      ...Object.keys(PAGES).map((path) => ({ path })),
+    ];
+  },
   price(slug, height, size) {
     const idx = catalog();
     const p = idx.publicProducts().find((x) => x.slug === slug);
@@ -7722,7 +8714,10 @@ $('#menu-btn').addEventListener('click', () => {
 });
 $('#drawer .drawer__scrim').addEventListener('click', closeDrawer);
 $('#drawer-close').addEventListener('click', closeDrawer);
-window.addEventListener('hashchange', route);
+setNavigator(route);
+interceptLinks(resolveProductPath);
+window.addEventListener(MODE === 'path' ? 'popstate' : 'hashchange', route);
+if (MODE === 'path') window.addEventListener('hashchange', () => current().legacy !== undefined && route());
 window.addEventListener('resize', () => requestAnimationFrame(moveThumb));
 store.subscribe((why) => {
   if (why === 'cart' || why === 'settings' || why === 'catalog') renderChrome();
@@ -7730,6 +8725,7 @@ store.subscribe((why) => {
 window.addEventListener('vs:rerender', route);
 // Avvio: si disegna SUBITO. Le foto caricate dall'admin (IndexedDB) arrivano dopo,
 // con un tempo massimo: in alcuni frame isolati IndexedDB non risponde mai.
+applySettings(store.db.settings);
 route();
 (async () => {
   const hasLocalPhotos = store.db.media.some((m) => m.src.startsWith('idb:'));

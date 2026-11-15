@@ -30,6 +30,8 @@ export interface RequestSummary {
   lines: SummaryLine[];
   total_cents: number;
   shipping_note?: string | null;
+  /** modalità di pagamento scelta dal cliente (contrassegno o bonifico) */
+  payment?: string | null;
 }
 
 function lineText(l: SummaryLine, i: number): string {
@@ -47,6 +49,7 @@ export function buildFullMessage(s: RequestSummary): string {
     '',
     `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
     ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
+    ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
     '',
     'Attendo la vostra conferma su disponibilità e consegna.',
   ].join('\n');
@@ -58,6 +61,7 @@ export function buildShortMessage(s: RequestSummary): string {
     'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
     `Riferimento: ${s.ref}`,
     `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+    ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
     'Incollo qui sotto il riepilogo completo copiato dal sito.',
   ].join('\n');
 }

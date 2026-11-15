@@ -32,6 +32,7 @@ export function buildFullMessage(s) {
         '',
         `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
         ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
+        ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
         '',
         'Attendo la vostra conferma su disponibilità e consegna.',
     ].join('\n');
@@ -42,6 +43,7 @@ export function buildShortMessage(s) {
         'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
         `Riferimento: ${s.ref}`,
         `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+        ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
         'Incollo qui sotto il riepilogo completo copiato dal sito.',
     ].join('\n');
 }

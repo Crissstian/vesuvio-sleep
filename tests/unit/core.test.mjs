@@ -76,3 +76,19 @@ test('seed: 130 varianti acquistabili, nessun prezzo zero o inventato', async ()
   assert.ok(!SEED.media.some((m) => /grafeno/i.test(m.src)));
   assert.ok(!SEED.products.some((p) => p.status === 'published' && /2400/.test(p.name + p.slug + p.description + p.highlights.join(' '))));
 });
+
+test('WhatsApp: la modalità di pagamento scelta finisce nel messaggio', async () => {
+  const core = await import('../../preview/js/core/index.js');
+  const s = { ref: 'VS-R-20261115-ABCD', lines: [{ name: 'Vesuvio Memory Duo', size: '160x190', height_cm: 25, sku: 'VS-MD-H25-160190', qty: 1, unit_cents: 28000 }], total_cents: 28000, payment: 'contrassegno alla consegna' };
+  assert.match(core.buildFullMessage(s), /Pagamento: contrassegno alla consegna/);
+  assert.match(core.buildShortMessage(s), /Pagamento: contrassegno alla consegna/);
+  assert.match(core.planWhatsApp('+39 366 121 8346', s).url, /^https:\/\/wa\.me\/393661218346\?text=/);
+});
+
+test('sitemap: URL assoluti, immagini, caratteri speciali protetti', async () => {
+  const core = await import('../../preview/js/core/index.js');
+  const xml = core.buildSitemap('https://vesuviosleep.it/', [{ path: '/', lastmod: '2026-11-15' }, { path: '/materassi/a&b/', images: ['https://vesuviosleep.it/img/x.webp'] }]);
+  assert.match(xml, /<loc>https:\/\/vesuviosleep\.it\/<\/loc><lastmod>2026-11-15<\/lastmod>/);
+  assert.match(xml, /a&amp;b/);
+  assert.match(xml, /<image:loc>https:\/\/vesuviosleep\.it\/img\/x\.webp<\/image:loc>/);
+});

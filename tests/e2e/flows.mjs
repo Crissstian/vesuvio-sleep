@@ -58,7 +58,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.locator('[data-act="reset-filters"]').click(); await p.waitForTimeout(400);
 
   await go(p, 'prodotto-pocket-2400-elite', 800);
-  ok(/#prodotto-pocket-2600-elite$/.test(p.url()) && /Pocket 2600 Elite/.test(await p.locator('h1').innerText()), 'vecchio indirizzo Pocket 2400 → Pocket 2600 Elite');
+  ok(/#\/materassi\/pocket-2600-elite\/$/.test(p.url()) && /Pocket 2600 Elite/.test(await p.locator('h1').innerText()), 'vecchio indirizzo Pocket 2400 → Pocket 2600 Elite');
   ok((await p.locator('#h30').count()) === 0 && (await p.locator('.seg--h').count()) === 0, 'Pocket 2600: altezza senza prezzo (H30) non mostrata');
   ok((await p.locator('input[name="s"]').count()) === 13, 'scheda: 13 misure dal listino');
   ok(!/2400/.test(await p.locator('#app').innerText()), 'scheda Pocket: nessun riferimento a 2400');
@@ -95,9 +95,13 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/stessa misura/.test(await p.locator('#app').innerText()), 'carrello: proposta rete della stessa misura');
   await go(p, 'riepilogo', 700);
   const rv = await p.locator('#app').innerText();
-  ok(/Copia il riepilogo/.test(rv) && !/non ancora|a breve|anteprima/i.test(rv), 'numero WhatsApp mancante: istruzione neutra, nessun testo provvisorio');
-  ok((await p.locator('a[href^="https://wa.me"]').count()) === 0, 'numero mancante: nessun link WhatsApp non funzionante');
-  ok((await p.locator('[data-act="copy-summary"]').count()) === 1, 'numero mancante: pulsante Copia il riepilogo');
+  ok(!/non ancora|a breve|anteprima/i.test(rv), 'riepilogo: nessun testo provvisorio');
+  const waHref = await p.locator('a[data-act="wa-open"]').getAttribute('href');
+  const waText = decodeURIComponent(waHref.split('text=')[1]);
+  ok(waHref.startsWith('https://wa.me/393661218346?text=') && /Pagamento: contrassegno alla consegna/.test(waText), 'WhatsApp aziendale 366 121 8346, pagamento in contrassegno nel messaggio');
+  await p.locator('input[name="pay"][value="bonifico"]').check(); await p.waitForTimeout(400);
+  ok(/Pagamento: bonifico bancario/.test(decodeURIComponent(await p.locator('a[data-act="wa-open"]').getAttribute('href'))) && (await p.locator('input[name="pay"][value="bonifico"]').isChecked()), 'scelta del bonifico: messaggio aggiornato');
+  ok((await p.locator('[data-act="copy-summary"]').count()) === 1, 'riepilogo: c\'è anche Copia il riepilogo');
   const msg = await p.locator('.msg-preview').innerText();
   ok(msg.includes('VS-P2600-H25-180200') && msg.includes('650,00') && msg.includes('Pocket 2600 Elite') && /VS-R-\d{8}-/.test(msg), 'messaggio: SKU, prezzo e riferimento');
   await p.locator('[data-act="copy-summary"]').click(); await p.waitForTimeout(300);
@@ -203,7 +207,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/almeno 10/.test(await p.locator('#login-err').innerText()), 'admin: password troppo corta rifiutata');
   await p.fill('#pw', 'anteprima-test-2026'); await p.fill('#pw2', 'anteprima-test-2026'); await p.click('#adm-login button'); await p.waitForTimeout(1500);
   ok((await p.locator('.adm__head h1').innerText()) === 'Panoramica', 'admin: primo accesso creato senza password predefinite');
-  ok(/WhatsApp per le\s+richieste non configurato/i.test(await p.locator('#app').innerText()), 'admin: blocco WhatsApp segnalato');
+  ok(!/WhatsApp per le\s+richieste non configurato/i.test(await p.locator('#app').innerText()), 'admin: WhatsApp già configurato, nessun blocco');
 
   // numero non valido poi valido
   await go(p, 'admin-impostazioni');
@@ -211,18 +215,20 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/prefisso internazionale/.test(await p.locator('#wa-check').innerText()), 'admin: numero senza prefisso rifiutato');
   await p.fill('#s-wa', '+39 300 000 0000'); await p.click('#adm-settings button'); await p.waitForTimeout(400);
   ok(/wa\.me\/393000000000/.test(await p.locator('#wa-check').innerText()), 'admin: numero valido attivo');
+  await go(p, 'contatti', 500); await p.goto(p.url()); await p.waitForTimeout(500);
+  ok((await p.locator('#wa-float').getAttribute('href')).startsWith('https://wa.me/393000000000'), 'il numero cambiato in admin vale anche per il pulsante fisso e i contatti');
 
   // carrello -> riepilogo con link WhatsApp
   await go(p, 'prodotto-memory-duo', 600);
   await p.locator('#add-btn').click();
   await go(p, 'riepilogo', 600);
-  const href = await p.locator('a[href^="https://wa.me/393000000000?text="]').getAttribute('href');
+  const href = await p.locator('a[data-act="wa-open"][href^="https://wa.me/393000000000?text="]').getAttribute('href');
   const text = decodeURIComponent(href.split('text=')[1]);
   ok(text.includes('VS-MD-H25-160190') && text.includes('280,00'), 'WhatsApp: link wa.me con riepilogo corretto (Memory Duo 160×190 = 280 €)');
   ok(!/via |indirizzo|@|telefono/i.test(text), 'WhatsApp: nessun dato personale nel link');
   const ref = /VS-R-\d{8}-[A-Z0-9]{4}/.exec(text)[0];
-  await p.evaluate(() => document.querySelector('a[href^="https://wa.me"]').addEventListener('click', (e) => e.preventDefault(), { once: true }));
-  await p.locator('a[href^="https://wa.me"]').click(); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('a[data-act="wa-open"]').addEventListener('click', (e) => e.preventDefault(), { once: true }));
+  await p.locator('a[data-act="wa-open"]').click(); await p.waitForTimeout(300);
   ok(/Hai aperto WhatsApp/.test(await p.locator('#wa-status').innerText()), 'dopo il click: avviso, nessuna conferma automatica');
   await go(p, 'admin-richieste', 500);
   const row = p.locator('.adm-tr', { hasText: ref });
@@ -239,7 +245,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     localStorage.setItem('vs-cart-v1', JSON.stringify(vs.map((v) => ({ variant_id: v.id, qty: 2, seen_price_cents: v.price_cents }))));
   });
   await go(p, 'riepilogo', 100); await p.reload(); await p.waitForTimeout(800);
-  const longHref = await p.locator('a[href^="https://wa.me"]').getAttribute('href');
+  const longHref = await p.locator('a[data-act="wa-open"]').getAttribute('href');
   ok(longHref.length <= 1900 && /riepilogo completo/.test(decodeURIComponent(longHref)), 'carrello lungo: link breve con riferimento');
   ok((await p.locator('table.size-table tbody tr').count()) === 30, 'carrello lungo: tutti i 30 articoli nel riepilogo del sito');
 
@@ -322,6 +328,44 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await answer(['single', 'fianco', '60-85', 'accogliente', 'spalle', 'spesso', 'memory', 'true']);
   ok(!/Memory Air 3D/.test(await p.locator('#quiz').innerText()) && (await p.locator('.result').count()) === 1, 'Sleep Match: mai un prodotto sospeso (Memory Air 3D) tra i risultati');
   ok(!(await p.evaluate(() => Object.keys(localStorage).some((k) => /sleep|match|sm/i.test(k)))), 'Sleep Match: risposte non salvate');
+  await ctx.close();
+}
+
+// ---------- pagine informative, legali e guide
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });
+  const PROV = /illustrativ|Foto in arrivo|Anteprima concept|da configurare|provvisori|segnaposto|lorem ipsum|\bTODO\b|\bPENDING\b/i;
+  const paths = ['/contatti/', '/domande-frequenti/', '/chi-siamo/', '/hotel-e-bb/', '/materassi-napoli/', '/spedizioni-e-consegna/', '/pagamenti/', '/resi-e-recesso/', '/garanzia/', '/condizioni-di-vendita/', '/privacy/', '/cookie/', '/guide/', '/guide/come-scegliere-il-materasso/', '/guide/materasso-memory-molle-o-poliuretano/'];
+  const bad = [];
+  for (const path of paths) {
+    await p.goto(BASE + '#' + path); await p.waitForTimeout(350);
+    const t = await p.locator('#app').innerText();
+    if ((await p.locator('#app h1').count()) !== 1 || !t.includes('366 121 8346') || PROV.test(t)) bad.push(path);
+  }
+  ok(!bad.length, `15 pagine informative: un H1, contatti visibili, nessun testo provvisorio`, bad.join(','));
+  await p.goto(BASE + '#/domande-frequenti/'); await p.waitForTimeout(400);
+  ok((await p.locator('.faq__item').count()) >= 12 && /FAQPage/.test(await p.locator('#ld').textContent()), 'FAQ: domande e dati strutturati FAQPage');
+  await p.goto(BASE + '#/condizioni-di-vendita/'); await p.waitForTimeout(400);
+  const terms = await p.locator('#app').innerText();
+  ok(/10456501211/.test(terms) && /contrassegno/.test(terms) && /bonifico/.test(terms) && /ADR/.test(terms) && !/piattaforma ODR|ec\.europa\.eu\/consumers\/odr/i.test(terms), 'condizioni: dati aziendali, contrassegno e bonifico, ADR, nessun link ODR');
+  await p.goto(BASE + '#/resi-e-recesso/'); await p.waitForTimeout(400);
+  ok(/14 giorni/.test(await p.locator('#app').innerText()) && (await p.locator('.legal-form').count()) === 1, 'recesso: 14 giorni e modulo');
+  await p.goto(BASE + '#/hotel-e-bb/'); await p.waitForTimeout(400);
+  await p.locator('.prose a.btn', { hasText: 'Richiedi un preventivo' }).click(); await p.waitForTimeout(500);
+  ok(await p.locator('#q-b2b').isChecked() && (await p.locator('#b2b-fields').isVisible()), 'hotel e B&B → preventivo con la struttura già selezionata');
+  await p.goto(BASE + '#/cerca/?q=memory'); await p.waitForTimeout(500);
+  ok((await p.locator('.card').count()) >= 3, 'ricerca "memory": materassi e topper');
+  await p.goto(BASE + '#/materassi/'); await p.waitForTimeout(400);
+  ok((await p.locator('.seo-text h2').count()) >= 1 && (await p.locator('.seo-text a').count()) >= 5, 'categoria: testo descrittivo con link interni');
+  ok((await p.locator('footer a').count()) >= 20 && /fdimaterassi@gmail\.com/.test(await p.locator('footer').innerText()), 'footer: link a tutte le sezioni e contatti');
+  await p.setViewportSize({ width: 375, height: 760 });
+  for (const path of paths) {
+    await p.goto(BASE + '#' + path); await p.waitForTimeout(250);
+    const o = await overflow(p);
+    if (o > 0) ok(false, `nessuno scroll orizzontale a 375px su ${path}`, `overflow ${o}px`);
+  }
+  ok(true, 'pagine informative: nessuno scroll orizzontale a 375px');
+  ok(errors.length === 0, 'nessun errore JavaScript (pagine informative)', errors.join(' | '));
   await ctx.close();
 }
 

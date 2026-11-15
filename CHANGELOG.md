@@ -1,5 +1,15 @@
 # Changelog
 
+## Contatti, pagine legali e sito SEO (15/11/2026, sera)
+- **Contatti reali**: WhatsApp e telefono +39 366 121 8346, email fdimaterassi@gmail.com. Il checkout apre WhatsApp sul numero aziendale; footer, pagina Contatti, pulsante WhatsApp fisso e dati strutturati usano gli stessi recapiti, modificabili da Admin › Impostazioni.
+- **Pagamenti**: contrassegno alla consegna o bonifico (con bolla di spedizione poco dopo). Il cliente sceglie nel riepilogo e la scelta finisce nel messaggio WhatsApp. Indicati nel carrello, nella scheda e nella pagina Pagamenti.
+- **15 pagine nuove**: Contatti, Domande frequenti, Chi siamo, Hotel e B&B, Materassi a Napoli, Spedizioni e consegna, Pagamenti, Resi e recesso (con modulo stampabile), Garanzia, Condizioni di vendita, Privacy, Cookie, Guide con due articoli. Più la ricerca interna.
+- **Indirizzi veri**: `/materassi/essential-foam/` al posto di `#prodotto-essential-foam`. Nell'anteprima dell'artifact restano dopo il cancelletto (`#/materassi/…`). I vecchi indirizzi portano ai nuovi.
+- **Sito pubblico statico** (`npm run build:site` → `dist/`): 32 pagine indicizzabili con HTML completo già scritto, titolo e descrizione unici, canonical, Open Graph con immagine, dati strutturati (Product con offerte, spedizione gratuita e reso 14 giorni; FurnitureStore; BreadcrumbList; FAQPage; Article; ItemList), `sitemap.xml` con immagini, `robots.txt`, 404 vera, 301 dal vecchio Pocket 2400, header di sicurezza e cache.
+- Testi descrittivi con link interni sotto le categorie e nella guida alle misure; footer con tutte le sezioni; immagine di condivisione 1200×630.
+- Corretti: titolo duplicato carrello/riepilogo, salti di livello dei titoli, preload dell'immagine d'apertura sbagliata.
+- Test: 107 end-to-end sull'anteprima, 22 sul sito pubblico, 48 SQL, 12 unitari.
+
 ## Catalogo ufficiale (15/11/2026)
 - **Prezzi dal listino confermato** (`Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx`, unica fonte): 130 varianti acquistabili, IVA inclusa: 91 materassi, 26 reti, 13 topper. Le celle vuote restano senza prezzo (mai zero, mai interpolate) e non sono acquistabili. Misure standard da 8 a 13 (80×190 … 180×200).
 - **Pocket 2400 Elite → Pocket 2600 Elite**: stesso prodotto (stesso ID, nessun duplicato), nuovo nome, slug `pocket-2600-elite`, SKU `VS-P2600-…`, testi e stratigrafia con «2600 molle insacchettate». Il vecchio indirizzo porta al nuovo (tabella `slug_redirects`). Le vecchie immagini 2400 restano in archivio, non pubblicate.

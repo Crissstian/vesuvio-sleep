@@ -70,6 +70,10 @@ if (db.seed_version !== SEED.version) {
     db.audit?.unshift({ id: rid0(), at: nowIso(), action: 'catalogo', entity: SEED.catalog_version, detail: 'Catalogo ufficiale applicato (prezzi, varianti, stati, foto)' });
   }
   db.redirects = clone(SEED.redirects ?? []);
+  // impostazioni nuove (contatti, pagamenti): si aggiungono, quelle già scelte dall'admin restano
+  for (const [k, v] of Object.entries(SEED.settings ?? {})) {
+    if (db.settings[k] === undefined || db.settings[k] === '' || db.settings[k] === null) db.settings[k] = clone(v);
+  }
   db.seed_version = SEED.version;
   writeLS(DB_KEY, db);
 }

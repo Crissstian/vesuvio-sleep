@@ -16,7 +16,11 @@ import {
   breadcrumbJsonLd,
   MAX_QTY,
   resolveRedirect,
+  faqJsonLd,
+  websiteJsonLd,
 } from './core/index.js';
+import { MODE, P, u, abs, absAsset, current, go, isAt, legacyToPath, setNavigator, interceptLinks, IS_PREVIEW } from './nav.js';
+import { PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_METHODS, applySettings } from './pages.js';
 import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage } from './store.js';
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
 import { productIllustration, layersFor } from './illustrations.js';
@@ -35,6 +39,7 @@ const state = {
   sm: null, // Sleep Match: risposte solo in memoria
   sizes: ['160x190', '180x200'],
   lastRoute: undefined,
+  pay: 'contrassegno',
   labModel: null,
 };
 const KIND_PLURAL = { materasso: 'Materassi', rete: 'Reti', guanciale: 'Guanciali', topper: 'Topper', letto: 'Letti a castello' };
@@ -68,20 +73,79 @@ function coverHtml(idx, p, opts = {}) {
 }
 
 // ---------------------------------------------------------------- helpers
+const catOf = (p) => catalog().snap.categories.find((c) => c.id === p.category_id);
+const catPath = (c) => `/${c.slug}/`;
+const prodPath = (p, c = catOf(p)) => (c ? `/${c.slug}/${p.slug}/` : `/prodotto/${p.slug}/`);
 const href = {
-  product: (p) => `#prodotto-${p.slug}`,
-  category: (c) => `#${c.slug}`,
+  product: (p) => u(prodPath(p)),
+  category: (c) => u(catPath(c)),
 };
+/** Percorso canonico di un prodotto (anche da un vecchio slug rinominato). */
+function resolveProductPath(slug) {
+  const idx = catalog();
+  let p = idx.snap.products.find((x) => x.slug === slug);
+  if (!p) {
+    const to = resolveRedirect(store.db.redirects ?? [], slug);
+    if (to) p = idx.snap.products.find((x) => x.slug === to);
+  }
+  return p ? prodPath(p) : null;
+}
 function priceFrom(idx, p) {
   const min = idx.minPrice(p);
   const max = idx.maxPrice(p);
   if (min === null) return '';
   return min === max ? `<span class="price">${formatCents(min)}</span>` : `<span class="price"><small>da</small>${formatCents(min)}</span>`;
 }
-function setMeta(title, desc, ld = []) {
-  document.title = title ? `${title} | Vesuvio Sleep` : 'Vesuvio Sleep | Materassi di fabbrica a Napoli, dal 1986';
-  $('meta[name="description"]').setAttribute('content', desc || 'Materassi prodotti a Casoria (Napoli) dal 1986 e venduti a prezzo di fabbrica: Memory Foam, poliuretano e molle insacchettate, reti e guanciali. Misure su richiesta.');
-  $('#ld').textContent = JSON.stringify(ld.length === 1 ? ld[0] : ld);
+const DEFAULT_DESC = VIEW_SEO.home.description;
+const SHARE_IMG = 'img/social/vesuvio-sleep-condividi.jpg';
+function metaTag(attr, key, content) {
+  let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute(attr, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content', content);
+}
+/**
+ * Titolo, descrizione, robots, canonical, Open Graph e dati strutturati della pagina.
+ * opts: { noindex, image, type, path }
+ */
+function setMeta(title, desc, ld = [], opts = {}) {
+  const full = title ? `${title} | Vesuvio Sleep` : `${VIEW_SEO.home.metaTitle} | Vesuvio Sleep`;
+  const description = desc || DEFAULT_DESC;
+  document.title = full.length <= 70 || !title ? full : title;
+  metaTag('name', 'description', description);
+  const path = opts.path ?? current().path;
+  metaTag('name', 'robots', IS_PREVIEW ? 'noindex, nofollow, noarchive' : opts.noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large');
+  let canon = document.head.querySelector('link[rel="canonical"]');
+  if (MODE === 'path' && !opts.noindex) {
+    if (!canon) {
+      canon = Object.assign(document.createElement('link'), { rel: 'canonical' });
+      document.head.appendChild(canon);
+    }
+    canon.setAttribute('href', abs(path));
+  } else canon?.remove();
+  const og = {
+    'og:type': opts.type || 'website',
+    'og:site_name': 'Vesuvio Sleep',
+    'og:locale': 'it_IT',
+    'og:title': title || VIEW_SEO.home.metaTitle,
+    'og:description': description,
+    'og:url': abs(path),
+    'og:image': absAsset(opts.image || SHARE_IMG),
+  };
+  for (const [k, v] of Object.entries(og)) metaTag('property', k, v);
+  metaTag('name', 'twitter:card', 'summary_large_image');
+  const list = ld.filter(Boolean);
+  $('#ld').textContent = JSON.stringify(list.length === 1 ? list[0] : list);
+}
+/** Briciole: link per la pagina e dati strutturati con URL assoluti. items: [{name, path}] */
+function trail(items) {
+  return {
+    ui: items.map((it, i) => ({ name: it.name, href: i < items.length - 1 && it.path ? u(it.path) : undefined })),
+    ld: breadcrumbJsonLd(items.map((it) => ({ name: it.name, url: abs(it.path ?? current().path) }))),
+  };
 }
 function crumbs(items) {
   return `<nav class="crumbs wrap" aria-label="Percorso"><ol>${items
@@ -103,67 +167,117 @@ const pub = () => catalog({ drafts: previewDrafts() });
 
 // ---------------------------------------------------------------- layout
 function renderChrome() {
+  applySettings(store.db.settings);
   const idx = catalog();
   const cats = idx.commercialCategories();
-  const route = location.hash.slice(1);
-  const wa = whatsappStatus();
+  const here = current().path;
+  const on = (p) => (here === p || (p !== '/' && here.startsWith(p)) ? 'aria-current="page"' : '');
   const nav = [
-    ...cats.map((c) => ({ href: `#${c.slug}`, label: c.name, on: route === c.slug })),
-    { href: '#sleep-match', label: 'Sleep Match', on: route === 'sleep-match' },
-    { href: '#showroom', label: 'Showroom', on: route === 'showroom' },
+    ...cats.map((c) => ({ path: catPath(c), label: c.name })),
+    { path: P.sleepMatch, label: 'Sleep Match' },
+    { path: P.showroom, label: 'Showroom' },
   ];
-  const msgs = [`Spedizione ${store.db.settings.shipping_note || ''}`, 'Produciamo materassi a Casoria dal 1986', 'Fuori misura e altezze personalizzate su richiesta', 'A Napoli consegna al piano gratuita', 'Showroom aperto lun–ven 9–18, sabato 10–14'];
+  const msgs = [
+    `Spedizione ${store.db.settings.shipping_note || ''}`,
+    CONTACT.waShort === CONTACT.phoneShort ? `WhatsApp e telefono ${CONTACT.phoneShort}` : `WhatsApp ${CONTACT.waShort}`,
+    'Produciamo materassi a Casoria dal 1986',
+    'Paghi alla consegna o con bonifico',
+    'A Napoli consegna al piano gratuita',
+    'Fuori misura e altezze personalizzate su richiesta',
+  ];
   const run = msgs.map((m) => `<span>${esc(m)}</span>`).join('');
   $('#topbar').innerHTML = `<div class="wrap">
       <div class="ticker" aria-hidden="true"><div class="ticker__track">${run}${run}</div></div><span class="sr-only">${esc(msgs[0])}</span>
       <span class="topbar__preview">${previewDrafts() ? '<span class="topbar__flag">Anteprima admin: bozze visibili</span>' : ''}</span>
     </div>`;
-  $('#nav').innerHTML = nav.map((n) => `<a href="${n.href}" ${n.on ? 'aria-current="page"' : ''}>${esc(n.label)}</a>`).join('');
-  $('#drawer-links').innerHTML = `<a href="#">Home</a>` + nav.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('') + `<a href="#confronto">Confronta i materassi</a><a href="#guida-misure">Guida alle misure</a><a href="#fuori-misura">Fuori misura</a><a href="#carrello">Carrello (${cart.count()})</a>`;
+  $('#nav').innerHTML = nav.map((n) => `<a href="${u(n.path)}" ${on(n.path)}>${esc(n.label)}</a>`).join('');
+  $('#drawer-links').innerHTML =
+    `<a href="${u(P.home)}">Home</a>` +
+    nav.map((n) => `<a href="${u(n.path)}">${esc(n.label)}</a>`).join('') +
+    `<a href="${u(P.compare)}">Confronta i materassi</a><a href="${u(P.sizes)}">Misure dei materassi</a><a href="${u(P.quote)}">Materassi su misura</a><a href="${u(P.faq)}">Domande frequenti</a><a href="${u(P.contacts)}">Contatti</a><a href="${u(P.search)}">Cerca</a><a href="${u(P.cart)}">Carrello (${cart.count()})</a>`;
   const n = cart.count();
+  $('#cart-link').setAttribute('href', u(P.cart));
   $('#cart-link').innerHTML = `${icon('cart')}<span class="sr-only">Carrello, ${n} articoli</span>${n ? `<span class="badge-count" aria-hidden="true">${n}</span>` : ''}`;
-  $('#foot-cats').innerHTML = cats.map((c) => `<li><a href="#${c.slug}">${esc(c.name)}</a></li>`).join('');
+  $('#search-link')?.setAttribute('href', u(P.search));
+  $('.brand')?.setAttribute('href', u(P.home));
+  $('#footer-main').innerHTML = footerHtml(cats);
+  let fl = $('#wa-float');
+  if (!fl) {
+    fl = document.createElement('a');
+    fl.id = 'wa-float';
+    fl.className = 'wa-float';
+    fl.target = '_blank';
+    fl.rel = 'noopener';
+    fl.setAttribute('aria-label', 'Scrivici su WhatsApp');
+    fl.innerHTML = `${icon('wa', 24)}<span>Scrivici</span>`;
+    document.body.appendChild(fl);
+  }
+  fl.href = waHref();
+}
+function footerHtml(cats) {
+  const li = (path, t) => `<li><a href="${u(path)}">${esc(t)}</a></li>`;
+  return `<div class="footer__grid footer__grid--5">
+      <div>
+        <span class="footer__logo"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep" loading="lazy"></span>
+        <p style="margin-top:14px">Materassi di fabbrica dal 1986, prodotti a Casoria (Napoli).</p>
+        <ul class="footer__contacts">
+          <li><a href="${waHref()}" target="_blank" rel="noopener">${icon('wa', 18)} WhatsApp ${CONTACT.waShort}</a></li>
+          <li><a href="${CONTACT.phoneHref}">${icon('phone', 18)} ${CONTACT.phoneShort}</a></li>
+          <li><a href="mailto:${CONTACT.email}">${icon('mail', 18)} ${CONTACT.email}</a></li>
+        </ul>
+      </div>
+      <div><h2>Catalogo</h2><ul>${cats.map((c) => li(catPath(c), c.name)).join('')}${li(P.quote, 'Materassi su misura')}${li(P.b2b, 'Hotel e B&B')}</ul></div>
+      <div><h2>Scegliere</h2><ul>${li(P.sleepMatch, 'Sleep Match')}${li(P.compare, 'Confronta i materassi')}${li(P.sizes, 'Misure dei materassi')}${li(P.guides, 'Guide')}${li(P.naples, 'Materassi a Napoli')}</ul></div>
+      <div><h2>Assistenza</h2><ul>${li(P.contacts, 'Contatti')}${li(P.faq, 'Domande frequenti')}${li(P.shipping, 'Spedizioni e consegna')}${li(P.payments, 'Pagamenti')}${li(P.returns, 'Resi e recesso')}${li(P.warranty, 'Garanzia')}</ul></div>
+      <div><h2>Showroom</h2><p style="margin:0">Via Raffaele Salierno 38<br>80026 Casoria (NA)</p><p>Lun–ven 09:00–18:00<br>Sab 10:00–14:00</p><ul>${li(P.showroom, 'Come arrivare')}${li(P.about, 'Chi siamo')}</ul></div>
+    </div>
+    <div class="footer__legal"><span>${esc(CONTACT.legalName)} · P.IVA ${CONTACT.vat} · REA ${CONTACT.rea} · ${esc(CONTACT.address)}</span>
+      <span class="footer__legal-links"><a href="${u(P.terms)}">Condizioni di vendita</a> · <a href="${u(P.privacy)}">Privacy</a> · <a href="${u(P.cookies)}">Cookie</a>${IS_PREVIEW ? ' · ' : ''}${IS_PREVIEW ? `<a href="${u(P.admin)}" rel="nofollow">Area riservata</a>` : ''}</span></div>`;
 }
 
 // ---------------------------------------------------------------- router
-const routes = [
-  [/^$/, viewHome],
-  [/^prodotto-(.+)$/, (m) => viewProduct(m[1])],
-  [/^sleep-match$/, viewSleepMatch],
-  [/^confronto$/, viewCompare],
-  [/^guida-misure$/, viewSizes],
-  [/^fuori-misura$/, viewQuote],
-  [/^showroom$/, viewShowroom],
-  [/^carrello$/, viewCart],
-  [/^riepilogo$/, viewReview],
-  [/^admin.*$/, async () => (await import('./admin.js')).render(app)],
-];
+async function dispatch(cur) {
+  const { path, query } = cur;
+  if (path.startsWith(P.admin)) return (await import('./admin.js')).render(app);
+  const fixed = {
+    [P.home]: viewHome,
+    [P.sleepMatch]: viewSleepMatch,
+    [P.compare]: viewCompare,
+    [P.sizes]: viewSizes,
+    [P.quote]: () => viewQuote(query),
+    [P.showroom]: viewShowroom,
+    [P.cart]: viewCart,
+    [P.review]: viewReview,
+    [P.search]: () => viewSearch(query.q || ''),
+  };
+  if (fixed[path]) return fixed[path]();
+  if (PAGES[path]) return viewPage(path, PAGES[path]);
+  const seg = path.split('/').filter(Boolean);
+  if (seg.length === 1) {
+    const c = pub().snap.categories.find((x) => x.slug === seg[0]);
+    if (c && (c.status === 'published' || previewDrafts())) return viewCategory(c);
+  }
+  if (seg.length === 2) return viewProduct(seg[1], seg[0]);
+  return viewNotFound();
+}
 async function route() {
-  const r = decodeURIComponent(location.hash.slice(1));
+  const cur = current();
+  if (cur.legacy !== undefined) {
+    // vecchio indirizzo (#materassi, #prodotto-xxx ...): si passa a quello nuovo
+    return go(legacyToPath(cur.legacy, resolveProductPath), { replace: true });
+  }
+  const r = cur.path + (Object.keys(cur.query).length ? '?' + new URLSearchParams(cur.query) : '');
   const render = async () => {
     closeDrawer();
     document.body.classList.remove('has-sticky');
     $('.compare-bar')?.remove();
-    const isAdmin = r.startsWith('admin');
+    const isAdmin = cur.path.startsWith(P.admin);
     document.body.classList.toggle('is-admin', isAdmin);
-    let done = false;
-    for (const [re, fn] of routes) {
-      const m = re.exec(r);
-      if (m) {
-        await fn(m);
-        done = true;
-        break;
-      }
-    }
-    if (!done) {
-      const idx = pub();
-      const c = idx.snap.categories.find((x) => x.slug === r);
-      if (c) viewCategory(c);
-      else viewNotFound();
-    }
+    await dispatch(cur);
     document.body.classList.toggle('on-hero', !!$('#app > .hero'));
     document.body.classList.toggle('on-dark', !!$('#app > .page-hero'));
     renderChrome();
+    if (MODE === 'path') $$('a[href^="#/"]').forEach((el) => el.setAttribute('href', el.getAttribute('href').slice(1)));
     if (state.lastRoute !== r) {
       window.scrollTo(0, 0);
       const h1 = $('#app h1');
@@ -175,7 +289,7 @@ async function route() {
     enhance(app);
     tiltCards(app);
     // la barra di confronto compare solo dove si selezionano i modelli
-    if (!isAdmin && state.compare.size && (r === '' || r === 'materassi')) showCompareBar();
+    if (!isAdmin && state.compare.size && (cur.path === P.home || cur.path === '/materassi/')) showCompareBar();
   };
   const first = state.lastRoute === undefined;
   if (!first && document.startViewTransition && !reducedMotion() && state.lastRoute !== r) {
@@ -251,7 +365,7 @@ function statementHtml() {
     <div class="statement__text rv" style="--d:1">
       <h2 id="st-title">Il Vesuvio ce l'abbiamo davanti ogni mattina.</h2>
       <p>Per questo il nostro marchio ha il suo profilo, e per questo cuciamo ogni materasso come si faceva in bottega: a mano dove serve, con materiali scelti e controllati in fabbrica.</p>
-      <a class="btn btn--primary" href="#materassi">Scegli il tuo materasso</a>
+      <a class="btn btn--primary" href="${u('/materassi/')}">Scegli il tuo materasso</a>
     </div>
   </div></section>`;
 }
@@ -341,7 +455,7 @@ function viewHome() {
   const cats = idx.commercialCategories();
   if (!cats.some((c) => c.kind === state.homeKind) && cats[0]) state.homeKind = cats[0].kind;
   const pocket = idx.publicProducts('materasso').find((p) => mediaFor(idx, p).some((m) => m.slot === 'exploded' && m.hotspots));
-  setMeta('', '', [localBusinessJsonLd()]);
+  setMeta(VIEW_SEO.home.metaTitle, VIEW_SEO.home.description, [websiteJsonLd(abs('')), localBusinessJsonLd(abs('/'), { image: absAsset(SHARE_IMG), logo: absAsset('img/logo.png') })], { path: P.home });
   const slides = heroSlides();
   const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
   app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
@@ -358,7 +472,7 @@ function viewHome() {
   <section class="section" aria-labelledby="cat-title">
     <div class="wrap">
       <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi IVA inclusa per la misura e l'altezza che scegli. Passa sopra un materasso per aprirne gli strati.</p></div>
-        <a class="btn btn--ghost btn--sm" href="#confronto">Confronta i materassi</a></div>
+        <a class="btn btn--ghost btn--sm" href="${u(P.compare)}">Confronta i materassi</a></div>
       <div class="seg-tabs" role="tablist" aria-label="Categorie">${cats
         .map((c) => `<button class="tab" role="tab" id="tab-${c.kind}" aria-selected="${c.kind === state.homeKind}" aria-controls="home-grid" data-act="home-tab" data-kind="${c.kind}" tabindex="${c.kind === state.homeKind ? 0 : -1}">${esc(c.name)}<small>${idx.publicProducts(c.kind).length}</small></button>`)
         .join('')}<span class="seg-tabs__thumb" aria-hidden="true"></span></div>
@@ -382,7 +496,7 @@ function viewHome() {
       <dl>
         <div class="rv" style="--d:2"><dt>Produzione diretta</dt><dd>Circa 2 giorni di lavorazione prima della spedizione.</dd></div>
         <div class="rv" style="--d:3"><dt>Su misura, se serve</dt><dd>Fuori misura e altezze personalizzate, su preventivo.</dd></div>
-        <div class="rv" style="--d:4"><dt>Hotel e B&amp;B</dt><dd>Forniture anche in grandi quantità. <a href="#fuori-misura">Richiedi un preventivo</a>.</dd></div>
+        <div class="rv" style="--d:4"><dt>Hotel e B&amp;B</dt><dd>Forniture anche in grandi quantità. <a href="${u(P.quote)}">Richiedi un preventivo</a>.</dd></div>
       </dl>
     </div>
   </section>
@@ -440,7 +554,7 @@ function heroSlides() {
 function homeGrid(idx) {
   const items = idx.publicProducts(state.homeKind);
   return `<div class="grid grid--stagger">${items.map((p, i) => productCard(idx, p, { compare: state.homeKind === 'materasso', d: i })).join('')}</div>
-    <p style="margin-top:22px"><a href="#${idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
+    <p style="margin-top:22px"><a href="${u('/' + idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug + '/')}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
 }
 function moveThumb() {
   const th = $('.seg-tabs__thumb');
@@ -483,9 +597,20 @@ function viewCategory(c) {
   const all = idx.publicProducts(c.kind);
   const f = state.filters;
   const isM = c.kind === 'materasso';
-  setMeta(c.seo_title || `${c.name} di fabbrica`, c.seo_description || c.description, [
-    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }]),
-  ]);
+  const seo = CATEGORY_SEO[c.kind];
+  const minAll = all.map((p) => idx.minPrice(p)).filter((x) => x !== null);
+  const from = minAll.length ? formatCents(Math.min(...minAll)) : '';
+  const tr = trail([{ name: 'Home', path: P.home }, { name: c.name, path: catPath(c) }]);
+  const firstImg = all.map((p) => coverFor(idx, p)).find(Boolean);
+  setMeta(c.seo_title || seo?.metaTitle || `${c.name} di fabbrica`, c.seo_description || seo?.description(from) || c.description, [
+    tr.ld,
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: c.name,
+      itemListElement: all.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(prodPath(p, c)), name: p.name })),
+    },
+  ], { image: firstImg ? media.resolve(firstImg) : undefined });
   const body = () => {
     let list = all.slice();
     if (isM) {
@@ -496,15 +621,15 @@ function viewCategory(c) {
     if (f.sort === 'asc') list.sort((a, b) => idx.minPrice(a) - idx.minPrice(b));
     if (f.sort === 'desc') list.sort((a, b) => idx.minPrice(b) - idx.minPrice(a));
     if (!all.length)
-      return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="#fuori-misura">Chiedi un preventivo</a></div>`;
+      return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
   const head = siteImage({ materasso: 'testata_materasso', rete: 'testata_rete', guanciale: 'testata_guanciale' }[c.kind]);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: c.name }], c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
+  app.innerHTML = `${pageHero(tr.ui, c.name, c.description, artP ? productIllustration(artP, c.kind) : '', head)}
   <div class="wrap" style="padding-top:28px">
     <div class="toolbar">
       ${isM ? `<div class="chips" role="group" aria-label="Tecnologia">${chip('tech', 'all', 'Tutti')}${chip('tech', 'foam', 'Poliuretano')}${chip('tech', 'memory', 'Memory Foam')}${chip('tech', 'molle', 'Molle')}</div>
@@ -515,7 +640,8 @@ function viewCategory(c) {
         <option value="desc" ${f.sort === 'desc' ? 'selected' : ''}>Prezzo decrescente</option></select></label>
     </div>
     <div id="cat-body">${body()}</div>
-    ${isM ? `<p style="margin-top:28px" class="muted">Cerchi una misura o un'altezza diversa? <a href="#fuori-misura">Chiedi un preventivo fuori misura</a>.</p>` : ''}
+    ${isM ? `<p style="margin-top:28px" class="muted">Cerchi una misura o un'altezza diversa? <a href="${u(P.quote)}">Chiedi un preventivo fuori misura</a>.</p>` : ''}
+    ${seo ? `<section class="seo-text prose">${seo.html()}</section>` : ''}
   </div>`;
   state.catBody = body;
 }
@@ -536,27 +662,50 @@ function getSel(idx, p) {
   return (state.sel[p.id] = { size, height, qty: s.qty ?? 1 });
 }
 
-function viewProduct(slug) {
+const PRODUCT_PHRASE = {
+  rete: () => 'rete a doghe in legno',
+  topper: () => 'topper in Memory Foam',
+  guanciale: () => 'guanciale',
+  letto: () => 'letto a castello',
+  materasso: (p) =>
+    p.match?.tech === 'molle' ? (p.hybrid ? 'materasso a molle insacchettate e Memory' : 'materasso a molle insacchettate') : p.match?.tech === 'memory' ? 'materasso in Memory Foam' : 'materasso in poliuretano espanso',
+};
+function productSeo(idx, p, kind) {
+  const min = idx.minPrice(p);
+  const sizes = idx.purchasableSizes(p).length;
+  const hs = kind === 'materasso' ? idx.purchasableHeights(p) : [];
+  const title = `${p.name}, ${PRODUCT_PHRASE[kind]?.(p) ?? kind}`;
+  const parts = [
+    p.short,
+    min !== null ? `Da ${formatCents(min)} IVA inclusa.` : '',
+    sizes ? `${sizes} ${sizes === 1 ? 'misura' : 'misure'}${hs.length ? ', H' + hs.join('/H') : ''}.` : '',
+    'Spedizione gratuita.',
+  ].filter(Boolean);
+  // massimo circa 160 caratteri: si tolgono prima le informazioni meno importanti
+  while (parts.join(' ').length > 160 && parts.length > 2) parts.splice(parts.length - 2, 1);
+  return { title, desc: parts.join(' ') };
+}
+function viewProduct(slug, catSlug) {
   const idx = pub();
-  const p = idx.snap.products.find((x) => x.slug === slug && x.status === 'published');
+  const p = idx.snap.products.find((x) => x.slug === slug && (x.status === 'published' || previewDrafts()));
   if (!p) {
-    // vecchi indirizzi (es. pocket-2400-elite -> pocket-2600-elite)
-    const to = resolveRedirect(store.db.redirects ?? [], slug);
-    if (to) {
-      setTimeout(() => location.replace('#prodotto-' + to));
-      return '';
-    }
+    // vecchi indirizzi (es. pocket-2400-elite -> pocket-2600-elite): redirect permanente
+    const to = resolveProductPath(slug);
+    if (to && to !== current().path) return go(to, { replace: true });
   }
   const c = p && idx.category(p);
-  if (!p || !c || c.status !== 'published') return viewNotFound();
+  if (!p || !c || (c.status !== 'published' && !previewDrafts())) return viewNotFound();
+  if (catSlug !== c.slug) return go(prodPath(p, c), { replace: true });
   const kind = c.kind;
   const ms = mediaFor(idx, p);
   const gallery = ms.length ? ms : [];
   const urlImgs = gallery.map((m) => media.resolve(m)).filter((u) => u && !u.startsWith('blob:'));
-  setMeta(p.seo_title || p.name, p.seo_description || p.short, [
-    productJsonLd(idx, p, { images: urlImgs }),
-    breadcrumbJsonLd([{ name: 'Home' }, { name: c.name }, { name: p.name }]),
-  ].filter(Boolean));
+  const tr = trail([{ name: 'Home', path: P.home }, { name: c.name, path: catPath(c) }, { name: p.name, path: prodPath(p, c) }]);
+  const seo = productSeo(idx, p, kind);
+  setMeta(p.seo_title || seo.title, p.seo_description || seo.desc, [
+    productJsonLd(idx, p, { images: urlImgs.map(absAsset), url: abs(prodPath(p, c)), site: abs('') }),
+    tr.ld,
+  ], { image: urlImgs[0], type: 'product' });
   const purchasable = idx.isProductPurchasable(p);
   const showClaims = store.db.settings.show_claims && p.claims?.length;
   const factsRows = [
@@ -571,7 +720,7 @@ function viewProduct(slug) {
     p.lead_time ? ['Produzione', p.lead_time] : null,
   ].filter((r) => r && r[1]);
 
-  app.innerHTML = `${crumbs([{ name: 'Home', href: '#' }, { name: c.name, href: `#${c.slug}` }, { name: p.name }])}
+  app.innerHTML = `${crumbs(tr.ui)}
   <div class="wrap" style="padding-top:22px">
     <div class="pdp">
       <div class="gallery" data-gallery>${galleryHtml(idx, p, gallery, 0)}</div>
@@ -586,7 +735,7 @@ function viewProduct(slug) {
     <section class="section--tight" id="pairings" aria-labelledby="pair-t"></section>
     <section class="section--tight"><div class="delivery">
       <div><h3>${icon('truck')} Consegna</h3><ul><li>Spedizione ${esc(store.db.settings.shipping_note)}</li><li>A Napoli consegna al piano, ritiro dell'usato${kind === 'rete' ? ' e montaggio' : ''}</li></ul></div>
-      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
+      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
     </div></section>
   </div>
   ${purchasable ? `<div class="sticky-buy" id="sticky-buy" aria-hidden="true"></div>` : ''}`;
@@ -676,9 +825,10 @@ function renderBuy(idx, p) {
       <button class="btn btn--primary" id="add-btn" data-act="add" ${ok ? '' : 'disabled'}>Aggiungi al carrello</button>
     </div>
     <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
+    <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
     <div class="buy__extra">
-      <a href="#fuori-misura" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
-      ${kind === 'materasso' ? `<a href="#confronto" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
+      <a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
+      ${kind === 'materasso' ? `<a href="${u(P.compare)}" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
     </div>`;
   state.lastPrice = { ...(state.lastPrice ?? {}), [p.id]: ok ? v.price_cents : null };
   const fp = $('.footprint__box span');
@@ -759,7 +909,7 @@ function setK(o, k, v) {
   cur[parts[0]] = v;
 }
 function viewSleepMatch() {
-  setMeta('Sleep Match: trova il tuo materasso', 'Qualche domanda su come dormi e ti proponiamo un solo materasso Vesuvio Sleep, con il perché. Senza budget e senza salvare le risposte.');
+  setMeta(VIEW_SEO[P.sleepMatch].metaTitle, VIEW_SEO[P.sleepMatch].description, [trail([{ name: 'Home', path: P.home }, { name: 'Sleep Match', path: P.sleepMatch }]).ld]);
   state.sm ??= { step: 0, a: { me: {} } };
   renderSM();
 }
@@ -783,7 +933,7 @@ function renderSM(animate = false) {
     if (a.sleepers !== 'couple') delete a.partner;
     const idx = pub();
     const r = sleepMatch(idx, a);
-    if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="#showroom">Contatti e showroom</a></div>`;
+    if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="${u(P.showroom)}">Contatti e showroom</a></div>`;
     else {
       state.sel[r.product.id] = { ...(state.sel[r.product.id] ?? {}), height: r.height };
       inner = `<p class="small muted">Il tuo risultato</p><div class="result">
@@ -796,7 +946,7 @@ function renderSM(animate = false) {
           <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
     }
   }
-  const html = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Sleep Match' }], 'Sleep Match', 'Rispondi a qualche domanda: ti proponiamo un solo materasso, con il perché.')}<div class="wrap section--tight"><div class="quiz" id="quiz">${inner}</div></div>`;
+  const html = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Sleep Match' }], 'Sleep Match', 'Rispondi a qualche domanda: ti proponiamo un solo materasso, con il perché.')}<div class="wrap section--tight"><div class="quiz" id="quiz">${inner}</div></div>`;
   if (animate && $('#quiz')) {
     swap($('#quiz'), inner);
     $('#quiz input, #quiz h2, #quiz button')?.focus({ preventScroll: true });
@@ -809,7 +959,7 @@ function viewCompare() {
   const all = idx.publicProducts('materasso');
   if (state.compare.size === 0) all.slice(0, 3).forEach((p) => state.compare.add(p.id));
   const chosen = all.filter((p) => state.compare.has(p.id)).slice(0, 3);
-  setMeta('Confronta i materassi', 'Confronto tra i materassi Vesuvio Sleep: tecnologia, composizione, altezze, prezzi e rivestimento.');
+  setMeta(VIEW_SEO[P.compare].metaTitle, VIEW_SEO[P.compare].description, [trail([{ name: 'Home', path: P.home }, { name: 'Confronta i materassi', path: P.compare }]).ld]);
   const yes = (b) => (b === true ? 'Sì' : b === false ? 'No' : '—');
   const rows = [
     ['Tecnologia', (p) => esc(p.technical_name)],
@@ -823,7 +973,7 @@ function viewCompare() {
     ['Rigidità indicativa', (p) => esc(p.firmness_display ?? '—')],
     ['', (p) => `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Vai alla scheda</a>`],
   ];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Confronto' }], 'Confronta i materassi', 'Solo dati confermati dalla fabbrica, senza punteggi. Scegli fino a tre modelli.')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Confronto' }], 'Confronta i materassi', 'Solo dati confermati dalla fabbrica, senza punteggi. Scegli fino a tre modelli.')}
   <div class="wrap" style="padding-top:28px">
     <div class="chips" role="group" aria-label="Modelli da confrontare" style="margin-bottom:20px">${all
       .map((p) => `<button class="chip" data-act="cmp-toggle" data-id="${esc(p.id)}" aria-pressed="${state.compare.has(p.id)}">${esc(p.name.replace('Vesuvio ', ''))}</button>`)
@@ -839,7 +989,7 @@ function showCompareBar() {
   const n = state.compare.size;
   const bar = document.createElement('div');
   bar.className = 'compare-bar';
-  bar.innerHTML = `<span>${n} ${n === 1 ? 'modello' : 'modelli'} da confrontare</span><a class="btn btn--sm" href="#confronto">Confronta</a><button class="icon-btn" style="color:#fff" data-act="cmp-clear" aria-label="Svuota il confronto">${icon('close', 18)}</button>`;
+  bar.innerHTML = `<span>${n} ${n === 1 ? 'modello' : 'modelli'} da confrontare</span><a class="btn btn--sm" href="${u(P.compare)}">Confronta</a><button class="icon-btn" style="color:#fff" data-act="cmp-clear" aria-label="Svuota il confronto">${icon('close', 18)}</button>`;
   document.body.append(bar);
 }
 
@@ -878,10 +1028,10 @@ function sizesSvg(a, b) {
     </g></svg>`;
 }
 function viewSizes() {
-  setMeta('Guida alle misure dei materassi', 'Le misure standard dei materassi Vesuvio Sleep a confronto in scala: singolo, piazza e mezza, matrimoniale. Fuori misura su richiesta.');
+  setMeta(VIEW_SEO[P.sizes].metaTitle, VIEW_SEO[P.sizes].description, [trail([{ name: 'Home', path: P.home }, { name: 'Misure dei materassi', path: P.sizes }]).ld]);
   const [a, b] = state.sizes;
   const opt = (sel) => STANDARD_SIZES.map((s) => `<option value="${s}" ${s === sel ? 'selected' : ''}>${formatSize(s)} – ${SIZE_NAMES[s]}</option>`).join('');
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Guida alle misure' }], 'Guida alle misure', "Metti a confronto due misure in scala, vista dall'alto. La selezione resta quando torni alla scheda.")}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Guida alle misure' }], 'Misure dei materassi', "Le 13 misure standard e il confronto in scala, vista dall'alto. La selezione resta quando torni alla scheda.")}
   <div class="wrap two-col" style="padding-top:28px">
     <div class="sizes-fig">
       <div class="row-2" style="margin-bottom:12px">
@@ -893,17 +1043,26 @@ function viewSizes() {
       <p class="small muted" style="margin:10px 0 0">Differenza: ${Math.abs(parseSize(a).w - parseSize(b).w)} cm in larghezza, ${Math.abs(parseSize(a).l - parseSize(b).l)} cm in lunghezza.</p>
     </div>
     <div><table class="size-table"><thead><tr><th>Misura (cm)</th><th>Formato</th></tr></thead><tbody>${STANDARD_SIZES.map((s) => `<tr><td><strong>${formatSize(s)}</strong></td><td>${SIZE_NAMES[s]}</td></tr>`).join('')}</tbody></table>
-      <p style="margin-top:18px">Il materasso va scelto sulla misura interna del letto o della rete. Se non corrisponde a una misura standard, <a href="#fuori-misura">chiedi un preventivo fuori misura</a>.</p></div>
-  </div>`;
+      <p style="margin-top:18px">Il materasso va scelto sulla misura interna del letto o della rete. Se non corrisponde a una misura standard, <a href="${u(P.quote)}">chiedi un preventivo fuori misura</a>.</p></div>
+  </div>
+  <div class="wrap"><section class="seo-text prose">
+    <h2>Come misurare il letto</h2>
+    <p>Misura <strong>l'interno</strong> del letto o della rete, da sponda a sponda, in larghezza e in lunghezza: è lì che va il materasso. Le misure esterne della struttura non contano. Se le due misure non coincidono con una misura standard, il materasso si fa su misura.</p>
+    <h2>Singolo, piazza e mezza, francese, matrimoniale</h2>
+    <p>Il <strong>singolo</strong> è largo 80 o 90 cm; la <strong>piazza e mezza</strong> 120 cm; il <strong>francese</strong> 140 cm, comodo per una persona e possibile per due; il <strong>matrimoniale</strong> 160 o 165 cm; il <strong>170×200</strong> e il <strong>King Size 180×200</strong> danno più spazio a chi dorme in due. Ogni larghezza esiste in lunghezza 190 o 200 cm: per chi supera 1,80 m conviene la lunghezza 200.</p>
+    <h2>Rete e topper della stessa misura</h2>
+    <p>Le nostre <a href="${u('/reti/')}">reti a doghe</a> e il <a href="${u('/topper/')}">topper in Memory Foam</a> esistono nelle stesse 13 misure dei materassi. Per scegliere il modello, leggi la guida <a href="${u('/guide/come-scegliere-il-materasso/')}">Come scegliere il materasso</a>.</p>
+  </section></div>`;
 }
 
 // ---------------------------------------------------------------- FUORI MISURA
-function viewQuote() {
+function viewQuote(query = {}) {
   const idx = pub();
-  setMeta('Materassi su misura e fuori misura', 'Richiedi un preventivo per un materasso fuori misura o con altezza personalizzata: ti rispondiamo su WhatsApp, senza pagamenti anticipati.');
+  const hotel = query.hotel === '1';
+  setMeta(VIEW_SEO[P.quote].metaTitle, VIEW_SEO[P.quote].description, [trail([{ name: 'Home', path: P.home }, { name: 'Materassi su misura', path: P.quote }]).ld]);
   const prods = [...idx.publicProducts('materasso'), ...idx.publicProducts('rete'), ...idx.publicProducts('topper')];
   const pre = state.quoteFor && prods.find((p) => p.id === state.quoteFor);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Fuori misura' }], 'Fuori misura e altezze personalizzate', 'Indica prodotto e misure. Ti mandiamo il prezzo su WhatsApp: niente pagamento online, la conferma avviene con noi.')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Materassi su misura' }], 'Materassi su misura e altezze personalizzate', 'Indica prodotto e misure. Ti mandiamo il prezzo su WhatsApp: niente pagamento online, la conferma avviene con noi.')}
   <div class="wrap two-col" style="padding-top:28px">
     <form class="form" id="quote-form" novalidate>
       <div class="field"><label for="q-prod">Prodotto</label><select id="q-prod" name="product" required>${prods.map((p) => `<option value="${esc(p.id)}" ${pre?.id === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}<option value="altro">Altro / non so ancora</option></select></div>
@@ -912,8 +1071,8 @@ function viewQuote() {
         <div class="field"><label for="q-l">Lunghezza (cm)</label><input class="input" id="q-l" name="l" inputmode="numeric" required></div>
         <div class="field"><label for="q-h">Altezza (cm)</label><input class="input" id="q-h" name="h" inputmode="numeric" placeholder="Facoltativa"></div>
       </div>
-      <label class="check"><input type="checkbox" name="b2b" id="q-b2b"> È per un hotel, un B&amp;B o una struttura ricettiva</label>
-      <div class="row-2" id="b2b-fields" hidden>
+      <label class="check"><input type="checkbox" name="b2b" id="q-b2b" ${hotel ? 'checked' : ''}> È per un hotel, un B&amp;B o una struttura ricettiva</label>
+      <div class="row-2" id="b2b-fields" ${hotel ? '' : 'hidden'}>
         <div class="field"><label for="q-rooms">Camere o posti letto</label><input class="input" id="q-rooms" name="rooms" inputmode="numeric"></div>
         <div class="field"><label for="q-qty">Quantità di materassi</label><input class="input" id="q-qty" name="qty" inputmode="numeric"></div>
       </div>
@@ -943,10 +1102,10 @@ function waBlock(plan, ref, kind) {
 function viewCart() {
   const v = api.validateCart(cart.items);
   const idx = catalog();
-  setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep.');
+  setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep: verifica gli articoli e invia il riepilogo su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
-    app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
-    <div class="wrap section--tight"><div class="empty"><h3>Il carrello è vuoto</h3><p>Scegli un materasso e la misura: troverai qui il riepilogo da inviare su WhatsApp.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="#materassi">Esplora i materassi</a><a class="btn btn--ghost" href="#sleep-match">Trova il tuo materasso</a></div></div></div>`;
+    app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello' }], 'Carrello')}
+    <div class="wrap section--tight"><div class="empty"><h2>Il carrello è vuoto</h2><p>Scegli un materasso e la misura: troverai qui il riepilogo da inviare su WhatsApp.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="${u('/materassi/')}">Esplora i materassi</a><a class="btn btn--ghost" href="${u(P.sleepMatch)}">Trova il tuo materasso</a></div></div></div>`;
     return;
   }
   // funzione extra: rete della stessa misura se nel carrello c'è un materasso senza rete
@@ -956,7 +1115,7 @@ function viewCart() {
   const reteSugg = missing.length
     ? idx.publicProducts('rete').map((p) => ({ p, v: idx.cheapestAtSize(p, missing[0]) })).filter((x) => x.v)
     : [];
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello' }], 'Carrello')}
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello' }], 'Carrello')}
   <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li aria-current="step">Carrello</li><li>Verifica</li><li>WhatsApp</li></ol></div>
   <div class="wrap cart">
     <div>
@@ -965,10 +1124,10 @@ function viewCart() {
     </div>
     <aside class="summary" aria-label="Totale">
       <dl><dt>Articoli</dt><dd>${cart.count()}</dd><dt>Spedizione</dt><dd>Gratuita in Italia</dd><div class="tot" style="display:contents"><dt>Totale</dt><dd>${formatCents(v.total_cents)}</dd></div></dl>
-      <p class="small muted">IVA inclusa. Nessun pagamento online: invii il riepilogo su WhatsApp e confermi con noi.</p>
+      <p class="small muted">IVA inclusa. Paghi alla consegna in contrassegno oppure con bonifico: nessun pagamento online. <a href="${u(P.payments)}">Come funziona</a></p>
       ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
-      <a class="btn btn--primary" style="width:100%" href="#riepilogo" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
-      <p style="margin:12px 0 0;text-align:center"><a href="#materassi" class="small">Continua a scegliere</a></p>
+      <a class="btn btn--primary" style="width:100%" href="${u(P.review)}" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
+      <p style="margin:12px 0 0;text-align:center"><a href="${u('/materassi/')}" class="small">Continua a scegliere</a></p>
     </aside>
   </div>`;
 }
@@ -994,17 +1153,17 @@ function cartSignature(items) {
   return items.map((i) => `${i.variant_id}:${i.qty}:${i.seen_price_cents}`).sort().join('|');
 }
 function viewReview() {
-  setMeta('Verifica il riepilogo', 'Controlla il riepilogo e invialo a Vesuvio Sleep su WhatsApp.');
+  setMeta('Verifica il riepilogo', 'Controlla il riepilogo, scegli come pagare e invialo a Vesuvio Sleep su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
-    location.hash = 'carrello';
+    go(P.cart, { replace: true });
     return;
   }
   const v = api.validateCart(cart.items); // ricontrollo "lato server"
-  const head = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Carrello', href: '#carrello' }, { name: 'Verifica' }], 'Verifica il riepilogo')}
+  const head = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello', href: u(P.cart) }, { name: 'Verifica' }], 'Verifica il riepilogo')}
     <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
   if (!v.canSubmit) {
     app.innerHTML = `${head}<div class="wrap"><div class="note note--warn" role="alert"><strong>Abbiamo ricontrollato il carrello e qualcosa è cambiato.</strong> Correggi gli articoli segnalati e riprova.</div>
-      <div>${v.lines.map((l) => cartLine(catalog(), l)).join('')}</div><p style="margin-top:20px"><a class="btn btn--ghost" href="#carrello">Torna al carrello</a></p></div>`;
+      <div>${v.lines.map((l) => cartLine(catalog(), l)).join('')}</div><p style="margin-top:20px"><a class="btn btn--ghost" href="${u(P.cart)}">Torna al carrello</a></p></div>`;
     return;
   }
   const sig = cartSignature(cart.items);
@@ -1021,7 +1180,8 @@ function viewReview() {
   } catch {
     /* ignora */
   }
-  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note };
+  const pay = PAYMENT_METHODS.find((m) => m.id === state.pay) ?? PAYMENT_METHODS[0];
+  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note, payment: pay.msg };
   const plan = planWhatsApp(whatsappStatus().raw, summary);
   state.lastSummary = plan.fullText;
   app.innerHTML = `${head}<div class="wrap cart">
@@ -1029,16 +1189,19 @@ function viewReview() {
       <table class="size-table" aria-label="Articoli"><thead><tr><th>Articolo</th><th>Q.tà</th><th style="text-align:right">Prezzo</th></tr></thead><tbody>
       ${summary.lines.map((l) => `<tr><td><strong>${esc(l.name)}</strong><br><span class="small muted">${[l.size ? formatSize(l.size) : '', l.height_cm && l.size ? 'H' + l.height_cm : ''].filter(Boolean).join(' · ')}${l.size ? ' · ' : ''}SKU ${esc(l.sku)}</span></td><td>${l.qty}</td><td style="text-align:right">${formatCents(l.unit_cents * l.qty)}</td></tr>`).join('')}
       </tbody></table>
-      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
+      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Pagamento</dt><dd>${esc(pay.label)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
       <h2 style="font-size:1.2rem;margin-top:28px">Il messaggio che invierai</h2>
       <pre class="msg-preview" aria-label="Testo del messaggio">${esc(plan.text)}</pre>
       <p class="small muted">Il messaggio contiene solo articoli, prezzi e riferimento: nessun dato personale.</p>
     </div>
     <aside class="summary" aria-label="Invio">
       <h2 style="font-size:1.2rem">Invia la richiesta</h2>
+      <fieldset class="pay-opt"><legend>Come preferisci pagare?</legend>
+        ${PAYMENT_METHODS.map((m) => `<label class="pay"><input type="radio" name="pay" value="${m.id}" ${m.id === pay.id ? 'checked' : ''}><span><strong>${esc(m.label)}</strong><small>${esc(m.text)}</small></span></label>`).join('')}
+      </fieldset>
       <div id="wa-status" aria-live="polite">${req.status === 'in_attesa_contatto' ? sentNote() : ''}</div>
       ${waBlock(plan, req.ref, 'cart')}
-      <p class="small" style="margin-top:14px"><a href="#carrello">Modifica il carrello</a></p>
+      <p class="small" style="margin-top:14px"><a href="${u(P.cart)}">Modifica il carrello</a></p>
     </aside></div>`;
 }
 function sentNote() {
@@ -1047,12 +1210,78 @@ function sentNote() {
 
 // ---------------------------------------------------------------- ALTRE
 function viewShowroom() {
-  setMeta('Showroom e fabbrica a Casoria', 'Vesuvio Sleep, Via Raffaele Salierno 38, Casoria (NA). Orari dello showroom e indicazioni stradali.', [localBusinessJsonLd()]);
-  app.innerHTML = `${pageHero([{ name: 'Home', href: '#' }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
+  setMeta(VIEW_SEO[P.showroom].metaTitle, VIEW_SEO[P.showroom].description, [localBusinessJsonLd(abs('/'), { image: absAsset(siteImage('showroom')?.src), logo: absAsset('img/logo.png') }), trail([{ name: 'Home', path: P.home }, { name: 'Showroom', path: P.showroom }]).ld], { image: siteImage('showroom')?.src });
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
 }
 function viewNotFound() {
-  setMeta('Pagina non trovata', '');
-  app.innerHTML = `<div class="wrap section"><h1>Questa pagina non c'è</h1><p class="lead">Il prodotto potrebbe non essere più in catalogo o il link è incompleto.</p><div class="btn-row"><a class="btn btn--primary" href="#materassi">Vai ai materassi</a><a class="btn btn--ghost" href="#">Torna alla home</a></div></div>`;
+  setMeta('Pagina non trovata', 'La pagina che cerchi non esiste o è stata spostata.', [], { noindex: true });
+  app.innerHTML = `<div class="wrap section"><h1>Questa pagina non c'è</h1><p class="lead">Il prodotto potrebbe non essere più in catalogo o il link è incompleto. Prova a cercarlo: <a href="${u(P.search)}">cerca nel sito</a>.</p><div class="btn-row"><a class="btn btn--primary" href="${u('/materassi/')}">Vai ai materassi</a><a class="btn btn--ghost" href="${u(P.home)}">Torna alla home</a></div></div>`;
+}
+
+// ---------------------------------------------------------------- PAGINE INFORMATIVE
+function asideHtml(path, def) {
+  const links = def.legal
+    ? [[P.terms, 'Condizioni di vendita'], [P.returns, 'Resi e recesso'], [P.warranty, 'Garanzia'], [P.privacy, 'Privacy'], [P.cookies, 'Cookie']]
+    : [[P.faq, 'Domande frequenti'], [P.shipping, 'Spedizioni e consegna'], [P.payments, 'Pagamenti'], [P.returns, 'Resi e recesso'], [P.guides, 'Guide']];
+  return `<aside class="page-aside" aria-label="Assistenza">
+    <div class="help-card"><h2>Hai una domanda?</h2><p>Ti rispondiamo noi, dalla fabbrica.</p>
+      <a class="btn btn--wa btn--sm" href="${waHref()}" target="_blank" rel="noopener">${icon('wa', 18)} WhatsApp</a>
+      <p class="help-card__line">${icon('phone', 16)} <a href="${CONTACT.phoneHref}">${CONTACT.phoneShort}</a></p>
+      <p class="help-card__line">${icon('mail', 16)} <a href="mailto:${CONTACT.email}">${CONTACT.email}</a></p></div>
+    <nav class="side-links" aria-label="Pagine correlate"><ul>${links.filter(([p]) => p !== path).map(([p, t]) => `<li><a href="${u(p)}">${t}</a></li>`).join('')}</ul></nav>
+  </aside>`;
+}
+function viewPage(path, def) {
+  const items = [{ name: 'Home', path: P.home }, ...(def.parent ? [{ name: def.parent[1], path: def.parent[0] }] : []), { name: def.nav, path }];
+  const tr = trail(items);
+  const photo = def.photo ? siteImage(def.photo) : null;
+  const ld = [tr.ld];
+  if (def.type === 'faq') ld.push(faqJsonLd(faqForLd()));
+  if (def.type === 'contact' || def.type === 'local')
+    ld.push({ ...localBusinessJsonLd(abs('/'), { image: absAsset(photo?.src || SHARE_IMG), logo: absAsset('img/logo.png') }), ...(def.type === 'local' ? { areaServed: [{ '@type': 'City', name: 'Napoli' }, { '@type': 'Country', name: 'Italia' }] } : {}) });
+  if (def.type === 'article')
+    ld.push({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: def.h1,
+      description: def.description,
+      inLanguage: 'it-IT',
+      datePublished: '2026-11-15',
+      dateModified: '2026-11-15',
+      mainEntityOfPage: abs(path),
+      author: { '@type': 'Organization', name: 'Vesuvio Sleep', url: abs('/') },
+      publisher: { '@type': 'Organization', name: 'Vesuvio Sleep', logo: { '@type': 'ImageObject', url: absAsset('img/logo.png') } },
+    });
+  setMeta(def.metaTitle, def.description, ld, { type: def.type === 'article' ? 'article' : 'website', image: photo?.src });
+  app.innerHTML = `${pageHero(tr.ui, def.h1, def.lead, '', photo)}
+  <div class="wrap page-layout${def.legal ? ' page-layout--legal' : ''}"><article class="prose">${def.body()}</article>${asideHtml(path, def)}</div>`;
+}
+
+// ---------------------------------------------------------------- RICERCA
+const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/×/g, 'x');
+function viewSearch(q) {
+  const idx = pub();
+  const terms = norm(q).split(/[^a-z0-9]+/).filter((x) => x.length > 1);
+  const match = (hay) => terms.length && terms.every((t) => norm(hay).includes(t));
+  const prods = terms.length
+    ? idx.publicProducts().filter((p) => match([p.name, p.technical_name, p.short, p.description, p.composition, (p.highlights || []).join(' '), idx.category(p)?.name, idx.purchasableSizes(p).join(' '), idx.purchasableHeights(p).map((h) => 'h' + h).join(' ')].join(' ')))
+    : [];
+  const pages = terms.length
+    ? Object.entries({ ...PAGES }).filter(([, d]) => match([d.h1, d.nav, d.description, d.lead].join(' '))).slice(0, 8)
+    : [];
+  setMeta(q ? `Risultati per "${q}"` : 'Cerca nel sito', 'Cerca materassi, reti, topper e informazioni su Vesuvio Sleep.', [], { noindex: true });
+  const n = prods.length + pages.length;
+  app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Cerca' }], 'Cerca nel sito')}
+  <div class="wrap section--tight">
+    <form class="search-form" id="search-form" role="search"><label class="sr-only" for="q">Cerca</label>
+      <input class="input" type="search" id="q" name="q" value="${esc(q)}" placeholder="Es. memory, molle, 160x190, spedizione" autocomplete="off">
+      <button class="btn btn--primary" type="submit">${icon('search', 18)} Cerca</button></form>
+    ${q ? `<p class="small muted" aria-live="polite">${n ? `${n} ${n === 1 ? 'risultato' : 'risultati'} per "${esc(q)}"` : `Nessun risultato per "${esc(q)}".`}</p>` : ''}
+    ${prods.length ? `<h2 class="sr-only">Prodotti</h2><div class="grid">${prods.map((p) => productCard(idx, p)).join('')}</div>` : ''}
+    ${pages.length ? `<h2 style="font-size:1.3rem;margin-top:32px">Pagine</h2><ul class="search-pages">${pages.map(([p, d]) => `<li><a href="${u(p)}"><strong>${esc(d.h1)}</strong><span>${esc(d.description)}</span></a></li>`).join('')}</ul>` : ''}
+    ${q && !n ? `<div class="empty"><p>Prova con un'altra parola, oppure scrivici: ti aiutiamo noi.</p><div class="btn-row" style="justify-content:center"><a class="btn btn--primary" href="${u('/materassi/')}">Vedi i materassi</a><a class="btn btn--ghost" href="${waHref()}" target="_blank" rel="noopener">Scrivici su WhatsApp</a></div></div>` : ''}
+    ${!q ? `<p class="muted">Più cercati: <a href="${u(P.search + '?q=memory')}">memory</a> · <a href="${u(P.search + '?q=molle')}">molle</a> · <a href="${u(P.search + '?q=160x190')}">160×190</a> · <a href="${u(P.search + '?q=rete')}">rete</a> · <a href="${u(P.search + '?q=spedizione')}">spedizione</a></p>` : ''}
+  </div>`;
 }
 
 // ---------------------------------------------------------------- EVENTI
@@ -1061,10 +1290,11 @@ function closeDrawer() {
   $('#menu-btn')?.setAttribute('aria-expanded', 'false');
 }
 function currentProduct() {
-  const m = /^prodotto-(.+)$/.exec(location.hash.slice(1));
-  if (!m) return null;
+  const seg = current().path.split('/').filter(Boolean);
+  if (seg.length !== 2) return null;
   const idx = pub();
-  return { idx, p: idx.snap.products.find((x) => x.slug === m[1]) };
+  const p = idx.snap.products.find((x) => x.slug === seg[1]);
+  return p ? { idx, p } : null;
 }
 function addVariant(v, qty = 1) {
   cart.set(addToCart(cart.items, v, qty));
@@ -1116,9 +1346,12 @@ document.addEventListener('click', async (e) => {
       } else delete st.dataset.focus;
       break;
     }
+    case 'print':
+      window.print();
+      break;
     case 'sm-start':
       state.sm = { step: 0, a: { me: {}, position: t.dataset.v } };
-      location.hash = 'sleep-match';
+      go(P.sleepMatch);
       break;
     case 'to-product': {
       // morph della card nella galleria della scheda (View Transitions)
@@ -1177,7 +1410,7 @@ document.addEventListener('click', async (e) => {
     }
     case 'quote-for':
       state.quoteFor = t.dataset.id;
-      if (location.hash === '#fuori-misura') viewQuote();
+      if (isAt(P.quote)) viewQuote(current().query);
       break;
     case 'layer': {
       const box = t.closest('[data-layers]');
@@ -1217,7 +1450,7 @@ document.addEventListener('click', async (e) => {
       const cp = currentProduct();
       const s = state.sel[cp.p.id]?.size;
       if (s) state.sizes = [s, s === '180x200' ? '160x190' : '180x200'];
-      location.hash = 'guida-misure';
+      go(P.sizes);
       break;
     }
     case 'qty': {
@@ -1234,7 +1467,7 @@ document.addEventListener('click', async (e) => {
       const v = cp.idx.purchasableVariants(cp.p).find((x) => (x.size ?? null) === (sel.size ?? null) && (kind === 'materasso' || kind === 'topper' ? x.height_cm === sel.height : true));
       if (!v) return toast('Questa configurazione non è acquistabile online');
       addVariant(v, sel.qty);
-      $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="#carrello">Vai al carrello</a></p>`;
+      $('#add-feedback').innerHTML = `<p class="note note--ok" style="margin:0">Aggiunto: ${esc(cp.p.name)}${v.size ? ' ' + formatSize(v.size) : ''}${kind === 'materasso' ? ' H' + v.height_cm : ''}. <a href="${u(P.cart)}">Vai al carrello</a></p>`;
       break;
     }
     case 'add-variant': {
@@ -1243,7 +1476,7 @@ document.addEventListener('click', async (e) => {
       const p = v && idx.products.get(v.product_id);
       if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
       addVariant(v, 1);
-      if (location.hash === '#carrello') viewCart();
+      if (isAt(P.cart)) viewCart();
       break;
     }
     case 'sm-next':
@@ -1267,13 +1500,13 @@ document.addEventListener('click', async (e) => {
     }
     case 'cart-remove':
       cart.set(cart.items.filter((i) => i.variant_id !== t.dataset.id));
-      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      isAt(P.review) ? viewReview() : viewCart();
       toast('Articolo rimosso');
       break;
     case 'accept-price': {
       const v = catalog().variants.get(t.dataset.id);
       cart.set(cart.items.map((i) => (i.variant_id === t.dataset.id ? { ...i, seen_price_cents: v.price_cents } : i)));
-      location.hash === '#riepilogo' ? viewReview() : viewCart();
+      isAt(P.review) ? viewReview() : viewCart();
       break;
     }
     case 'blocked':
@@ -1295,7 +1528,7 @@ document.addEventListener('click', async (e) => {
         /* ignora */
       }
       toast('Carrello svuotato');
-      location.hash = '';
+      go(P.home);
       break;
   }
 });
@@ -1332,6 +1565,13 @@ document.addEventListener('change', (e) => {
     $('#' + (act === 'size-a' ? 'sz-a' : 'sz-b')).focus();
   }
   if (t.id === 'q-b2b') $('#b2b-fields').hidden = !t.checked;
+  if (t.name === 'pay') {
+    state.pay = t.value;
+    const y = window.scrollY;
+    viewReview();
+    window.scrollTo(0, y);
+    $(`input[name="pay"][value="${CSS.escape(t.value)}"]`)?.focus();
+  }
 });
 
 document.addEventListener('input', (e) => {
@@ -1355,6 +1595,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('submit', (e) => {
+  if (e.target.id === 'search-form') {
+    e.preventDefault();
+    const q = String(new FormData(e.target).get('q') || '').trim();
+    go(P.search + (q ? '?q=' + encodeURIComponent(q) : ''));
+    return;
+  }
   if (e.target.id !== 'quote-form') return;
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -1402,6 +1648,18 @@ window.__vs = {
     }
     return { total, byKind, products: idx.publicProducts().map((p) => p.slug) };
   },
+  /** Pagine indicizzabili e relative immagini: usato da scripts/build_site.mjs per generare il sito e la sitemap. */
+  routes() {
+    const idx = catalog();
+    const imgs = (p) => mediaFor(idx, p).map((m) => media.resolve(m)).filter((x) => x && !/^(blob|idb):/.test(x)).map(absAsset);
+    return [
+      { path: P.home, images: [absAsset(SHARE_IMG)] },
+      ...idx.commercialCategories().map((c) => ({ path: catPath(c) })),
+      ...idx.publicProducts().map((p) => ({ path: prodPath(p), images: imgs(p) })),
+      ...[P.sleepMatch, P.compare, P.sizes, P.quote, P.showroom].map((path) => ({ path })),
+      ...Object.keys(PAGES).map((path) => ({ path })),
+    ];
+  },
   price(slug, height, size) {
     const idx = catalog();
     const p = idx.publicProducts().find((x) => x.slug === slug);
@@ -1419,7 +1677,10 @@ $('#menu-btn').addEventListener('click', () => {
 });
 $('#drawer .drawer__scrim').addEventListener('click', closeDrawer);
 $('#drawer-close').addEventListener('click', closeDrawer);
-window.addEventListener('hashchange', route);
+setNavigator(route);
+interceptLinks(resolveProductPath);
+window.addEventListener(MODE === 'path' ? 'popstate' : 'hashchange', route);
+if (MODE === 'path') window.addEventListener('hashchange', () => current().legacy !== undefined && route());
 window.addEventListener('resize', () => requestAnimationFrame(moveThumb));
 store.subscribe((why) => {
   if (why === 'cart' || why === 'settings' || why === 'catalog') renderChrome();
@@ -1427,6 +1688,7 @@ store.subscribe((why) => {
 window.addEventListener('vs:rerender', route);
 // Avvio: si disegna SUBITO. Le foto caricate dall'admin (IndexedDB) arrivano dopo,
 // con un tempo massimo: in alcuni frame isolati IndexedDB non risponde mai.
+applySettings(store.db.settings);
 route();
 (async () => {
   const hasLocalPhotos = store.db.media.some((m) => m.src.startsWith('idb:'));

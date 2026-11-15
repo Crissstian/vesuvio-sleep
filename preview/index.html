@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Vesuvio Sleep | Materassi di fabbrica a Napoli, dal 1986</title>
   <meta name="description" content="Materassi prodotti a Casoria (Napoli) dal 1986 e venduti a prezzo di fabbrica: Memory Foam, poliuretano e molle insacchettate, reti e guanciali. Misure su richiesta.">
-  <!-- Preview: mai indicizzata, nessun canonical verso il dominio reale -->
+  <!-- Anteprima: mai indicizzata. Il sito pubblico (dist/) è generato da scripts/build_site.mjs con robots e canonical -->
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0E3444">
   <link rel="icon" href="img/favicon.png" type="image/png">
@@ -13,9 +13,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap">
-  <link rel="preload" as="image" href="img/hero-vesuvio-1536.webp" imagesrcset="img/hero-vesuvio-640.webp 640w, img/hero-vesuvio-1024.webp 1024w, img/hero-vesuvio-1536.webp 1536w" imagesizes="(max-width: 860px) 180vw, 100vw">
+  <link rel="preload" as="image" href="img/foto/camera-ambientata-1600.webp" imagesrcset="img/foto/camera-ambientata-900.webp 900w, img/foto/camera-ambientata-1600.webp 1536w" imagesizes="100vw" fetchpriority="high">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/admin.css">
   <script src="js/config.js"></script>
   <script>
@@ -43,10 +44,11 @@
   <div class="topbar" id="topbar"><div class="wrap"><div class="ticker" aria-hidden="true"><div class="ticker__track"><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span><span>Spedizione gratuita in tutta Italia, isole comprese</span><span>Produciamo materassi a Casoria dal 1986</span><span>Fuori misura e altezze personalizzate su richiesta</span><span>A Napoli consegna al piano gratuita</span></div></div></div></div>
   <header class="header">
     <div class="wrap">
-      <a class="brand" href="#" aria-label="Vesuvio Sleep, home"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep"></a>
+      <a class="brand" href="#/" aria-label="Vesuvio Sleep, home"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep"></a>
       <nav class="nav" id="nav" aria-label="Principale"></nav>
       <div class="header__tools">
-        <a class="icon-btn" id="cart-link" href="#carrello"></a>
+        <a class="icon-btn" id="search-link" href="#/cerca/" aria-label="Cerca nel sito"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></a>
+        <a class="icon-btn" id="cart-link" href="#/carrello/"></a>
         <button class="icon-btn menu-btn" id="menu-btn" aria-label="Apri il menu" aria-expanded="false" aria-controls="drawer">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
         </button>
@@ -86,8 +88,8 @@
       <h1 id="hero-title"><span class="ln"><span>Materassi di</span></span><span class="ln"><span>fabbrica, cuciti</span></span><span class="ln"><span>sotto il <em>Vesuvio</em>.</span></span></h1>
       <p class="lead">Dal 1986 li produciamo noi, alle porte di Napoli, e li vendiamo senza intermediari: prezzo di fabbrica, misure standard e, su richiesta, misure e altezze personalizzate.</p>
       <div class="btn-row">
-        <a class="btn btn--primary" href="#materassi">Esplora i materassi</a>
-        <a class="btn btn--glass" href="#sleep-match">Trova il tuo materasso</a>
+        <a class="btn btn--primary" href="#/materassi/">Esplora i materassi</a>
+        <a class="btn btn--glass" href="#/sleep-match/">Trova il tuo materasso</a>
       </div>
       <p class="hero__caption" id="hero-caption"><span>Una camera con vista sul Vesuvio</span></p>
     </div>
@@ -103,16 +105,7 @@
   <footer class="footer">
     <div class="wrap">
       <div class="footer__slogan"><p>L'eruzione del <span>sonno perfetto.</span></p></div>
-      <div class="footer__grid">
-        <div>
-          <span class="footer__logo"><img src="img/logo.webp" width="240" height="229" alt="Vesuvio Sleep" loading="lazy"></span>
-          <p style="margin-top:14px">Materassi di fabbrica dal 1986. Made in Italy.</p>
-        </div>
-        <div><h3>Catalogo</h3><ul id="foot-cats"></ul></div>
-        <div><h3>Scegliere</h3><ul><li><a href="#sleep-match">Sleep Match</a></li><li><a href="#confronto">Confronta i materassi</a></li><li><a href="#guida-misure">Guida alle misure</a></li><li><a href="#fuori-misura">Fuori misura e hotel</a></li></ul></div>
-        <div><h3>Showroom</h3><p style="margin:0">Via Raffaele Salierno 38<br>80026 Casoria (NA)</p><p>Lun–ven 09:00–18:00<br>Sab 10:00–14:00</p></div>
-      </div>
-      <div class="footer__legal">MATERASSI D'AUTORE A.V. S.R.L.S. · P.IVA 10456501211 · REA NA-1107535 · Via Raffaele Salierno 38, 80026 Casoria (NA) · <a href="#admin">Area riservata</a></div>
+      <div id="footer-main"></div>
     </div>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

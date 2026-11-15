@@ -1,6 +1,6 @@
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 export const SEED = {
- "version": "seed-2026-11-15",
+ "version": "seed-2026-11-15b",
  "catalog_version": "catalogo-2026-11-15",
  "authoritative": true,
  "categories": [
@@ -3392,7 +3392,13 @@ export const SEED = {
   }
  ],
  "settings": {
-  "whatsapp_number": "",
+  "whatsapp_number": "+39 366 121 8346",
+  "public_phone": "+39 366 121 8346",
+  "contact_email": "fdimaterassi@gmail.com",
+  "payment_methods": [
+   "contrassegno",
+   "bonifico"
+  ],
   "shipping_note": "gratuita in tutta Italia, isole comprese",
   "show_claims": true,
   "payments": {

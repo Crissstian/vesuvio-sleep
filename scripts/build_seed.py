@@ -293,7 +293,8 @@ for i, (key, name, slot, cover, published, alt) in enumerate(GEN):
 
 # ------------------------------------------------------------------ redirect e impostazioni
 redirects = [dict(old_slug='pocket-2400-elite', new_slug='pocket-2600-elite')]
-settings = dict(whatsapp_number='', shipping_note='gratuita in tutta Italia, isole comprese', show_claims=True,
+settings = dict(whatsapp_number='+39 366 121 8346', public_phone='+39 366 121 8346', contact_email='fdimaterassi@gmail.com',
+                payment_methods=['contrassegno', 'bonifico'], shipping_note='gratuita in tutta Italia, isole comprese', show_claims=True,
                 payments=dict(stripe=False, paypal=False, klarna=False))
 
 # ------------------------------------------------------------------ controlli
@@ -316,7 +317,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-15', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-15b', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 with open(os.path.join(ROOT, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
     f.write('// Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.\n')
@@ -357,7 +358,7 @@ for m in media:
 for r in redirects:
     seed_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do nothing;")
 for k, v in settings.items():
-    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number') else 'false'
+    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods') else 'false'
     seed_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")
 seed_sql.append('commit;')
 open(os.path.join(ROOT, 'supabase/seed.sql'), 'w', encoding='utf-8').write('\n'.join(seed_sql) + '\n')
@@ -380,6 +381,11 @@ for m in media:
     upd_sql.append(ins('media', MCOLS, mrow(m), upd(MCOLS)))
 for r in redirects:
     upd_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do update set new_slug = excluded.new_slug;")
+upd_sql.append('-- contatti e pagamenti (15/11/2026): si scrivono solo dove l\'admin non ha già un valore')
+for k, v in settings.items():
+    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods') else 'false'
+    val = q(v) if isinstance(v, (dict, list)) else q(json.dumps(v)) + '::jsonb'
+    upd_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {val}, {pub}) on conflict (key) do update set value = excluded.value, is_public = excluded.is_public where public.settings.value in ('\"\"'::jsonb, 'null'::jsonb);")
 upd_sql.append('commit;')
 os.makedirs(os.path.join(ROOT, 'supabase/catalog'), exist_ok=True)
 open(os.path.join(ROOT, 'supabase/catalog/2026-11-15_catalogo_ufficiale.sql'), 'w', encoding='utf-8').write('\n'.join(upd_sql) + '\n')

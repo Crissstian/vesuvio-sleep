@@ -282,7 +282,10 @@ insert into public.media (id, product_id, slot, storage_path, alt, caption, illu
 insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots, fit, bg) values ('aa3b9e01-d012-5886-9fb0-9dd35a29dee4', '85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6', 'hero', 'seed/foto/guanciale-memory-classic-1600.webp', 'Guanciale Memory Classic rettangolare con fodera trapuntata', '', true, true, true, 20, 50, 50, 1536, 1024, null, 'cover', null) on conflict (id) do nothing;
 insert into public.media (id, product_id, slot, storage_path, alt, caption, illustrative, is_cover, published, sort, focal_x, focal_y, width, height, hotspots, fit, bg) values ('8fdbe388-b19b-572f-bb22-f4b5022e443e', '97116d49-df22-5e8e-8419-28d3b7acee61', 'hero', 'seed/foto/guanciale-memory-cervical-1600.webp', 'Guanciale cervicale in Memory con profilo a onda', '', true, true, true, 21, 50, 50, 1536, 1024, null, 'cover', null) on conflict (id) do nothing;
 insert into public.slug_redirects (old_slug, new_slug) values ('pocket-2400-elite', 'pocket-2600-elite') on conflict (old_slug) do nothing;
-insert into public.settings (key, value, is_public) values ('whatsapp_number', '""'::jsonb, true) on conflict (key) do nothing;
+insert into public.settings (key, value, is_public) values ('whatsapp_number', '"+39 366 121 8346"'::jsonb, true) on conflict (key) do nothing;
+insert into public.settings (key, value, is_public) values ('public_phone', '"+39 366 121 8346"'::jsonb, true) on conflict (key) do nothing;
+insert into public.settings (key, value, is_public) values ('contact_email', '"fdimaterassi@gmail.com"'::jsonb, true) on conflict (key) do nothing;
+insert into public.settings (key, value, is_public) values ('payment_methods', '["contrassegno", "bonifico"]'::jsonb, true) on conflict (key) do nothing;
 insert into public.settings (key, value, is_public) values ('shipping_note', '"gratuita in tutta Italia, isole comprese"'::jsonb, true) on conflict (key) do nothing;
 insert into public.settings (key, value, is_public) values ('show_claims', 'true'::jsonb, true) on conflict (key) do nothing;
 insert into public.settings (key, value, is_public) values ('payments', '{"stripe": false, "paypal": false, "klarna": false}'::jsonb, false) on conflict (key) do nothing;

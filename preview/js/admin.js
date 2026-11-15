@@ -2,6 +2,7 @@
 // CRUD categorie/prodotti/varianti, media, richieste, impostazioni, storico.
 // L'accesso qui è locale al browser (PBKDF2 + sessione); in produzione è Supabase Auth + RLS.
 
+import { adminKey, go, P, legacyToPath } from './nav.js';
 import { formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex } from './core/index.js';
 import { store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api } from './store.js';
 import { SITE_SLOTS } from './slots.js';
@@ -457,8 +458,13 @@ function viewSettings() {
     <form id="adm-settings" class="form" novalidate>
       <section class="adm-card"><h2 class="adm-h2">WhatsApp per le richieste</h2>
         ${wa.source === 'env' ? `<p class="note">Il numero è impostato dalla configurazione d'ambiente e prevale su questo campo.</p>` : ''}
-        <div class="field"><label for="s-wa">Numero WhatsApp aziendale</label><input class="input" id="s-wa" name="whatsapp_number" value="${esc(s.whatsapp_number)}" placeholder="+39 …" inputmode="tel" aria-describedby="s-wa-h"><span class="hint" id="s-wa-h">Con prefisso internazionale. Da confermare prima del lancio: finché è vuoto il sito offre solo "Copia il riepilogo".</span></div>
+        <div class="field"><label for="s-wa">Numero WhatsApp aziendale</label><input class="input" id="s-wa" name="whatsapp_number" value="${esc(s.whatsapp_number)}" placeholder="+39 …" inputmode="tel" aria-describedby="s-wa-h"><span class="hint" id="s-wa-h">Con prefisso internazionale. Se è vuoto il sito offre solo "Copia il riepilogo".</span></div>
         <p class="${wa.check.ok ? 'note note--ok' : 'note note--warn'} small" id="wa-check">${wa.check.ok ? `Attivo: i link si aprono su wa.me/${esc(wa.check.digits)}` : esc(wa.check.reason)}</p>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Contatti pubblici</h2>
+        <div class="field"><label for="s-phone">Telefono</label><input class="input" id="s-phone" name="public_phone" value="${esc(s.public_phone || '')}" placeholder="+39 …" inputmode="tel"></div>
+        <div class="field"><label for="s-mail">Email</label><input class="input" id="s-mail" name="contact_email" type="email" value="${esc(s.contact_email || '')}"></div>
+        <p class="small muted">Compaiono nel footer, nella pagina Contatti, nelle condizioni di vendita e nell'informativa privacy.</p>
       </section>
       <section class="adm-card"><h2 class="adm-h2">Testi e condizioni</h2>
         <div class="field"><label for="s-ship">Spedizione (testo pubblico)</label><input class="input" id="s-ship" name="shipping_note" value="${esc(s.shipping_note)}"></div>
@@ -492,7 +498,7 @@ function viewAudit() {
 export async function render(app) {
   root = app;
   bind();
-  const r = location.hash.slice(1);
+  const r = adminKey();
   if (!isLogged()) return viewLogin();
   let m;
   if (r === 'admin') viewOverview();
@@ -602,6 +608,20 @@ function bind() {
       if (s.whatsapp_number !== raw) store.audit('impostazioni', 'WhatsApp', raw ? 'Numero aggiornato' : 'Numero rimosso');
       s.whatsapp_number = raw;
       s.shipping_note = String(fd.get('shipping_note') || '').trim() || s.shipping_note;
+      const phone = String(fd.get('public_phone') || '').trim();
+      if (phone && !normalizeWhatsAppNumber(phone).ok) {
+        $('#s-phone').setAttribute('aria-invalid', 'true');
+        toast('Telefono: usa il prefisso internazionale, es. +39 …');
+        return $('#s-phone').focus();
+      }
+      const mail = String(fd.get('contact_email') || '').trim();
+      if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+        $('#s-mail').setAttribute('aria-invalid', 'true');
+        toast('Email non valida');
+        return $('#s-mail').focus();
+      }
+      s.public_phone = phone;
+      s.contact_email = mail;
       s.show_claims = fd.get('show_claims') === 'on';
       store.commit('settings');
       toast('Impostazioni salvate');
@@ -726,7 +746,7 @@ function bind() {
       case 'logout':
         sessionStorage.removeItem(SESSION);
         sessionStorage.removeItem('vs-preview-drafts');
-        location.hash = '';
+        go(P.home);
         break;
       case 'new-product': {
         const cat = d.categories[0];
@@ -734,7 +754,7 @@ function bind() {
         d.products.push(np);
         store.audit('nuovo prodotto', np.name, 'Creato in bozza');
         store.commit('catalog');
-        location.hash = 'admin-prodotto-' + np.id;
+        go(`/admin/prodotto-${np.id}/`);
         break;
       }
       case 'status': {
@@ -768,13 +788,13 @@ function bind() {
         store.audit('eliminazione', p.name, 'Bozza eliminata definitivamente');
         store.commit('catalog');
         toast('Bozza eliminata');
-        location.hash = 'admin-catalogo';
+        go('/admin/catalogo/');
         break;
       }
       case 'preview':
         if ($('#adm-product') && !saveProduct($('#adm-product'), { silent: true })) return;
         sessionStorage.setItem('vs-preview-drafts', '1');
-        location.hash = 'prodotto-' + p.slug;
+        go(legacyToPath('prodotto-' + p.slug));
         break;
       case 'var-add': {
         if (!saveProduct($('#adm-product'), { silent: true })) return;
@@ -953,7 +973,8 @@ function bind() {
       case 'sitemap': {
         const out = $('#sm-out');
         out.hidden = false;
-        out.value = buildSitemap(catalog(), $('#sm-base').value.trim() || 'https://vesuviosleep.it');
+        // stessa sitemap che scripts/build_site.mjs pubblica con il sito
+        out.value = buildSitemap($('#sm-base').value.trim() || 'https://vesuviosleep.it', window.__vs.routes().map((r) => ({ path: r.path, images: r.images })));
         break;
       }
       case 'export': {

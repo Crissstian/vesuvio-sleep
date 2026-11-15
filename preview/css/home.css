@@ -231,7 +231,8 @@ body.is-scrolled .brand img {
   min-height: 42px;
   padding: 0 18px;
 }
-#cart-link {
+#cart-link,
+#search-link {
   background: rgba(255, 252, 247, 0.7);
   border: 1px solid rgba(14, 52, 68, 0.12);
 }
