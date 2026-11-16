@@ -5981,6 +5981,8 @@ function scrollUpdate() {
     const r = an.getBoundingClientRect();
     an.style.setProperty('--ap', Math.max(0, Math.min(1, (vh - r.top) / (vh * 0.75))).toFixed(3));
   }
+  const gm = document.querySelector('.pdp .gallery__main');
+  if (gm) gm.style.setProperty('--gs', Math.min(1, Math.max(0, y / Math.max(1, gm.offsetHeight * 1.2))).toFixed(3));
   document.querySelectorAll(PAR).forEach((img) => {
     const r = img.parentElement.getBoundingClientRect();
     if (r.bottom < -50 || r.top > vh + 50) return;
@@ -6004,6 +6006,7 @@ requestAnimationFrame(scrollUpdate);
 /** Da chiamare dopo ogni render di pagina. */
 function enhance(root = document) {
   requestAnimationFrame(scrollUpdate);
+  enhanceTouch(root);
   const obs = revealObserver();
   root.querySelectorAll('.rv, .kb, [data-count], [data-autoexplode]').forEach((el) => {
     if (obs) obs.observe(el);
@@ -6124,10 +6127,140 @@ document.addEventListener(
   { passive: true },
 );
 
+// ================================================================== TELEFONO
+// Sul telefono non c'è il puntatore: gli effetti seguono il dito e lo scorrimento.
+const coarse = () => window.matchMedia('(hover: none), (max-width: 900px)').matches;
+
+// ---- tocco: un'onda parte dal punto premuto (pulsanti, misure, schede, righe del menu)
+const RIPPLE = '.btn, .seg label, .chip, .tab, .thumb, .showcase__row, .drawer__panel a, .qty button, .pay, .faq__item summary';
+document.addEventListener(
+  'pointerdown',
+  (e) => {
+    if (reduced()) return;
+    const el = e.target.closest?.(RIPPLE);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const d = Math.max(r.width, r.height) * 2.2;
+    const w = document.createElement('span');
+    w.className = 'tap-wave';
+    w.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.classList.add('has-wave');
+    el.appendChild(w);
+    w.addEventListener('animationend', () => w.remove(), { once: true });
+  },
+  { passive: true },
+);
+
+// ---- vibrazione breve quando si aggiunge al carrello (dove il telefono la supporta)
+document.addEventListener('click', (e) => {
+  if (e.target.closest?.('[data-act="add"], [data-act="add-variant"]')) navigator.vibrate?.(12);
+});
+
+// ---- carosello della vetrina: la scheda al centro è in primo piano, i puntini seguono
+function carouselUpdate(list) {
+  const items = [...list.children];
+  if (!items.length || list.scrollWidth <= list.clientWidth + 4) return;
+  const mid = list.scrollLeft + list.clientWidth / 2;
+  let best = 0;
+  let bestD = Infinity;
+  items.forEach((it, i) => {
+    const c = it.offsetLeft + it.offsetWidth / 2;
+    const d = (c - mid) / list.clientWidth;
+    it.style.setProperty('--off', Math.max(-1, Math.min(1, d)).toFixed(3));
+    if (Math.abs(d) < bestD) {
+      bestD = Math.abs(d);
+      best = i;
+    }
+  });
+  items.forEach((it, i) => it.classList.toggle('is-center', i === best));
+  const dots = list.parentElement.querySelector('.car-dots');
+  dots?.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i === best));
+}
+function setupCarousels(root) {
+  root.querySelectorAll('.showcase__list').forEach((list) => {
+    if (list.dataset.car) return;
+    list.dataset.car = '1';
+    const dots = document.createElement('div');
+    dots.className = 'car-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    dots.innerHTML = [...list.children].map(() => '<i></i>').join('');
+    list.after(dots);
+    let raf = 0;
+    list.addEventListener('scroll', () => (raf ||= requestAnimationFrame(() => ((raf = 0), carouselUpdate(list)))), { passive: true });
+    requestAnimationFrame(() => carouselUpdate(list));
+  });
+}
+
+// ---- galleria della scheda: si sfoglia col dito
+let swipe = null;
+document.addEventListener(
+  'touchstart',
+  (e) => {
+    const g = e.target.closest?.('.gallery__main');
+    swipe = g && e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, g } : null;
+  },
+  { passive: true },
+);
+document.addEventListener(
+  'touchmove',
+  (e) => {
+    if (!swipe) return;
+    const dx = e.touches[0].clientX - swipe.x;
+    const dy = e.touches[0].clientY - swipe.y;
+    if (Math.abs(dy) > Math.abs(dx) + 6) return (swipe = null);
+    swipe.dx = dx;
+    if (!reduced()) swipe.g.style.setProperty('--drag', `${(dx * 0.35).toFixed(1)}px`);
+  },
+  { passive: true },
+);
+document.addEventListener('touchend', () => {
+  if (!swipe) return;
+  const { dx = 0, g } = swipe;
+  swipe = null;
+  g.style.removeProperty('--drag');
+  if (Math.abs(dx) < 44) return;
+  const thumbs = [...document.querySelectorAll('.thumbs .thumb')];
+  if (thumbs.length < 2) return;
+  const cur = thumbs.findIndex((t) => t.getAttribute('aria-current') === 'true');
+  const next = (cur + (dx < 0 ? 1 : -1) + thumbs.length) % thumbs.length;
+  document.documentElement.style.setProperty('--swipe-dir', dx < 0 ? 1 : -1);
+  thumbs[next].click();
+  document.activeElement?.blur?.();
+});
+
+// ---- al centro dello schermo: sul telefono fa le veci del passaggio del mouse
+let centerIO = null;
+function setupCenter(root) {
+  if (!coarse() || !('IntersectionObserver' in window)) return;
+  centerIO ||= new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('is-center', e.isIntersecting)), { rootMargin: '-38% 0px -38% 0px' });
+  root.querySelectorAll('.card, .pair, .promise li, .anatomy__list li, .tiles li, .ship__card, .guide-card, .contact-card').forEach((el) => centerIO.observe(el));
+}
+
+// ---- il pulsante WhatsApp si fa da parte mentre scendi e torna quando risali
+let lastY = 0;
+window.addEventListener(
+  'scroll',
+  () => {
+    const y = window.scrollY;
+    if (Math.abs(y - lastY) < 14) return;
+    document.body.classList.toggle('is-down', y > lastY && y > 240);
+    lastY = y;
+  },
+  { passive: true },
+);
+
+/** Da chiamare dopo ogni render (lo fa enhance). */
+function enhanceTouch(root = document) {
+  setupCarousels(root);
+  setupCenter(root);
+}
+
 __exp.scrollUpdate = scrollUpdate;
 __exp.enhance = enhance;
 __exp.bump = bump;
 __exp.explode = explode;
+__exp.enhanceTouch = enhanceTouch;
 });
 __def("admin.js", function (__exp) {
 // Admin della PREVIEW. Stessa struttura dell'admin Supabase previsto:
@@ -7989,7 +8122,7 @@ function galleryHtml(idx, p, gallery, i) {
     const label = t.type === 'media' ? t.m.alt : `Illustrazione di ${p.name}`;
     return `<button class="thumb ${t.type === 'ph' ? 'thumb--ph' : ''}" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="${esc(label)}">${inner}</button>`;
   };
-  return `${main}${items.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>` : ''}
+  return `${main}${items.length > 1 ? `<div class="gal-dots" aria-hidden="true">${items.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</div><div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>` : ''}
 `;
 }
 
@@ -8518,6 +8651,7 @@ document.addEventListener('click', async (e) => {
       const hg = $('#home-grid');
       hg.innerHTML = homeGrid(pub());
       $('.showcase', hg).classList.add('is-entering');
+      enhance(hg);
       break;
     }
     case 'lab-model': {

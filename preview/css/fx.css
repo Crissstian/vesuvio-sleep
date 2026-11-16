@@ -941,3 +941,304 @@
     flex: 1;
   }
 }
+
+/* ================================================================== TELEFONO */
+/* onda al tocco */
+.has-wave {
+  overflow: hidden;
+}
+.tap-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 120, 91, 0.3), rgba(200, 120, 91, 0) 65%);
+  pointer-events: none;
+  animation: tap-wave 0.65s var(--e-out) forwards;
+  z-index: 0;
+}
+.btn--primary .tap-wave,
+.btn--wa .tap-wave,
+.drawer__panel .tap-wave,
+.seg input:checked + label .tap-wave {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 65%);
+}
+@keyframes tap-wave {
+  from {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+/* tutto ciò che si tocca risponde sotto il dito */
+@media (hover: none) {
+  .btn:active,
+  .seg label:active,
+  .chip:active,
+  .thumb:active,
+  .icon-btn:active,
+  .showcase__item:active,
+  .card:active,
+  .pair:active {
+    transform: scale(0.965);
+    transition-duration: 0.12s;
+  }
+}
+
+.car-dots,
+.gal-dots {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* ---- vetrina: carosello in profondità */
+  .showcase__list {
+    padding-block: 18px 26px;
+    gap: 0;
+  }
+  .showcase__item {
+    --off: 0;
+    margin-inline: 7px;
+    box-shadow: 0 24px 40px -30px rgba(14, 52, 68, 0.55);
+    will-change: transform;
+  }
+  .car-dots,
+  .gal-dots {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 2px;
+  }
+  .gal-dots {
+    margin-top: 12px;
+  }
+  .car-dots i,
+  .gal-dots i {
+    width: 7px;
+    height: 7px;
+    border-radius: 99px;
+    background: rgba(14, 52, 68, 0.22);
+    transition:
+      width 0.45s var(--e-out),
+      background 0.3s;
+  }
+  .car-dots i.on,
+  .gal-dots i.on {
+    width: 26px;
+    background: repeating-linear-gradient(90deg, var(--lava) 0 6px, transparent 6px 9px);
+  }
+  .thumbs {
+    display: none;
+  }
+
+  /* ---- galleria: segue il dito, poi la nuova foto entra dal lato giusto */
+  .gallery__main img {
+    translate: var(--drag, 0px) 0;
+  }
+  .gallery__main--stage {
+    aspect-ratio: 1 / 0.86;
+  }
+
+  /* ---- titoli più grandi e tesi */
+  .hero h1 {
+    letter-spacing: -0.045em;
+  }
+  .buy h1 {
+    font-size: clamp(2.3rem, 10.5vw, 3.2rem);
+  }
+  .kinetic__row {
+    font-size: clamp(3rem, 15vw, 5rem);
+  }
+  .numbers {
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 18px;
+  }
+  .numbers h2 {
+    grid-column: 1 / -1;
+  }
+  .num:last-child {
+    grid-column: 1 / -1;
+  }
+  .num b {
+    font-size: clamp(3.4rem, 19vw, 5.4rem);
+  }
+  .tiles li {
+    min-height: 96px;
+  }
+  .anatomy__fig {
+    margin-inline: calc(var(--pad) * -0.4);
+  }
+
+  /* ---- barra d'acquisto: sale con uno scatto morbido */
+  .sticky-buy {
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -18px 40px -22px rgba(14, 52, 68, 0.55);
+    transition: transform 0.6s cubic-bezier(0.34, 1.4, 0.5, 1) !important;
+  }
+
+  /* ---- menu: pannello a tutto schermo, voci grandi */
+  .drawer__panel {
+    width: 100vw;
+    padding: 18px 26px calc(28px + var(--safe-b));
+    clip-path: circle(0% at calc(100% - 44px) 44px);
+    transform: none !important;
+    transition: clip-path 0.7s var(--e-out);
+  }
+  .drawer.is-open .drawer__panel {
+    clip-path: circle(150% at calc(100% - 44px) 44px);
+  }
+  .drawer__panel a {
+    font-size: clamp(1.7rem, 7.6vw, 2.3rem);
+    letter-spacing: -0.035em;
+    padding: 12px 0;
+    position: relative;
+  }
+  .drawer__panel a:nth-of-type(n + 7) {
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+    padding: 10px 0;
+    color: rgba(247, 241, 232, 0.78);
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .showcase__item {
+    transform: perspective(900px) translateZ(calc(max(var(--off), calc(var(--off) * -1)) * -110px)) rotateY(calc(var(--off) * -16deg));
+    transition: box-shadow 0.4s;
+  }
+  .showcase__item .showcase__fig img,
+  .showcase__item .showcase__fig svg {
+    transform: translateX(calc(var(--off) * -34px)) scale(calc(1.06 - max(var(--off), calc(var(--off) * -1)) * 0.14));
+    transition: none;
+  }
+  .gallery__main.is-fade img {
+    animation: gal-swipe 0.55s var(--e-out) both;
+  }
+  .drawer.is-open .drawer__panel a {
+    animation: menu-in 0.7s var(--e-out) both;
+  }
+  .drawer.is-open .drawer__panel a:nth-of-type(1) { animation-delay: 0.12s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(2) { animation-delay: 0.16s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(3) { animation-delay: 0.2s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(4) { animation-delay: 0.24s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(5) { animation-delay: 0.28s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(6) { animation-delay: 0.32s; }
+  .drawer.is-open .drawer__panel a:nth-of-type(n + 7) { animation-delay: 0.38s; }
+
+  /* le sezioni entrano alternando il lato */
+  .js .card.rv,
+  .js .pair,
+  .js .promise li.rv,
+  .js .ship__card.rv {
+    transition-duration: 0.9s;
+  }
+  .js .grid > .card.rv:nth-child(odd):not(.in) {
+    transform: translate3d(-26px, 20px, 0) rotate(-1.5deg);
+  }
+  .js .grid > .card.rv:nth-child(even):not(.in) {
+    transform: translate3d(26px, 20px, 0) rotate(1.5deg);
+  }
+  /* la foto di apertura della scheda si allontana mentre scendi */
+  .pdp .gallery__main {
+    scale: calc(1 - var(--gs, 0) * 0.08);
+    opacity: calc(1 - var(--gs, 0) * 0.5);
+    transform-origin: 50% 100%;
+  }
+  .wa-float {
+    transition:
+      transform 0.5s var(--e-out),
+      opacity 0.3s,
+      background 0.2s;
+  }
+  body.is-down .wa-float {
+    transform: translateY(120%) scale(0.8);
+    opacity: 0;
+  }
+  .wa-float::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid #1f6f4a;
+    animation: wa-ring 3.2s 2.5s ease-out 3;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+@keyframes gal-swipe {
+  from {
+    opacity: 0;
+    translate: calc(var(--swipe-dir, 1) * 70px) 0;
+    scale: 0.94;
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 34px, 0) skewY(4deg);
+  }
+}
+@keyframes wa-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+/* al centro dello schermo (telefono): quello che al computer succede al passaggio del mouse */
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  .card,
+  .pair,
+  .promise li,
+  .guide-card,
+  .contact-card {
+    transition:
+      transform 0.6s var(--e-out),
+      box-shadow 0.6s var(--e-out),
+      outline-color 0.4s,
+      outline-offset 0.6s var(--e-out),
+      border-color 0.4s;
+  }
+  .card.is-center {
+    outline-color: rgba(32, 103, 134, 0.45);
+    outline-offset: -9px;
+    box-shadow: 0 26px 44px -30px rgba(14, 52, 68, 0.55);
+  }
+  .card.is-center .card__media img:not(.is-cover) {
+    transform: scale(1.07) translateY(-2%);
+  }
+  .card .card__media img {
+    transition: transform 1s var(--e-out), scale 1.3s var(--e-out);
+  }
+  .pair.is-center,
+  .guide-card.is-center,
+  .contact-card.is-center {
+    border-color: rgba(32, 103, 134, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px -28px rgba(14, 52, 68, 0.5);
+  }
+  .anatomy__list li {
+    transition: padding 0.5s var(--e-out);
+  }
+  .anatomy__list li.is-center {
+    padding-left: 10px;
+  }
+  .anatomy__list li.is-center .anatomy__sw {
+    transform: skewX(-18deg) scale(1.25);
+  }
+  .anatomy__sw {
+    transition: transform 0.5s var(--e-out);
+  }
+  .anatomy__list li.is-center::after {
+    -webkit-text-stroke-color: #f1b79c;
+  }
+}
+/* il menu aperto copre anche il pulsante WhatsApp */
+.drawer {
+  z-index: 95;
+}

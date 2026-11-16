@@ -397,6 +397,42 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await ctx.close();
 }
 
+// ---------- telefono: effetti al tocco
+{
+  const { ctx, p } = await newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await p.goto(BASE + '#/'); await p.waitForTimeout(900);
+  await p.evaluate(() => document.querySelector('.showcase').scrollIntoView({ block: 'center' })); await p.waitForTimeout(500);
+  ok((await p.locator('.car-dots i').count()) === 5 && (await p.locator('.car-dots i.on').count()) === 1, 'telefono: carosello della vetrina con puntini');
+  await p.evaluate(() => (document.querySelector('.showcase__list').scrollLeft = 330)); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.car-dots i')].findIndex((d) => d.classList.contains('on')) === 1 && document.querySelectorAll('.showcase__item')[1].classList.contains('is-center')), 'telefono: scorrendo il carosello la scheda al centro va in primo piano');
+  await p.goto(BASE + '#/materassi/memory-duo/'); await p.waitForTimeout(900);
+  ok((await p.locator('.gal-dots i').count()) === 3 && !(await p.locator('.thumbs').isVisible()), 'telefono: galleria con puntini al posto delle miniature');
+  const swipeTo = async (dx) => p.evaluate(async (dx) => {
+    const g = document.querySelector('.gallery__main'); const r = g.getBoundingClientRect();
+    const t = (x) => new Touch({ identifier: 1, target: g, clientX: x, clientY: r.top + 100 });
+    const x0 = r.left + r.width / 2;
+    g.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [t(x0)] }));
+    g.dispatchEvent(new TouchEvent('touchmove', { bubbles: true, touches: [t(x0 + dx)] }));
+    g.dispatchEvent(new TouchEvent('touchend', { bubbles: true, touches: [] }));
+  }, dx);
+  await swipeTo(-120); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => document.querySelector('.gallery__main img').src.includes('exploded') && document.querySelectorAll('.gal-dots i')[1].classList.contains('on')), 'telefono: col dito verso sinistra si passa alla foto successiva');
+  await swipeTo(120); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => document.querySelector('.gallery__main img').src.includes('hero')), 'telefono: col dito verso destra si torna indietro');
+  await p.locator('#add-btn').tap(); await p.waitForTimeout(150);
+  ok((await p.locator('#add-btn .tap-wave').count()) >= 0 && /Aggiunto/.test(await p.locator('#add-feedback').innerText()), 'telefono: tocco su Aggiungi al carrello');
+  await p.locator('#menu-btn').tap(); await p.waitForTimeout(900);
+  ok(await p.evaluate(() => { const d = document.querySelector('.drawer__panel').getBoundingClientRect(); return d.width >= innerWidth - 1 && +getComputedStyle(document.querySelector('.drawer')).zIndex > +getComputedStyle(document.querySelector('.wa-float')).zIndex; }), 'telefono: menu a tutto schermo sopra il pulsante WhatsApp');
+  for (const path of ['/', '/materassi/', '/materassi/pocket-2600-elite/', '/contatti/']) {
+    await p.goto(BASE + '#' + path); await p.waitForTimeout(500);
+    const o = await overflow(p);
+    if (o > 0) ok(false, `telefono: nessuno scorrimento orizzontale su ${path}`, `${o}px`);
+  }
+  ok(true, 'telefono: nessuno scorrimento orizzontale dopo gli effetti');
+  ok(errors.length === 0, 'nessun errore JavaScript (telefono)', errors.join(' | '));
+  await ctx.close();
+}
+
 // ---------- pagine informative, legali e guide
 {
   const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });

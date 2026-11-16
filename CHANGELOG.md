@@ -1,5 +1,13 @@
 # Changelog
 
+## Effetti per il telefono (16/11/2026)
+- Vetrina della home come carosello in profondità: la scheda al centro è in primo piano, le altre si allontanano; puntini a forma di cucitura.
+- Galleria della scheda sfogliabile col dito, con puntini; la foto segue il dito e la successiva entra dal lato giusto.
+- Onda al tocco su pulsanti, misure, schede e voci del menu; breve vibrazione quando aggiungi al carrello (dove supportata).
+- Menu a tutto schermo che si apre a cerchio dal pulsante, con voci grandi che entrano in sequenza.
+- Ciò che arriva al centro dello schermo si accende (bordo cucito, foto che si avvicina): sostituisce il passaggio del mouse.
+- Card che entrano alternando il lato, foto della scheda che si allontana scorrendo, barra d'acquisto con scatto morbido, pulsante WhatsApp che si fa da parte mentre scendi.
+
 ## Restyling (16/11/2026)
 Punto di ripristino della versione precedente: tag e branch `checkpoint-pre-restyling-2026-11-16` (commit `1b599da`).
 - **Home**: vetrina interattiva al posto della griglia (elenco dei modelli a sinistra, prodotto in scena a destra che cambia al passaggio e segue il puntatore; carosello sul telefono), fascia cinetica a due righe che scorre con la pagina, numeri più grandi con cucitura che si disegna.

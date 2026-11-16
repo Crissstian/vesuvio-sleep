@@ -860,7 +860,7 @@ function galleryHtml(idx, p, gallery, i) {
     const label = t.type === 'media' ? t.m.alt : `Illustrazione di ${p.name}`;
     return `<button class="thumb ${t.type === 'ph' ? 'thumb--ph' : ''}" data-act="thumb" data-i="${j}" aria-current="${j === i}" aria-label="${esc(label)}">${inner}</button>`;
   };
-  return `${main}${items.length > 1 ? `<div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>` : ''}
+  return `${main}${items.length > 1 ? `<div class="gal-dots" aria-hidden="true">${items.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</div><div class="thumbs" role="group" aria-label="Immagini">${items.map(thumb).join('')}</div>` : ''}
 `;
 }
 
@@ -1389,6 +1389,7 @@ document.addEventListener('click', async (e) => {
       const hg = $('#home-grid');
       hg.innerHTML = homeGrid(pub());
       $('.showcase', hg).classList.add('is-entering');
+      enhance(hg);
       break;
     }
     case 'lab-model': {
