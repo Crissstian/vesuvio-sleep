@@ -1,5 +1,22 @@
 # Changelog
 
+## Gamma rifatta: 6 materassi (16/11/2026, sera)
+L'azienda ha indicato l'elenco definitivo dei materassi. Il catalogo, le schede, i testi del sito e il database Supabase sono stati allineati; i prezzi non dettati sono stati **ricostruiti in proporzione**, non inventati.
+
+- **Vesuvio Eco** (era Vesuvio Essential Foam). Prezzi e foto invariati. Il nome «Eco» resta una denominazione commerciale: sul sito non è accompagnato da nessuna dichiarazione ambientale, perché non ne abbiamo di documentate.
+- **Vesuvio Memory Duo Classic** pubblicato: Memory Foam due strati con rivestimento fisso. Prezzi indicati dall'azienda come «Memory Duo meno 20 €», applicati misura per misura (160×190 = 260 €).
+- **Vesuvio Memory Duo** invariato.
+- **Vesuvio Memory Trio** (era «Memory Foam 3 strati», nome di listino): il nome richiama il Memory Duo e dichiara i tre strati. Prezzi invariati.
+- **Vesuvio Pocket 3000 Elite** (era Pocket 2600, prima ancora 2400). Prezzi ricostruiti in proporzione portando il 160×190 a 620 € (fattore 1,1273, arrotondamento a 10 €). Il numero di molle è cambiato anche in composizione, punti chiave, strati della scheda, confronto e guida: **va confermato prima del lancio**, è un dato tecnico pubblicato.
+- **Vesuvio Pocket 1600** rientrato in catalogo. Prezzi ricostruiti portando il 160×190 a 500 € (fattore 1,1111).
+- **Memory Air 3D** e **Bonnell Classic** fuori gamma: archiviati, non eliminati. Spariscono dal sito, prezzi e storico restano, si ripubblicano da Admin con un clic.
+- Materassi in catalogo: da 4 a **6**. Varianti acquistabili: da 117 a **143** (104 materassi, 26 reti, 13 topper).
+- **Segnaposto per le foto mancanti**: ogni scheda senza foto mostra, per ogni inquadratura prevista, un riquadro dichiarato «Foto in arrivo» invece di riempire il vuoto. Riguarda Memory Trio, Memory Duo Classic, Pocket 1600 e il Topper.
+- **Indirizzi**: `/materassi/essential-foam/`, `/materassi/memory-foam-3-strati/`, `/materassi/pocket-2600-elite/` e `/materassi/pocket-2400-elite/` reindirizzano in modo permanente alle pagine nuove; i redirect del sito statico ora si generano dal catalogo, non a mano.
+- Rinominate anche le cartelle delle foto, mantenendo gli ID delle immagini: il database non vede foto nuove.
+- Applicato al database Supabase del nuovo sito (143 varianti acquistabili, 9 prodotti pubblici, nessuno SKU vecchio residuo) e verificato con una query di controllo.
+- Test aggiornati: 134 end-to-end sulla preview, 26 sul sito statico, 12 unitari, SQL completi su Postgres 16. Tutti superati.
+
 ## Catalogo: Pocket 1600 ritirato, Memory Duo Classic in arrivo (16/11/2026)
 - **Vesuvio Pocket 1600 fuori catalogo** su indicazione dell'azienda. È **archiviato**, non eliminato: sparisce da categorie, ricerca, Sleep Match, abbinamenti e confronto, la sua pagina non esiste più, ma prezzi e storico restano e si ripubblica da Admin con un clic. Se qualcuno ce l'ha nel carrello da prima, al riepilogo risulta non disponibile e non può essere inviato. Tolto anche dai testi del catalogo e dalla guida alle tecnologie.
 - **Vesuvio Memory Duo Classic**: stesso materasso del Memory Duo con il rivestimento fisso, non sfoderabile. Creato in **bozza**, visibile solo nell'admin, perché i prezzi non sono nel listino e non si inventano. Si pubblica appena l'azienda li fornisce.

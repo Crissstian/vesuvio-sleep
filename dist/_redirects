@@ -1,6 +1,13 @@
 # Netlify / Cloudflare Pages
-/materassi/pocket-2400-elite/  /materassi/pocket-2600-elite/  301
-/materassi/pocket-2400-elite   /materassi/pocket-2600-elite/  301
+# Indirizzi vecchi dei prodotti: presi dal catalogo (seed.redirects), non scritti a mano.
+/materassi/pocket-2400-elite/  /materassi/pocket-3000-elite/  301
+/materassi/pocket-2400-elite   /materassi/pocket-3000-elite/  301
+/materassi/pocket-2600-elite/  /materassi/pocket-3000-elite/  301
+/materassi/pocket-2600-elite   /materassi/pocket-3000-elite/  301
+/materassi/essential-foam/  /materassi/eco/  301
+/materassi/essential-foam   /materassi/eco/  301
+/materassi/memory-foam-3-strati/  /materassi/memory-trio/  301
+/materassi/memory-foam-3-strati   /materassi/memory-trio/  301
 /prodotto/*                    /materassi/                    301
 /admin/*                       /admin/index.html              200
 /cerca/*                       /cerca/index.html              200

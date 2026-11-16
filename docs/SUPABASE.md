@@ -32,9 +32,9 @@ Gli ID sono gli stessi del sito: un carrello fatto sul sito si valida sul databa
 
 ## Verificato come visitatore anonimo
 
-- vede 7 prodotti e 117 varianti acquistabili, nessuna nota interna, nessuna richiesta;
+- vede 9 prodotti e 143 varianti acquistabili, nessuna nota interna, nessuna richiesta;
 - non può scrivere su nessuna tabella né usare le funzioni interne;
-- il carrello si valida lato server (Memory Duo 160×190 = 280 €, Pocket 2600 180×200 = 650 €).
+- il carrello si valida lato server (Memory Duo 160×190 = 280 €, Pocket 3000 180×200 = 730 €).
 
 Controlli di sicurezza di Supabase: restano solo gli avvisi sulle quattro funzioni pubbliche delle
 richieste (`validate_cart`, `create_cart_request`, `mark_request_waiting`, `create_quote_request`),

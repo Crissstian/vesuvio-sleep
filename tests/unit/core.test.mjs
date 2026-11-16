@@ -62,23 +62,34 @@ test('listino 15/11/2026: 13 misure standard e redirect degli slug', async () =>
   const core = await import('../../preview/js/core/index.js');
   assert.equal(core.STANDARD_SIZES.length, 13);
   assert.deepEqual([core.STANDARD_SIZES[0], core.STANDARD_SIZES[12]], ['80x190', '180x200']);
-  const r = [{ old_slug: 'pocket-2400-elite', new_slug: 'pocket-2600-elite' }];
-  assert.equal(core.resolveRedirect(r, 'pocket-2400-elite'), 'pocket-2600-elite');
+  const r = [{ old_slug: 'pocket-2400-elite', new_slug: 'pocket-3000-elite' }];
+  assert.equal(core.resolveRedirect(r, 'pocket-2400-elite'), 'pocket-3000-elite');
   assert.equal(core.resolveRedirect(r, 'memory-duo'), null);
 });
 
-test('seed: 117 varianti acquistabili, nessun prezzo zero o inventato', async () => {
+test('seed: 143 varianti acquistabili, nessun prezzo zero o inventato', async () => {
   const { SEED } = await import('../../preview/js/seed.js');
   const pub = new Set(SEED.products.filter((p) => p.status === 'published').map((p) => p.id));
   const priced = SEED.variants.filter((v) => v.price_cents !== null);
-  assert.equal(priced.filter((v) => pub.has(v.product_id)).length, 117);
+  assert.equal(priced.filter((v) => pub.has(v.product_id)).length, 143);
   assert.ok(priced.every((v) => v.price_cents > 0));
-  // un prodotto ritirato conserva i prezzi di listino ma non è pubblico
+  // un prodotto fuori gamma conserva i prezzi di listino ma non è pubblico
+  const air = SEED.products.find((p) => p.slug === 'memory-air-3d');
+  assert.equal(air.status, 'archived');
+  assert.ok(!pub.has(air.id));
+  // il Pocket 1600 è rientrato in catalogo il 16/11/2026 con i prezzi aggiornati
   const p1600 = SEED.products.find((p) => p.slug === 'pocket-1600');
-  assert.equal(p1600.status, 'archived');
-  assert.ok(!pub.has(p1600.id));
+  assert.equal(p1600.status, 'published');
+  assert.equal(SEED.variants.find((v) => v.product_id === p1600.id && v.size === '160x190' && v.height_cm === 25).price_cents, 50000);
+  // il Memory Duo Classic costa 20 euro meno dello sfoderabile, misura per misura
+  const duo = SEED.products.find((p) => p.slug === 'memory-duo').id;
+  const cls = SEED.products.find((p) => p.slug === 'memory-duo-classic').id;
+  const byZ = (id) => Object.fromEntries(SEED.variants.filter((v) => v.product_id === id && v.height_cm === 25 && v.price_cents).map((v) => [v.size, v.price_cents]));
+  const a = byZ(duo), b = byZ(cls);
+  assert.equal(Object.keys(b).length, 13);
+  assert.ok(Object.keys(b).every((z) => a[z] - b[z] === 2000));
   assert.ok(!SEED.media.some((m) => /grafeno/i.test(m.src)));
-  assert.ok(!SEED.products.some((p) => p.status === 'published' && /2400/.test(p.name + p.slug + p.description + p.highlights.join(' '))));
+  assert.ok(!SEED.products.some((p) => p.status === 'published' && /2400|2600/.test(p.name + p.slug + p.description + p.highlights.join(' '))));
 });
 
 test('WhatsApp: la modalità di pagamento scelta finisce nel messaggio', async () => {

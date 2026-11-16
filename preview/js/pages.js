@@ -54,10 +54,12 @@ export const PAYMENT_METHODS = [
 export const LEGAL_UPDATED = '15 novembre 2026';
 
 const L = {
-  essential: '/materassi/essential-foam/',
+  eco: '/materassi/eco/',
   duo: '/materassi/memory-duo/',
-  pocket: '/materassi/pocket-2600-elite/',
-  mf3: '/materassi/memory-foam-3-strati/',
+  duoClassic: '/materassi/memory-duo-classic/',
+  trio: '/materassi/memory-trio/',
+  p1600: '/materassi/pocket-1600/',
+  pocket: '/materassi/pocket-3000-elite/',
   flex: '/reti/rete-flex/',
   strong: '/reti/rete-strong/',
   topper: '/topper/topper-memory-cloud-5/',
@@ -106,7 +108,7 @@ export const FAQ = [
   },
   {
     q: 'Il rivestimento è sfoderabile?',
-    a: () => `Dipende dal modello: Memory Duo, Pocket 2600 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Essential Foam no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento.`,
+    a: () => `Dipende dal modello: Memory Duo, Pocket 3000 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Eco e il Memory Duo Classic no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento.`,
   },
   {
     q: 'Posso restituire il materasso?',
@@ -134,8 +136,8 @@ export const CATEGORY_SEO = {
     metaTitle: 'Materassi Memory Foam, a molle e in poliuretano',
     description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
     html: () => `<h2>Come scegliere tra i nostri materassi</h2>
-      <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
-      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda al ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}: 2600 molle insacchettate che lavorano una per una, con sopra uno strato di Memory Foam.</p>
+      <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.eco, 'Vesuvio Eco')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duoClassic, 'Vesuvio Memory Duo Classic')} introduce il Memory Foam con il rivestimento fisso; il ${a(L.duo, 'Vesuvio Memory Duo')} è lo stesso materasso sfoderabile e reversibile, con un lato invernale e uno estivo. Il ${a(L.trio, 'Vesuvio Memory Trio')} porta gli strati di Memory a tre, per 27 cm di altezza.</p>
+      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda alle molle insacchettate: il ${a(L.p1600, 'Vesuvio Pocket 1600')} è l'ingresso nella gamma, il ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')} ne ha 3000 e aggiunge uno strato di Memory Foam.</p>
       <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
   },
   rete: {
@@ -226,7 +228,7 @@ export const PAGES = {
         <ul class="ticks"><li>consegna al piano gratuita</li><li>ritiro del vecchio materasso</li><li>montaggio delle reti</li></ul>
         <p>Come nel resto d'Italia, la spedizione è gratuita. Paghi alla consegna in contrassegno oppure con bonifico.</p>`)}
       ${sec('showroom-na', 'Provali in showroom', `<p>Lo showroom è nella fabbrica, in Via Raffaele Salierno 38 a Casoria: aperto dal lunedì al venerdì 9:00–18:00 e il sabato 10:00–14:00. Puoi provare i materassi e scegliere con chi li produce. ${a(P.showroom, 'Come arrivare')}.</p>`)}
-      ${sec('gamma-na', 'I materassi più richiesti', `<p>Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano, in tre altezze; il ${a(L.duo, 'Vesuvio Memory Duo')}, reversibile estate-inverno; il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} con 2600 molle insacchettate e Memory Foam. Completa il letto con una ${a('/reti/', 'rete a doghe')}: a Napoli la montiamo noi.</p>`)}`,
+      ${sec('gamma-na', 'I materassi più richiesti', `<p>Il ${a(L.eco, 'Vesuvio Eco')} in poliuretano, in tre altezze; il ${a(L.duo, 'Vesuvio Memory Duo')}, reversibile estate-inverno; il ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')} con 3000 molle insacchettate e Memory Foam. Completa il letto con una ${a('/reti/', 'rete a doghe')}: a Napoli la montiamo noi.</p>`)}`,
   },
 
   [P.shipping]: {
@@ -418,16 +420,16 @@ export const PAGES = {
     type: 'article',
     body: () => `${toc([['poliuretano', 'Poliuretano espanso'], ['memory', 'Memory Foam'], ['molle', 'Molle insacchettate'], ['confronto', 'In sintesi']])}
       ${sec('poliuretano', 'Poliuretano espanso', `<p>È una schiuma che, ad alta densità, offre un sostegno uniforme e stabile. Non si modella sul corpo come il Memory: risponde in modo più diretto. È la scelta più essenziale e conveniente, adatta a chi cerca un letto solido e a chi preferisce non "affondare".</p>
-        <p>Il nostro modello: ${a(L.essential, 'Vesuvio Essential Foam')}, anima monoblocco in poliuretano ad alta densità, in tre altezze (H20, H25, H30).</p>`)}
+        <p>Il nostro modello: ${a(L.eco, 'Vesuvio Eco')}, anima monoblocco in poliuretano ad alta densità, in tre altezze (H20, H25, H30).</p>`)}
       ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
-        <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
+        <p>I nostri modelli: ${a(L.duoClassic, 'Vesuvio Memory Duo Classic')}, Memory su base in poliuretano con rivestimento fisso; ${a(L.duo, 'Vesuvio Memory Duo')}, lo stesso sfoderabile e reversibile estate-inverno; ${a(L.trio, 'Vesuvio Memory Trio')}, tre strati di Memory per 27 cm.</p>`)}
       ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
-        <p>Il nostro modello: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con uno strato di comfort in Memory Foam.</p>`)}
+        <p>I nostri modelli: ${a(L.p1600, 'Vesuvio Pocket 1600')}, 1600 molle insacchettate alto 25 cm; ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')}, 3000 molle con uno strato di comfort in Memory Foam.</p>`)}
       ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
         <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
         <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
         <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
-        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.eco, 'Eco')}</td><td>${a(L.duoClassic, 'Memory Duo Classic')}, ${a(L.duo, 'Memory Duo')}, ${a(L.trio, 'Memory Trio')}</td><td>${a(L.p1600, 'Pocket 1600')}, ${a(L.pocket, 'Pocket 3000 Elite')}</td></tr>
         </tbody></table></div>
         <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
   },

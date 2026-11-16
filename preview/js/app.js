@@ -833,7 +833,12 @@ function viewProduct(slug, catSlug) {
 function galleryItems(idx, p, gallery) {
   const kind = idx.kind(p);
   const items = gallery.map((m) => ({ type: 'media', m }));
+  // Senza nemmeno una foto si mostra il disegno del modello: è dichiarato come illustrazione.
   if (!items.length) items.push({ type: 'illus' });
+  // Per ogni inquadratura prevista e non ancora fornita resta un segnaposto dichiarato:
+  // meglio uno spazio vuoto e onesto che una foto di un altro materasso.
+  const taken = new Set(gallery.map((m) => m.slot));
+  for (const def of PRODUCT_SLOTS[kind] ?? []) if (!taken.has(def.slot)) items.push({ type: 'ph', def });
   return items;
 }
 function galleryHtml(idx, p, gallery, i) {

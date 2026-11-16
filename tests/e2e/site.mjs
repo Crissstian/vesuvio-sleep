@@ -58,27 +58,27 @@ const b = await chromium.launch();
     if (words < 150 || !/<h1[\s>]/.test(h) || !h.includes(`<link rel="canonical" href="${l}">`)) noText.push(`${p} (${words} parole)`);
   }
   ok(!noText.length, 'ogni pagina della sitemap ha testo, H1 e canonical già nell\'HTML', noText.join(', '));
-  const prod = await get('/materassi/pocket-2600-elite/');
+  const prod = await get('/materassi/pocket-3000-elite/');
   const ld = JSON.parse(/<script type="application\/ld\+json" id="ld">([\s\S]*?)<\/script>/.exec(prod)[1]);
   const product = ld.find((x) => x['@type'] === 'Product');
-  ok(product && product.offers.lowPrice === '200.00' && product.offers.highPrice === '650.00' && product.offers.offers.length === 13, 'dati strutturati Pocket 2600: 13 offerte, 200–650 €');
-  ok(product.image.every((i) => i.startsWith('https://vesuviosleep.it/img/prodotti/vesuvio-pocket-2600-elite/')) && product.offers.offers[0].shippingDetails && product.offers.offers[0].hasMerchantReturnPolicy.merchantReturnDays === 14, 'dati strutturati: immagini assolute, spedizione gratuita, reso 14 giorni');
+  ok(product && product.offers.lowPrice === '230.00' && product.offers.highPrice === '730.00' && product.offers.offers.length === 13, 'dati strutturati Pocket 3000: 13 offerte, 230–730 €');
+  ok(product.image.every((i) => i.startsWith('https://vesuviosleep.it/img/prodotti/vesuvio-pocket-3000-elite/')) && product.offers.offers[0].shippingDetails && product.offers.offers[0].hasMerchantReturnPolicy.merchantReturnDays === 14, 'dati strutturati: immagini assolute, spedizione gratuita, reso 14 giorni');
   ok(ld.find((x) => x['@type'] === 'BreadcrumbList').itemListElement.every((i) => i.item.startsWith('https://')), 'briciole con URL assoluti');
   ok(/property="og:image" content="https:\/\/vesuviosleep\.it\/img\/prodotti\//.test(prod), 'Open Graph: foto del prodotto per WhatsApp e social');
   const home = await get('/');
   ok(/"@type":"FurnitureStore"/.test(home) && /"telephone":"\+39 366 121 8346"/.test(home) && /"email":"fdimaterassi@gmail.com"/.test(home), 'home: attività locale con telefono ed email');
   const bundle = await get('/js/bundle.js');
-  ok(!/Sospeso:|Fuori catalogo|non verificata: non pubblicare|Rinominato da|era un errore/i.test(bundle), 'nessuna nota interna nel JavaScript pubblico');
-  ok(!/Pocket 1600|Memory Duo Classic|Bonnell Classic|Memory Air 3D|Castello Steel|Vesuvio Piuma/.test(bundle), 'nel JavaScript pubblico nessun prodotto ritirato, in bozza o sospeso');
+  ok(!/Sospeso:|Fuori catalogo|Fuori gamma dal|non verificata: non pubblicare|Rinominato da|Storico del nome|DA VERIFICARE PRIMA DEL LANCIO|era un errore/i.test(bundle), 'nessuna nota interna nel JavaScript pubblico');
+  ok(!/Bonnell Classic|Memory Air 3D|Castello Steel|Vesuvio Piuma|Essential Foam|Pocket 2600/.test(bundle), 'nel JavaScript pubblico nessun prodotto fuori gamma, in bozza o con nome superato');
   ok(!/"status":"draft"|"status":"archived"/.test(bundle), 'nel JavaScript pubblico solo prodotti pubblicati');
-  ok(/Vesuvio Pocket 2600 Elite/.test(bundle) && /65000/.test(bundle), 'il catalogo pubblicato c\'è tutto');
+  ok(/Vesuvio Pocket 3000 Elite/.test(bundle) && /73000/.test(bundle) && /Vesuvio Memory Trio/.test(bundle) && /Vesuvio Eco/.test(bundle), 'il catalogo pubblicato c\'è tutto');
   ok(!/<html lang="it" class="js">/.test(home) && !/vs-err/.test(home.replace(/getElementById\('vs-err'\)|b\.id = 'vs-err'/g, '')), 'HTML pulito: nessuna classe di runtime o errore salvato');
 }
 
 // ---------- redirect e 404 dal server
 {
   const r1 = await fetch(B + '/materassi/pocket-2400-elite/', { redirect: 'manual' });
-  ok(r1.status === 301 && r1.headers.get('location') === '/materassi/pocket-2600-elite/', '301 dal vecchio Pocket 2400 al 2600');
+  ok(r1.status === 301 && r1.headers.get('location') === '/materassi/pocket-3000-elite/', '301 dal vecchio Pocket 2400 al 3000');
   const r2 = await fetch(B + '/pagina-che-non-esiste/');
   ok(r2.status === 404 && /noindex/.test(await r2.text()), '404 vera, non indicizzabile');
 }
@@ -99,7 +99,7 @@ const b = await chromium.launch();
   await p.goBack(); await p.waitForTimeout(700);
   ok(p.url() === B + '/materassi/', 'pulsante indietro');
   await p.goto(B + '/#prodotto-pocket-2400-elite'); await p.waitForTimeout(1200);
-  ok(p.url() === B + '/materassi/pocket-2600-elite/', 'vecchio link #prodotto-… → nuovo indirizzo');
+  ok(p.url() === B + '/materassi/pocket-3000-elite/', 'vecchio link #prodotto-… → nuovo indirizzo');
   await p.goto(B + '/materassi/memory-duo/'); await p.waitForTimeout(900);
   await p.click('#add-btn'); await p.waitForTimeout(300);
   await p.goto(B + '/carrello/riepilogo/'); await p.waitForTimeout(1000);

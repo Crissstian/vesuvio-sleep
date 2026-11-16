@@ -8,7 +8,7 @@ const S = 0.5;
 
 // Strati dall'alto verso il basso
 const LAYERS = {
-  'essential-foam': [
+  eco: [
     { k: 'cover', label: 'Rivestimento', note: 'Antiacaro e ipoallergenico, non sfoderabile' },
     { k: 'foam', h: 16, label: 'Anima monoblocco', note: 'Poliuretano ad alta densità e alta portanza' },
   ],
@@ -17,16 +17,22 @@ const LAYERS = {
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort, ad alta densità' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
+  // Stessa costruzione del Memory Duo, dichiarata dall'azienda; cambia il rivestimento.
+  'memory-duo-classic': [
+    { k: 'cover', label: 'Rivestimento fisso', note: 'Non sfoderabile' },
+    { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort, ad alta densità' },
+    { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
+  ],
   'memory-air-3d': [
     { k: 'cover', zip: true, mesh: true, label: 'Fascia perimetrale 3D', note: 'Traspirante, per la ventilazione laterale' },
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
-  'pocket-2600-elite': [
+  'pocket-3000-elite': [
     { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
     { k: 'memory', label: 'Memory Foam', note: 'Lo strato di comfort' },
     { k: 'foam', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
-    { k: 'springs', label: 'Molle insacchettate', note: '2600 molle indipendenti' },
+    { k: 'springs', label: 'Molle insacchettate', note: '3000 molle indipendenti' },
     { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
   ],
 };

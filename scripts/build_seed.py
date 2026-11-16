@@ -18,7 +18,7 @@ Output:
 Regole: una variante è acquistabile solo con prezzo > 0 nell'Excel. Nessun prezzo
 storico, nessuna interpolazione, nessuno zero al posto delle celle vuote. I prodotti
 senza alcun prezzo restano in bozza. Gli ID restano stabili (upsert, non duplicati):
-il Pocket 2600 Elite conserva l'ID del vecchio "Pocket 2400 Elite".
+il Pocket 3000 Elite conserva l'ID del vecchio "Pocket 2400 Elite", l'Eco quello dell'Essential Foam.
 """
 import json, os, uuid, sys
 import openpyxl
@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-16'
+CATALOG_VERSION = 'catalogo-2026-11-16b'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -84,7 +84,11 @@ cat = {c['kind']: c['id'] for c in categories}
 # key = chiave dell'ID (stabile), slug = indirizzo pubblico
 MATTRESSES = {
     'Vesuvio Essential Foam': dict(
-        key='essential-foam', slug='essential-foam', line='ESS', sort=1,
+        key='essential-foam', slug='eco', display='Vesuvio Eco', line='ESS', sort=1,
+        notes='Rinominato da "Vesuvio Essential Foam" il 16/11/2026 su indicazione dell\'azienda. '
+              'Il vecchio indirizzo /materassi/essential-foam/ reindirizza qui. '
+              'Da verificare: il nome "Eco" e\' una denominazione commerciale, sul sito non e\' accompagnato '
+              'da alcuna dichiarazione ambientale perche\' non ne abbiamo di documentate.',
         short='Poliuretano espanso ad alta densità: sostegno uniforme e stabile, in tre altezze.',
         description="L'anima monoblocco in poliuretano ad alta densità e alta portanza dà un sostegno uniforme, stabile e duraturo. "
                     "È il modello più essenziale della gamma, disponibile in H20, H25 e H30. Il rivestimento non è sfoderabile.",
@@ -94,56 +98,80 @@ MATTRESSES = {
         claims=old['essential-foam'].get('claims', []),
         match=dict(tech='foam', welcome=0, ventilation=False, independent_springs=False)),
     'Vesuvio Memory Duo': dict(
-        key='memory-duo', slug='memory-duo', line='MD', sort=2,
+        key='memory-duo', slug='memory-duo', line='MD', sort=3,
         short='Memory Foam su base in poliuretano ad alta densità. Sfoderabile e reversibile.',
         description="Uno strato di comfort in Memory Foam poggia su una base portante in poliuretano ad alta densità. "
-                    "È più accogliente dell'Essential ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
+                    "È più accogliente dell'Eco ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
         composition=old['memory-duo']['composition_public'],
         highlights=['Memory Foam 2 strati', 'Lato invernale e lato estivo', 'Sfoderabile'],
         removable_cover=True, summer_winter=True, firmness=old['memory-duo'].get('firmness_display'),
         claims=old['memory-duo'].get('claims', []),
         match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
-    # Prezzi non presenti nel listino del 15/11/2026: li fornisce l'azienda.
-    # Finché la riga è vuota il prodotto resta in bozza e non compare sul sito.
+    # Non è nel listino Excel: i prezzi li ha indicati l'azienda il 16/11/2026
+    # come "Memory Duo sfoderabile meno 20 euro", misura per misura.
     'Vesuvio Memory Duo Classic': dict(
-        key='memory-duo-classic', slug='memory-duo-classic', line='MDC', sort=3, heights=[25],
-        prices={},
+        key='memory-duo-classic', slug='memory-duo-classic', line='MDC', sort=2, heights=[25],
+        prices={'80x190': 110, '80x200': 120, '90x190': 140, '90x200': 150, '120x190': 200, '120x200': 210,
+                '140x190': 230, '140x200': 240, '160x190': 260, '160x200': 280, '165x190': 290,
+                '170x200': 310, '180x200': 330},
         short='Lo stesso Memory Duo, con il rivestimento fisso.',
         description='Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante '
                     'in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.',
         composition=old['memory-duo']['composition_public'],
         highlights=['Memory Foam 2 strati', 'Rivestimento fisso'],
         removable_cover=False,
-        notes='Aggiunto il 16/11/2026 su indicazione dell\'azienda. Da confermare: prezzi, se è reversibile '
-              'estate/inverno come lo sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria.',
+        notes='Aggiunto il 16/11/2026 su indicazione dell\'azienda. Prezzi: Memory Duo sfoderabile meno 20 euro '
+              'per ogni misura, confermati il 16/11/2026. Da confermare: se è reversibile estate/inverno come lo '
+              'sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria: la scheda mostra i segnaposto.',
         match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
     'Vesuvio Pocket 2600 Elite': dict(
-        key='pocket-2400-elite', slug='pocket-2600-elite', line='P2600', sort=4, hybrid=True,
-        short='2600 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.',
+        key='pocket-2400-elite', slug='pocket-3000-elite', display='Vesuvio Pocket 3000 Elite', line='P3000', sort=6, hybrid=True,
+        technical='3000 molle insacchettate + Memory',
+        override={25: {'80x190': 230, '80x200': 250, '90x190': 280, '90x200': 290, '120x190': 390, '120x200': 410,
+                       '140x190': 470, '140x200': 480, '160x190': 620, '160x200': 630, '165x190': 630,
+                       '170x200': 680, '180x200': 730}},
+        short='3000 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.',
         description="Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. "
                     "Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
-        composition='2600 molle insacchettate, Memory Foam ed elementi in poliuretano ad alta densità.',
-        highlights=['2600 molle insacchettate', 'Strato di comfort in Memory', 'Sfoderabile'],
+        composition='3000 molle insacchettate, Memory Foam ed elementi in poliuretano ad alta densità.',
+        highlights=['3000 molle insacchettate', 'Strato di comfort in Memory', 'Sfoderabile'],
         removable_cover=True, summer_winter=False, firmness=old['pocket-2400-elite'].get('firmness_display'),
         claims=old['pocket-2400-elite'].get('claims', []),
-        notes='Rinominato da "Pocket 2400 Elite" il 15/11/2026 (2600 molle confermate). Da verificare a quale misura si riferisce il numero di molle.',
+        notes='Storico del nome: "Pocket 2400 Elite" fino al 15/11/2026, "Pocket 2600 Elite" fino al 16/11/2026, '
+              'poi "Pocket 3000 Elite" su indicazione dell\'azienda. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle '
+              'pubblicato e a quale misura si riferisce; le foto in scheda sono quelle scattate il 15/11/2026. '
+              'Prezzi del 16/11/2026: ricostruiti in proporzione dal listino confermato portando il 160x190 a 620 euro '
+              '(fattore 1,1273, arrotondamento a 10 euro).',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Vesuvio Pocket 1600': dict(
-        key='pocket-1600', slug='pocket-1600', line='P1600', sort=8, status='archived',
-        short='Molle insacchettate, alto 25 cm.',
-        description='Materasso a molle insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria.',
+        key='pocket-1600', slug='pocket-1600', line='P1600', sort=5,
+        technical='1600 molle insacchettate',
+        override={25: {'80x190': 220, '80x200': 240, '90x190': 270, '90x200': 280, '120x190': 390, '120x200': 400,
+                       '140x190': 420, '140x200': 440, '160x190': 500, '160x200': 510, '165x190': 510,
+                       '170x200': 530, '180x200': 580}},
+        short='1600 molle insacchettate, alto 25 cm: l\'ingresso nella gamma a molle.',
+        description='Materasso a molle indipendenti insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria. '
+                    'È il modello a molle più essenziale della gamma: stesso principio del Pocket 3000 Elite, con un numero '
+                    'di molle inferiore.',
         composition='Molle insacchettate.',
-        highlights=['Molle insacchettate', 'Altezza 25 cm'],
-        notes='Fuori catalogo dal 16/11/2026 per decisione dell\'azienda: archiviato, non compare sul sito. '
-              'I prezzi restano quelli del listino, si ripubblica da Admin se rientra in gamma.',
+        highlights=['1600 molle insacchettate', 'Altezza 25 cm'],
+        notes='Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). '
+              'Prezzi del 16/11/2026: ricostruiti in proporzione dal listino confermato portando il 160x190 a 500 euro '
+              '(fattore 1,1111, arrotondamento a 10 euro). DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato '
+              'e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Memory Foam 3 strati': dict(
-        key='memory-foam-3-strati', slug='memory-foam-3-strati', line='MF3', sort=5,
-        short='Materasso in Memory Foam a 3 strati, alto 27 cm.',
-        description='Materasso in Memory Foam a 3 strati, alto 27 cm, prodotto nella nostra fabbrica di Casoria.',
+        key='memory-foam-3-strati', slug='memory-trio', display='Vesuvio Memory Trio', line='MF3', sort=4,
+        short='Tre strati di Memory Foam, alto 27 cm: il più accogliente della gamma in schiuma.',
+        description='Tre strati di Memory Foam per un totale di 27 cm di altezza, prodotto nella nostra fabbrica di Casoria. '
+                    'Dove il Memory Duo ha un solo strato di comfort sopra la base, qui gli strati sono tre: '
+                    'l\'accoglienza è più progressiva e il materasso è più alto.',
         composition='Memory Foam, 3 strati.',
         highlights=['Memory Foam a 3 strati', 'Altezza 27 cm'],
-        notes='Nome dal listino. Composizione di dettaglio e foto non ancora fornite.',
+        notes='Rinominato da "Memory Foam 3 strati" (nome di listino) a "Vesuvio Memory Trio" il 16/11/2026: '
+              'il nome richiama il Memory Duo e dichiara i tre strati. Il vecchio indirizzo reindirizza qui. '
+              'DA VERIFICARE PRIMA DEL LANCIO: la composizione di dettaglio dei tre strati e se è sfoderabile. '
+              'Foto annunciate dall\'azienda il 16/11/2026, non ancora ricevute: la scheda mostra i segnaposto.',
         match=dict(tech='memory', welcome=1.5, ventilation=False, independent_springs=False)),
     'Vesuvio Memory Air 3D': dict(
         key='memory-air-3d', slug='memory-air-3d', line='MA3D', sort=6,
@@ -154,12 +182,15 @@ MATTRESSES = {
         highlights=['Fascia perimetrale 3D traspirante', 'Lato invernale e lato estivo', 'Sfoderabile'],
         removable_cover=True, summer_winter=True, firmness=old['memory-air-3d'].get('firmness_display'),
         claims=old['memory-air-3d'].get('claims', []),
-        notes='Sospeso: nessun prezzo nel listino del 15/11/2026.',
+        status='archived',
+        notes='Fuori gamma dal 16/11/2026: non compare nell\'elenco dei prodotti indicato dall\'azienda. '
+              'Archiviato, non compare sul sito. Si ripubblica da Admin se rientra in gamma.',
         match=dict(tech='memory', welcome=1.5, ventilation=True, independent_springs=False)),
     'Vesuvio Bonnell Classic': dict(
         key='bonnell-classic', slug='bonnell-classic', line='BON', sort=7,
-        short='Molle Bonnell.', description='', composition='Molle Bonnell.', highlights=[],
-        notes='Sospeso: nessun prezzo nel listino del 15/11/2026.'),
+        short='Molle Bonnell.', description='', composition='Molle Bonnell.', highlights=[], status='archived',
+        notes='Fuori gamma dal 16/11/2026: non compare nell\'elenco dei prodotti indicato dall\'azienda. '
+              'Archiviato, non compare sul sito. Si ripubblica da Admin se rientra in gamma.'),
 }
 BASES = {
     'Vesuvio Rete Flex': dict(key='rete-flex', line='FLEX', sort=10,
@@ -192,16 +223,25 @@ def add_variants(p, key, line, rows, kind):
                                  availability='made_to_order' if cents else 'unavailable', active=True,
                                  sort=(h or 0) * 100 + j))
 
+def euro(d):
+    """Prezzi indicati dall'azienda in euro -> centesimi. Nessun valore dedotto: le misure
+    non elencate restano vuote, quindi non acquistabili."""
+    return {z: (int(round(d[z] * 100)) if d.get(z) else None) for z in SIZES}
+
 for name, spec in MATTRESSES.items():
     rows = [r for r in MATT if r['name'] == name]
     if not rows and 'heights' in spec:
         # modello non presente nel listino Excel: misure standard, prezzi solo se forniti
-        rows = [dict(name=name, tipologia='Memory Foam 2 strati', height=h,
-                     prices={z: (spec['prices'].get(z) if spec['prices'] else None) for z in SIZES})
+        rows = [dict(name=name, tipologia='Memory Foam 2 strati', height=h, prices=euro(spec['prices']))
                 for h in spec['heights']]
+    # prezzi aggiornati dall'azienda dopo il listino: sostituiscono la riga dell'altezza indicata
+    for h, table in spec.get('override', {}).items():
+        hit = [r for r in rows if r['height'] == h]
+        assert hit, (name, h)
+        hit[0]['prices'] = euro(table)
     priced = any(v for r in rows for v in r['prices'].values())
-    p = add_product(spec['key'], slug=spec['slug'], category_id=cat['materasso'], name=name,
-                    technical_name=rows[0]['tipologia'] if rows else '', short=spec['short'], description=spec['description'],
+    p = add_product(spec['key'], slug=spec['slug'], category_id=cat['materasso'], name=spec.get('display', name),
+                    technical_name=spec.get('technical') or (rows[0]['tipologia'] if rows else ''), short=spec['short'], description=spec['description'],
                     composition=spec['composition'], highlights=spec['highlights'], claims=spec.get('claims', []),
                     removable_cover=spec.get('removable_cover'), reversible=spec.get('summer_winter'),
                     summer_winter=spec.get('summer_winter'), hybrid=spec.get('hybrid', False),
@@ -249,18 +289,21 @@ pid = lambda key: uid('prod', key)
 # ------------------------------------------------------------------ media
 # 1) immagini approvate del 15/11/2026 (MEDIA_MANIFEST.csv)
 IMG = json.load(open(os.path.join(ROOT, 'preview/img/prodotti/manifest.json')))
-FOLDER_KEY = {'vesuvio-essential-foam': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-2600-elite': 'pocket-2400-elite'}
+FOLDER_KEY = {'vesuvio-eco': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-3000-elite': 'pocket-2400-elite'}
+# Le cartelle sono state rinominate con i prodotti il 16/11/2026, ma l'ID della foto si
+# continua a calcolare dal nome originale: altrimenti il database vedrebbe foto nuove.
+ID_FOLDER = {'vesuvio-eco': 'vesuvio-essential-foam', 'vesuvio-pocket-3000-elite': 'vesuvio-pocket-2600-elite'}
 SLOT = {'hero': 'hero', 'exploded': 'exploded', 'detail': 'fabric'}
 ALT = {
-    ('essential-foam', 'hero'): 'Vesuvio Essential Foam, materasso con rivestimento bianco trapuntato',
-    ('essential-foam', 'exploded'): 'Vista esplosa del Vesuvio Essential Foam: rivestimento e anima in poliuretano espanso',
-    ('essential-foam', 'detail'): 'Dettaglio del rivestimento trapuntato del Vesuvio Essential Foam',
+    ('essential-foam', 'hero'): 'Vesuvio Eco, materasso con rivestimento bianco trapuntato',
+    ('essential-foam', 'exploded'): 'Vista esplosa del Vesuvio Eco: rivestimento e anima in poliuretano espanso',
+    ('essential-foam', 'detail'): 'Dettaglio del rivestimento trapuntato del Vesuvio Eco',
     ('memory-duo', 'hero'): 'Vesuvio Memory Duo con piano trapuntato bianco e fascia laterale grigio scuro',
     ('memory-duo', 'exploded'): 'Vista esplosa del Vesuvio Memory Duo: rivestimento, strato in Memory Foam e base in poliuretano',
     ('memory-duo', 'detail'): 'Dettaglio del tessuto e della fascia grigio scuro del Vesuvio Memory Duo',
-    ('pocket-2400-elite', 'hero'): 'Vesuvio Pocket 2600 Elite con piano trapuntato e fascia laterale marrone chiaro',
-    ('pocket-2400-elite', 'exploded'): 'Vista esplosa del Vesuvio Pocket 2600 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate',
-    ('pocket-2400-elite', 'detail'): 'Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 2600 Elite',
+    ('pocket-2400-elite', 'hero'): 'Vesuvio Pocket 3000 Elite con piano trapuntato e fascia laterale marrone chiaro',
+    ('pocket-2400-elite', 'exploded'): 'Vista esplosa del Vesuvio Pocket 3000 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate',
+    ('pocket-2400-elite', 'detail'): 'Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 3000 Elite',
 }
 ORDER = {'hero': 1, 'exploded': 2, 'detail': 3}
 for it in IMG:
@@ -268,7 +311,7 @@ for it in IMG:
     (big, bw, bh), (small, sw, sh) = it['files'][0], it['files'][1]
     base = f"img/prodotti/{it['prodotto']}/"
     white_bg = it['ruolo'] != 'detail'
-    media.append(dict(id=uid('media', 'catalogo-2026-11-15', it['prodotto'], it['ruolo']), product_id=pid(key),
+    media.append(dict(id=uid('media', 'catalogo-2026-11-15', ID_FOLDER.get(it['prodotto'], it['prodotto']), it['ruolo']), product_id=pid(key),
                       slot=SLOT[it['ruolo']], src=base + big, srcset=f'{base}{small} {sw}w, {base}{big} {bw}w', width=bw, height=bh,
                       alt=ALT[(key, it['ruolo'])], caption='', illustrative=it['ruolo'] == 'exploded',
                       fit='contain' if white_bg else 'cover', bg='white' if white_bg else None,
@@ -312,7 +355,13 @@ for i, (key, name, slot, cover, published, alt) in enumerate(GEN):
                       fit='cover', is_cover=cover, published=published, sort=10 + i, focal_x=50, focal_y=50, **foto(name)))
 
 # ------------------------------------------------------------------ redirect e impostazioni
-redirects = [dict(old_slug='pocket-2400-elite', new_slug='pocket-2600-elite')]
+# Indirizzi vecchi -> nuovi. Si tengono tutti: un link già pubblicato deve continuare a funzionare.
+redirects = [
+    dict(old_slug='pocket-2400-elite', new_slug='pocket-3000-elite'),
+    dict(old_slug='pocket-2600-elite', new_slug='pocket-3000-elite'),
+    dict(old_slug='essential-foam', new_slug='eco'),
+    dict(old_slug='memory-foam-3-strati', new_slug='memory-trio'),
+]
 settings = dict(whatsapp_number='+39 366 121 8346', public_phone='+39 366 121 8346', contact_email='fdimaterassi@gmail.com',
                 payment_methods=['contrassegno', 'bonifico'], shipping_note='gratuita in tutta Italia, isole comprese', show_claims=True,
                 payments=dict(stripe=False, paypal=False, klarna=False))
@@ -341,7 +390,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-16a', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-16b', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 # Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
 # Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.

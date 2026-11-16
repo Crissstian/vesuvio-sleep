@@ -17,6 +17,20 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { buildSitemap } from '../preview/js/core/seo.js';
+import { SEED } from '../preview/js/seed.public.js';
+
+/** Un indirizzo vecchio può puntare a uno che è cambiato a sua volta: si risolve la catena. */
+const REDIRECTS = SEED.redirects.map(({ old_slug, new_slug }) => {
+  const seen = new Set([old_slug]);
+  let to = new_slug;
+  for (;;) {
+    const next = SEED.redirects.find((r) => r.old_slug === to);
+    if (!next || seen.has(to)) break;
+    seen.add(to);
+    to = next.new_slug;
+  }
+  return { old_slug, new_slug: to };
+});
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SRC = path.join(ROOT, 'preview');
@@ -138,8 +152,11 @@ fs.writeFileSync(
   path.join(OUT, '_redirects'),
   [
     '# Netlify / Cloudflare Pages',
-    '/materassi/pocket-2400-elite/  /materassi/pocket-2600-elite/  301',
-    '/materassi/pocket-2400-elite   /materassi/pocket-2600-elite/  301',
+    '# Indirizzi vecchi dei prodotti: presi dal catalogo (seed.redirects), non scritti a mano.',
+    ...REDIRECTS.flatMap(({ old_slug, new_slug }) => [
+      `/materassi/${old_slug}/  /materassi/${new_slug}/  301`,
+      `/materassi/${old_slug}   /materassi/${new_slug}/  301`,
+    ]),
     '/prodotto/*                    /materassi/                    301',
     '/admin/*                       /admin/index.html              200',
     '/cerca/*                       /cerca/index.html              200',

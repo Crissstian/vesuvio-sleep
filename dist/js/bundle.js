@@ -45,7 +45,7 @@ function baseSku(line, size) {
 function pillowSku(line) {
     return `VS-GUA-${line}`;
 }
-/** Proposta per i topper: non definita nel Master Spec, da confermare. */
+/** Codice articolo dei topper. */
 function topperSku(line, size) {
     return `VS-TOP-${line}-${size.replace('x', '')}`;
 }
@@ -947,10 +947,12 @@ const PAYMENT_METHODS = [
 const LEGAL_UPDATED = '15 novembre 2026';
 
 const L = {
-  essential: '/materassi/essential-foam/',
+  eco: '/materassi/eco/',
   duo: '/materassi/memory-duo/',
-  pocket: '/materassi/pocket-2600-elite/',
-  mf3: '/materassi/memory-foam-3-strati/',
+  duoClassic: '/materassi/memory-duo-classic/',
+  trio: '/materassi/memory-trio/',
+  p1600: '/materassi/pocket-1600/',
+  pocket: '/materassi/pocket-3000-elite/',
   flex: '/reti/rete-flex/',
   strong: '/reti/rete-strong/',
   topper: '/topper/topper-memory-cloud-5/',
@@ -999,7 +1001,7 @@ const FAQ = [
   },
   {
     q: 'Il rivestimento è sfoderabile?',
-    a: () => `Dipende dal modello: Memory Duo, Pocket 2600 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Essential Foam no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento.`,
+    a: () => `Dipende dal modello: Memory Duo, Pocket 3000 Elite e il Topper Memory Cloud 5 hanno il rivestimento sfoderabile; l'Eco e il Memory Duo Classic no. Lo trovi indicato in ogni scheda prodotto, alla voce Rivestimento.`,
   },
   {
     q: 'Posso restituire il materasso?',
@@ -1027,8 +1029,8 @@ const CATEGORY_SEO = {
     metaTitle: 'Materassi Memory Foam, a molle e in poliuretano',
     description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
     html: () => `<h2>Come scegliere tra i nostri materassi</h2>
-      <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
-      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda al ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}: 2600 molle insacchettate che lavorano una per una, con sopra uno strato di Memory Foam.</p>
+      <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.eco, 'Vesuvio Eco')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duoClassic, 'Vesuvio Memory Duo Classic')} introduce il Memory Foam con il rivestimento fisso; il ${a(L.duo, 'Vesuvio Memory Duo')} è lo stesso materasso sfoderabile e reversibile, con un lato invernale e uno estivo. Il ${a(L.trio, 'Vesuvio Memory Trio')} porta gli strati di Memory a tre, per 27 cm di altezza.</p>
+      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda alle molle insacchettate: il ${a(L.p1600, 'Vesuvio Pocket 1600')} è l'ingresso nella gamma, il ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')} ne ha 3000 e aggiunge uno strato di Memory Foam.</p>
       <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
   },
   rete: {
@@ -1119,7 +1121,7 @@ const PAGES = {
         <ul class="ticks"><li>consegna al piano gratuita</li><li>ritiro del vecchio materasso</li><li>montaggio delle reti</li></ul>
         <p>Come nel resto d'Italia, la spedizione è gratuita. Paghi alla consegna in contrassegno oppure con bonifico.</p>`)}
       ${sec('showroom-na', 'Provali in showroom', `<p>Lo showroom è nella fabbrica, in Via Raffaele Salierno 38 a Casoria: aperto dal lunedì al venerdì 9:00–18:00 e il sabato 10:00–14:00. Puoi provare i materassi e scegliere con chi li produce. ${a(P.showroom, 'Come arrivare')}.</p>`)}
-      ${sec('gamma-na', 'I materassi più richiesti', `<p>Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano, in tre altezze; il ${a(L.duo, 'Vesuvio Memory Duo')}, reversibile estate-inverno; il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} con 2600 molle insacchettate e Memory Foam. Completa il letto con una ${a('/reti/', 'rete a doghe')}: a Napoli la montiamo noi.</p>`)}`,
+      ${sec('gamma-na', 'I materassi più richiesti', `<p>Il ${a(L.eco, 'Vesuvio Eco')} in poliuretano, in tre altezze; il ${a(L.duo, 'Vesuvio Memory Duo')}, reversibile estate-inverno; il ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')} con 3000 molle insacchettate e Memory Foam. Completa il letto con una ${a('/reti/', 'rete a doghe')}: a Napoli la montiamo noi.</p>`)}`,
   },
 
   [P.shipping]: {
@@ -1311,16 +1313,16 @@ const PAGES = {
     type: 'article',
     body: () => `${toc([['poliuretano', 'Poliuretano espanso'], ['memory', 'Memory Foam'], ['molle', 'Molle insacchettate'], ['confronto', 'In sintesi']])}
       ${sec('poliuretano', 'Poliuretano espanso', `<p>È una schiuma che, ad alta densità, offre un sostegno uniforme e stabile. Non si modella sul corpo come il Memory: risponde in modo più diretto. È la scelta più essenziale e conveniente, adatta a chi cerca un letto solido e a chi preferisce non "affondare".</p>
-        <p>Il nostro modello: ${a(L.essential, 'Vesuvio Essential Foam')}, anima monoblocco in poliuretano ad alta densità, in tre altezze (H20, H25, H30).</p>`)}
+        <p>Il nostro modello: ${a(L.eco, 'Vesuvio Eco')}, anima monoblocco in poliuretano ad alta densità, in tre altezze (H20, H25, H30).</p>`)}
       ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
-        <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
+        <p>I nostri modelli: ${a(L.duoClassic, 'Vesuvio Memory Duo Classic')}, Memory su base in poliuretano con rivestimento fisso; ${a(L.duo, 'Vesuvio Memory Duo')}, lo stesso sfoderabile e reversibile estate-inverno; ${a(L.trio, 'Vesuvio Memory Trio')}, tre strati di Memory per 27 cm.</p>`)}
       ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
-        <p>Il nostro modello: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con uno strato di comfort in Memory Foam.</p>`)}
+        <p>I nostri modelli: ${a(L.p1600, 'Vesuvio Pocket 1600')}, 1600 molle insacchettate alto 25 cm; ${a(L.pocket, 'Vesuvio Pocket 3000 Elite')}, 3000 molle con uno strato di comfort in Memory Foam.</p>`)}
       ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
         <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
         <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
         <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
-        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.eco, 'Eco')}</td><td>${a(L.duoClassic, 'Memory Duo Classic')}, ${a(L.duo, 'Memory Duo')}, ${a(L.trio, 'Memory Trio')}</td><td>${a(L.p1600, 'Pocket 1600')}, ${a(L.pocket, 'Pocket 3000 Elite')}</td></tr>
         </tbody></table></div>
         <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
   },
@@ -1369,8 +1371,8 @@ __def("seed.js", function (__exp) {
 // Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,
 // senza bozze, archiviati e note interne. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-16a",
- "catalog_version": "catalogo-2026-11-16",
+ "version": "seed-2026-11-16b",
+ "catalog_version": "catalogo-2026-11-16b",
  "authoritative": true,
  "categories": [
   {
@@ -1413,7 +1415,7 @@ const SEED = {
  "products": [
   {
    "id": "4e3ab029-d797-558f-8017-b4b2566294f0",
-   "slug": "essential-foam",
+   "slug": "eco",
    "technical_name": "Poliuretano espanso",
    "short": "Poliuretano espanso ad alta densità: sostegno uniforme e stabile, in tre altezze.",
    "description": "L'anima monoblocco in poliuretano ad alta densità e alta portanza dà un sostegno uniforme, stabile e duraturo. È il modello più essenziale della gamma, disponibile in H20, H25 e H30. Il rivestimento non è sfoderabile.",
@@ -1444,14 +1446,14 @@ const SEED = {
     "independent_springs": false
    },
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Essential Foam"
+   "name": "Vesuvio Eco"
   },
   {
    "id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
    "slug": "memory-duo",
    "technical_name": "Memory Foam 2 strati",
    "short": "Memory Foam su base in poliuretano ad alta densità. Sfoderabile e reversibile.",
-   "description": "Uno strato di comfort in Memory Foam poggia su una base portante in poliuretano ad alta densità. È più accogliente dell'Essential ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
+   "description": "Uno strato di comfort in Memory Foam poggia su una base portante in poliuretano ad alta densità. È più accogliente dell'Eco ed è reversibile: un lato invernale in Memory e un lato più fresco per l'estate. Il rivestimento è sfoderabile.",
    "composition": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
    "highlights": [
     "Memory Foam 2 strati",
@@ -1470,7 +1472,7 @@ const SEED = {
    "firmness_display": "Medio-rigido e accogliente",
    "line_code": "MD",
    "status": "published",
-   "sort": 2,
+   "sort": 3,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "memory",
@@ -1482,14 +1484,44 @@ const SEED = {
    "name": "Vesuvio Memory Duo"
   },
   {
-   "id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "slug": "pocket-2600-elite",
-   "technical_name": "2600 molle insacchettate + Memory",
-   "short": "2600 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.",
-   "description": "Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
-   "composition": "2600 molle insacchettate, Memory Foam ed elementi in poliuretano ad alta densità.",
+   "id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "slug": "memory-duo-classic",
+   "technical_name": "Memory Foam 2 strati",
+   "short": "Lo stesso Memory Duo, con il rivestimento fisso.",
+   "description": "Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.",
+   "composition": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
    "highlights": [
-    "2600 molle insacchettate",
+    "Memory Foam 2 strati",
+    "Rivestimento fisso"
+   ],
+   "claims": [],
+   "removable_cover": false,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MDC",
+   "status": "published",
+   "sort": 2,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "memory",
+    "welcome": 2,
+    "ventilation": false,
+    "independent_springs": false
+   },
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Memory Duo Classic"
+  },
+  {
+   "id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "slug": "pocket-3000-elite",
+   "technical_name": "3000 molle insacchettate + Memory",
+   "short": "3000 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.",
+   "description": "Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
+   "composition": "3000 molle insacchettate, Memory Foam ed elementi in poliuretano ad alta densità.",
+   "highlights": [
+    "3000 molle insacchettate",
     "Strato di comfort in Memory",
     "Sfoderabile"
    ],
@@ -1503,9 +1535,9 @@ const SEED = {
    "summer_winter": false,
    "hybrid": true,
    "firmness_display": "Sostenuto / medio-rigido",
-   "line_code": "P2600",
+   "line_code": "P3000",
    "status": "published",
-   "sort": 4,
+   "sort": 6,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "molle",
@@ -1514,14 +1546,44 @@ const SEED = {
     "independent_springs": true
    },
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Pocket 2600 Elite"
+   "name": "Vesuvio Pocket 3000 Elite"
+  },
+  {
+   "id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "slug": "pocket-1600",
+   "technical_name": "1600 molle insacchettate",
+   "short": "1600 molle insacchettate, alto 25 cm: l'ingresso nella gamma a molle.",
+   "description": "Materasso a molle indipendenti insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria. È il modello a molle più essenziale della gamma: stesso principio del Pocket 3000 Elite, con un numero di molle inferiore.",
+   "composition": "Molle insacchettate.",
+   "highlights": [
+    "1600 molle insacchettate",
+    "Altezza 25 cm"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "P1600",
+   "status": "published",
+   "sort": 5,
+   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
+   "match": {
+    "tech": "molle",
+    "welcome": 1,
+    "ventilation": false,
+    "independent_springs": true
+   },
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Pocket 1600"
   },
   {
    "id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
-   "slug": "memory-foam-3-strati",
+   "slug": "memory-trio",
    "technical_name": "Memory Foam 3 strati",
-   "short": "Materasso in Memory Foam a 3 strati, alto 27 cm.",
-   "description": "Materasso in Memory Foam a 3 strati, alto 27 cm, prodotto nella nostra fabbrica di Casoria.",
+   "short": "Tre strati di Memory Foam, alto 27 cm: il più accogliente della gamma in schiuma.",
+   "description": "Tre strati di Memory Foam per un totale di 27 cm di altezza, prodotto nella nostra fabbrica di Casoria. Dove il Memory Duo ha un solo strato di comfort sopra la base, qui gli strati sono tre: l'accoglienza è più progressiva e il materasso è più alto.",
    "composition": "Memory Foam, 3 strati.",
    "highlights": [
     "Memory Foam a 3 strati",
@@ -1535,7 +1597,7 @@ const SEED = {
    "firmness_display": null,
    "line_code": "MF3",
    "status": "published",
-   "sort": 5,
+   "sort": 4,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "memory",
@@ -1544,7 +1606,7 @@ const SEED = {
     "independent_springs": false
    },
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Memory Foam 3 strati"
+   "name": "Vesuvio Memory Trio"
   },
   {
    "id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
@@ -2341,12 +2403,155 @@ const SEED = {
    "sort": 3012
   },
   {
-   "id": "1635c6ff-6e59-55aa-9755-efdef865c4af",
-   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-80190",
+   "id": "d6530707-1d4f-5cb7-8dbd-d0446136e0ff",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80190",
    "size": "80x190",
    "height_cm": 25,
+   "price_cents": 11000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "b08afda4-ac33-5362-83f8-0630cdf6ed61",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80200",
+   "size": "80x200",
+   "height_cm": 25,
+   "price_cents": 12000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "c13170ca-60e3-5b6b-bd6d-16a924e3885b",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90190",
+   "size": "90x190",
+   "height_cm": 25,
+   "price_cents": 14000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "9e238e4f-d889-5e6d-9bf5-56a8939da0fd",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 15000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "cf380a68-c459-5570-a1d2-be8a60d1959d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
    "price_cents": 20000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "e3780998-635d-58ca-b71d-82ab1e837282",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120200",
+   "size": "120x200",
+   "height_cm": 25,
+   "price_cents": 21000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "5bbfb28f-3678-5afd-ba9a-1eb94e7672f6",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 23000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "c6e5766e-0aac-5a83-858e-10ecc213d5ed",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140200",
+   "size": "140x200",
+   "height_cm": 25,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "8950dbb4-7f1e-5c3b-b091-3ba9b577a2eb",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 26000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2508
+  },
+  {
+   "id": "e0d86319-fe5f-54cb-ba8b-a08bec346668",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160200",
+   "size": "160x200",
+   "height_cm": 25,
+   "price_cents": 28000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2509
+  },
+  {
+   "id": "dcc35ffb-a7c2-5d9b-96af-8520cf48ea0d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 29000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2510
+  },
+  {
+   "id": "346212dd-5ff4-540f-915c-3277e56dfa3e",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 31000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2511
+  },
+  {
+   "id": "5f16949d-30ec-539e-9ce9-f19eaa52bcaa",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 33000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2512
+  },
+  {
+   "id": "1635c6ff-6e59-55aa-9755-efdef865c4af",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "sku": "VS-P3000-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 23000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2500
@@ -2354,10 +2559,10 @@ const SEED = {
   {
    "id": "b3c69c9d-3050-512b-918a-cf112126038a",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-80200",
+   "sku": "VS-P3000-H25-80200",
    "size": "80x200",
    "height_cm": 25,
-   "price_cents": 22000,
+   "price_cents": 25000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2501
@@ -2365,10 +2570,10 @@ const SEED = {
   {
    "id": "493f6329-4356-54b6-aee2-f3cfa42af332",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-90190",
+   "sku": "VS-P3000-H25-90190",
    "size": "90x190",
    "height_cm": 25,
-   "price_cents": 25000,
+   "price_cents": 28000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2502
@@ -2376,10 +2581,10 @@ const SEED = {
   {
    "id": "ebeae128-c635-5af6-b718-bf9943d6dd09",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-90200",
+   "sku": "VS-P3000-H25-90200",
    "size": "90x200",
    "height_cm": 25,
-   "price_cents": 26000,
+   "price_cents": 29000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2503
@@ -2387,10 +2592,10 @@ const SEED = {
   {
    "id": "365033c4-e02e-5a78-aaac-889c1fa15fab",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-120190",
+   "sku": "VS-P3000-H25-120190",
    "size": "120x190",
    "height_cm": 25,
-   "price_cents": 35000,
+   "price_cents": 39000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2504
@@ -2398,10 +2603,10 @@ const SEED = {
   {
    "id": "99870793-5975-5943-bbc2-1c9a2e838394",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-120200",
+   "sku": "VS-P3000-H25-120200",
    "size": "120x200",
    "height_cm": 25,
-   "price_cents": 36000,
+   "price_cents": 41000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2505
@@ -2409,10 +2614,10 @@ const SEED = {
   {
    "id": "be76be28-9784-586a-8cf8-88b8d84bd4c3",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-140190",
+   "sku": "VS-P3000-H25-140190",
    "size": "140x190",
    "height_cm": 25,
-   "price_cents": 42000,
+   "price_cents": 47000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2506
@@ -2420,10 +2625,10 @@ const SEED = {
   {
    "id": "b74c2958-3113-5303-9bd5-ff2850b3e84d",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-140200",
+   "sku": "VS-P3000-H25-140200",
    "size": "140x200",
    "height_cm": 25,
-   "price_cents": 43000,
+   "price_cents": 48000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2507
@@ -2431,10 +2636,10 @@ const SEED = {
   {
    "id": "b94d3907-7679-5648-8a7d-ae1767aa2f38",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-160190",
+   "sku": "VS-P3000-H25-160190",
    "size": "160x190",
    "height_cm": 25,
-   "price_cents": 55000,
+   "price_cents": 62000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2508
@@ -2442,10 +2647,10 @@ const SEED = {
   {
    "id": "484140db-74e3-5357-af10-f03025525941",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-160200",
+   "sku": "VS-P3000-H25-160200",
    "size": "160x200",
    "height_cm": 25,
-   "price_cents": 56000,
+   "price_cents": 63000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2509
@@ -2453,10 +2658,10 @@ const SEED = {
   {
    "id": "9ca88932-2563-53df-bc6d-8a00d1c8f239",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-165190",
+   "sku": "VS-P3000-H25-165190",
    "size": "165x190",
    "height_cm": 25,
-   "price_cents": 56000,
+   "price_cents": 63000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2510
@@ -2464,10 +2669,10 @@ const SEED = {
   {
    "id": "d3c4d2fd-319e-5a1f-be14-0898fe6bbf20",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-170200",
+   "sku": "VS-P3000-H25-170200",
    "size": "170x200",
    "height_cm": 25,
-   "price_cents": 60000,
+   "price_cents": 68000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2511
@@ -2475,10 +2680,10 @@ const SEED = {
   {
    "id": "d9c74290-5732-5513-85a4-a1f7a09dd6a2",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H25-180200",
+   "sku": "VS-P3000-H25-180200",
    "size": "180x200",
    "height_cm": 25,
-   "price_cents": 65000,
+   "price_cents": 73000,
    "availability": "made_to_order",
    "active": true,
    "sort": 2512
@@ -2486,7 +2691,7 @@ const SEED = {
   {
    "id": "7286e0b5-2edc-5ae0-bcf7-8be1b5d53632",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-80190",
+   "sku": "VS-P3000-H30-80190",
    "size": "80x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2497,7 +2702,7 @@ const SEED = {
   {
    "id": "51376a20-0d3d-55ce-a0b0-7527e492100e",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-80200",
+   "sku": "VS-P3000-H30-80200",
    "size": "80x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2508,7 +2713,7 @@ const SEED = {
   {
    "id": "67bc4c5e-5427-5a4f-8596-c3b7e2e6210d",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-90190",
+   "sku": "VS-P3000-H30-90190",
    "size": "90x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2519,7 +2724,7 @@ const SEED = {
   {
    "id": "a52c256d-f083-5609-854c-f9984f69d22b",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-90200",
+   "sku": "VS-P3000-H30-90200",
    "size": "90x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2530,7 +2735,7 @@ const SEED = {
   {
    "id": "d437f8d7-77d6-5276-ad19-fc9c5ac00321",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-120190",
+   "sku": "VS-P3000-H30-120190",
    "size": "120x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2541,7 +2746,7 @@ const SEED = {
   {
    "id": "6d3fefbd-16b0-5032-b34e-bf94f9154700",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-120200",
+   "sku": "VS-P3000-H30-120200",
    "size": "120x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2552,7 +2757,7 @@ const SEED = {
   {
    "id": "a658f207-4fe6-5de5-b70d-fa66cf816adc",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-140190",
+   "sku": "VS-P3000-H30-140190",
    "size": "140x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2563,7 +2768,7 @@ const SEED = {
   {
    "id": "c756ba68-5e6a-59e8-94d2-003418853c6f",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-140200",
+   "sku": "VS-P3000-H30-140200",
    "size": "140x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2574,7 +2779,7 @@ const SEED = {
   {
    "id": "ea8206d8-905a-50fc-8fbe-22195cda7704",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-160190",
+   "sku": "VS-P3000-H30-160190",
    "size": "160x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2585,7 +2790,7 @@ const SEED = {
   {
    "id": "f40e62b8-d446-550d-9914-2361947fed6d",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-160200",
+   "sku": "VS-P3000-H30-160200",
    "size": "160x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2596,7 +2801,7 @@ const SEED = {
   {
    "id": "8ec3a81a-05e5-573f-8d53-eafa93158568",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-165190",
+   "sku": "VS-P3000-H30-165190",
    "size": "165x190",
    "height_cm": 30,
    "price_cents": null,
@@ -2607,7 +2812,7 @@ const SEED = {
   {
    "id": "118000ae-9fe7-57b7-8ba3-769a02acd488",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-170200",
+   "sku": "VS-P3000-H30-170200",
    "size": "170x200",
    "height_cm": 30,
    "price_cents": null,
@@ -2618,7 +2823,293 @@ const SEED = {
   {
    "id": "e35e9379-4a29-57af-aaa6-b0d794d54de3",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "sku": "VS-P2600-H30-180200",
+   "sku": "VS-P3000-H30-180200",
+   "size": "180x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3012
+  },
+  {
+   "id": "a5b3abfc-9968-57d2-9d7d-6999c941c581",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": 22000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "fa586bbf-6536-5250-828a-ce413197d6a9",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-80200",
+   "size": "80x200",
+   "height_cm": 25,
+   "price_cents": 24000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "06d92d1f-0a6e-5e4a-80ee-990f4e93ef98",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-90190",
+   "size": "90x190",
+   "height_cm": 25,
+   "price_cents": 27000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "691b9046-9401-591b-bbd3-012dcd30f233",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": 28000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "1b16ed89-2f4e-58d1-a571-bae714410524",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": 39000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "29b846f4-d529-5bf0-ad74-9b0ea97af288",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-120200",
+   "size": "120x200",
+   "height_cm": 25,
+   "price_cents": 40000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "9a59d6f3-1fdd-555a-b0a7-6c2bc200e709",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": 42000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "e2ee03b9-da11-55d6-a730-b795d6959645",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-140200",
+   "size": "140x200",
+   "height_cm": 25,
+   "price_cents": 44000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "ab57b3ce-1cc5-58dc-a2e1-612614d9cebf",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": 50000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2508
+  },
+  {
+   "id": "736ec404-b9a6-5896-a08d-528c0a9739c0",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-160200",
+   "size": "160x200",
+   "height_cm": 25,
+   "price_cents": 51000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2509
+  },
+  {
+   "id": "d0756e61-1bf9-5c84-a2f5-e528299f8c97",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": 51000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2510
+  },
+  {
+   "id": "ad3ae3ea-a037-5782-9a5e-e3eb35cbd6d8",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": 53000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2511
+  },
+  {
+   "id": "6f9ef276-6be3-5c4d-a328-c6e3d6ed6c9d",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": 58000,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 2512
+  },
+  {
+   "id": "7ba990fc-3a86-53bc-82d4-5b22b9b7f149",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-80190",
+   "size": "80x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3000
+  },
+  {
+   "id": "86652a03-f4a9-5b0f-948a-84b75d748384",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-80200",
+   "size": "80x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3001
+  },
+  {
+   "id": "15ea634e-ef9e-5a43-9cbf-c92ba1c4c619",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-90190",
+   "size": "90x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3002
+  },
+  {
+   "id": "73b1d071-9059-5610-9a9e-a21356e21a6c",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-90200",
+   "size": "90x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3003
+  },
+  {
+   "id": "b5642e1b-8349-5e90-9420-19c1ff56a7f7",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-120190",
+   "size": "120x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3004
+  },
+  {
+   "id": "657fbb0a-3689-59ff-9e16-5abc31ec31cd",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-120200",
+   "size": "120x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3005
+  },
+  {
+   "id": "ba5c1c10-6086-5ea8-8d17-32b7526ed41a",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-140190",
+   "size": "140x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3006
+  },
+  {
+   "id": "3a9f558b-a10e-5ef2-8827-86595005ea78",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-140200",
+   "size": "140x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3007
+  },
+  {
+   "id": "18d25f34-e226-5de6-b314-fdb0b451d639",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-160190",
+   "size": "160x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3008
+  },
+  {
+   "id": "918a2681-c27f-52fd-a721-5637a9774c6c",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-160200",
+   "size": "160x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3009
+  },
+  {
+   "id": "c1a4834a-3333-5953-89d6-a0f787480288",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-165190",
+   "size": "165x190",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3010
+  },
+  {
+   "id": "cf81b548-7c68-5a7e-8b33-f0d85e16f26b",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-170200",
+   "size": "170x200",
+   "height_cm": 30,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 3011
+  },
+  {
+   "id": "f35faa70-ca85-54b1-a160-c35a76ea2033",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "sku": "VS-P1600-H30-180200",
    "size": "180x200",
    "height_cm": 30,
    "price_cents": null,
@@ -3204,11 +3695,11 @@ const SEED = {
    "id": "e23ffbdd-373d-55d7-af87-74592337274e",
    "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
    "slot": "hero",
-   "src": "img/prodotti/vesuvio-essential-foam/hero-1200.webp",
-   "srcset": "img/prodotti/vesuvio-essential-foam/hero-720.webp 720w, img/prodotti/vesuvio-essential-foam/hero-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-eco/hero-1200.webp",
+   "srcset": "img/prodotti/vesuvio-eco/hero-720.webp 720w, img/prodotti/vesuvio-eco/hero-1200.webp 1200w",
    "width": 1200,
    "height": 900,
-   "alt": "Vesuvio Essential Foam, materasso con rivestimento bianco trapuntato",
+   "alt": "Vesuvio Eco, materasso con rivestimento bianco trapuntato",
    "caption": "",
    "illustrative": false,
    "fit": "contain",
@@ -3223,11 +3714,11 @@ const SEED = {
    "id": "4ceb66b1-9ea3-5f99-a743-e14d11b51554",
    "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
    "slot": "exploded",
-   "src": "img/prodotti/vesuvio-essential-foam/exploded-1200.webp",
-   "srcset": "img/prodotti/vesuvio-essential-foam/exploded-720.webp 720w, img/prodotti/vesuvio-essential-foam/exploded-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-eco/exploded-1200.webp",
+   "srcset": "img/prodotti/vesuvio-eco/exploded-720.webp 720w, img/prodotti/vesuvio-eco/exploded-1200.webp 1200w",
    "width": 1200,
    "height": 900,
-   "alt": "Vista esplosa del Vesuvio Essential Foam: rivestimento e anima in poliuretano espanso",
+   "alt": "Vista esplosa del Vesuvio Eco: rivestimento e anima in poliuretano espanso",
    "caption": "",
    "illustrative": true,
    "fit": "contain",
@@ -3242,11 +3733,11 @@ const SEED = {
    "id": "68244225-5eea-5a18-a485-217f14318ceb",
    "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
    "slot": "fabric",
-   "src": "img/prodotti/vesuvio-essential-foam/detail-1200.webp",
-   "srcset": "img/prodotti/vesuvio-essential-foam/detail-720.webp 720w, img/prodotti/vesuvio-essential-foam/detail-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-eco/detail-1200.webp",
+   "srcset": "img/prodotti/vesuvio-eco/detail-720.webp 720w, img/prodotti/vesuvio-eco/detail-1200.webp 1200w",
    "width": 1200,
    "height": 1200,
-   "alt": "Dettaglio del rivestimento trapuntato del Vesuvio Essential Foam",
+   "alt": "Dettaglio del rivestimento trapuntato del Vesuvio Eco",
    "caption": "",
    "illustrative": false,
    "fit": "cover",
@@ -3318,11 +3809,11 @@ const SEED = {
    "id": "5afbdd62-6147-5395-9b0e-9ecf6c6cc9f5",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slot": "hero",
-   "src": "img/prodotti/vesuvio-pocket-2600-elite/hero-1200.webp",
-   "srcset": "img/prodotti/vesuvio-pocket-2600-elite/hero-720.webp 720w, img/prodotti/vesuvio-pocket-2600-elite/hero-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-pocket-3000-elite/hero-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-3000-elite/hero-720.webp 720w, img/prodotti/vesuvio-pocket-3000-elite/hero-1200.webp 1200w",
    "width": 1200,
    "height": 900,
-   "alt": "Vesuvio Pocket 2600 Elite con piano trapuntato e fascia laterale marrone chiaro",
+   "alt": "Vesuvio Pocket 3000 Elite con piano trapuntato e fascia laterale marrone chiaro",
    "caption": "",
    "illustrative": false,
    "fit": "contain",
@@ -3337,11 +3828,11 @@ const SEED = {
    "id": "26da096a-0bfc-537e-bc5e-1957c88c3343",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slot": "exploded",
-   "src": "img/prodotti/vesuvio-pocket-2600-elite/exploded-1200.webp",
-   "srcset": "img/prodotti/vesuvio-pocket-2600-elite/exploded-720.webp 720w, img/prodotti/vesuvio-pocket-2600-elite/exploded-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-pocket-3000-elite/exploded-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-3000-elite/exploded-720.webp 720w, img/prodotti/vesuvio-pocket-3000-elite/exploded-1200.webp 1200w",
    "width": 1200,
    "height": 900,
-   "alt": "Vista esplosa del Vesuvio Pocket 2600 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate",
+   "alt": "Vista esplosa del Vesuvio Pocket 3000 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate",
    "caption": "",
    "illustrative": true,
    "fit": "contain",
@@ -3356,11 +3847,11 @@ const SEED = {
    "id": "8dc95f54-c316-5dcf-aa46-75da7b045d64",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slot": "fabric",
-   "src": "img/prodotti/vesuvio-pocket-2600-elite/detail-1200.webp",
-   "srcset": "img/prodotti/vesuvio-pocket-2600-elite/detail-720.webp 720w, img/prodotti/vesuvio-pocket-2600-elite/detail-1200.webp 1200w",
+   "src": "img/prodotti/vesuvio-pocket-3000-elite/detail-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-3000-elite/detail-720.webp 720w, img/prodotti/vesuvio-pocket-3000-elite/detail-1200.webp 1200w",
    "width": 1200,
    "height": 1200,
-   "alt": "Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 2600 Elite",
+   "alt": "Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 3000 Elite",
    "caption": "",
    "illustrative": false,
    "fit": "cover",
@@ -3447,7 +3938,19 @@ const SEED = {
  "redirects": [
   {
    "old_slug": "pocket-2400-elite",
-   "new_slug": "pocket-2600-elite"
+   "new_slug": "pocket-3000-elite"
+  },
+  {
+   "old_slug": "pocket-2600-elite",
+   "new_slug": "pocket-3000-elite"
+  },
+  {
+   "old_slug": "essential-foam",
+   "new_slug": "eco"
+  },
+  {
+   "old_slug": "memory-foam-3-strati",
+   "new_slug": "memory-trio"
   }
  ],
  "settings": {
@@ -4057,7 +4560,7 @@ const S = 0.5;
 
 // Strati dall'alto verso il basso
 const LAYERS = {
-  'essential-foam': [
+  eco: [
     { k: 'cover', label: 'Rivestimento', note: 'Antiacaro e ipoallergenico, non sfoderabile' },
     { k: 'foam', h: 16, label: 'Anima monoblocco', note: 'Poliuretano ad alta densità e alta portanza' },
   ],
@@ -4066,16 +4569,22 @@ const LAYERS = {
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort, ad alta densità' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
+  // Stessa costruzione del Memory Duo, dichiarata dall'azienda; cambia il rivestimento.
+  'memory-duo-classic': [
+    { k: 'cover', label: 'Rivestimento fisso', note: 'Non sfoderabile' },
+    { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort, ad alta densità' },
+    { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
+  ],
   'memory-air-3d': [
     { k: 'cover', zip: true, mesh: true, label: 'Fascia perimetrale 3D', note: 'Traspirante, per la ventilazione laterale' },
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
-  'pocket-2600-elite': [
+  'pocket-3000-elite': [
     { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
     { k: 'memory', label: 'Memory Foam', note: 'Lo strato di comfort' },
     { k: 'foam', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
-    { k: 'springs', label: 'Molle insacchettate', note: '2600 molle indipendenti' },
+    { k: 'springs', label: 'Molle insacchettate', note: '3000 molle indipendenti' },
     { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
   ],
 };
@@ -6785,7 +7294,12 @@ function viewProduct(slug, catSlug) {
 function galleryItems(idx, p, gallery) {
   const kind = idx.kind(p);
   const items = gallery.map((m) => ({ type: 'media', m }));
+  // Senza nemmeno una foto si mostra il disegno del modello: è dichiarato come illustrazione.
   if (!items.length) items.push({ type: 'illus' });
+  // Per ogni inquadratura prevista e non ancora fornita resta un segnaposto dichiarato:
+  // meglio uno spazio vuoto e onesto che una foto di un altro materasso.
+  const taken = new Set(gallery.map((m) => m.slot));
+  for (const def of PRODUCT_SLOTS[kind] ?? []) if (!taken.has(def.slot)) items.push({ type: 'ph', def });
   return items;
 }
 function galleryHtml(idx, p, gallery, i) {

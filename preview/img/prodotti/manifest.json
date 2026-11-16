@@ -1,6 +1,6 @@
 [
  {
-  "prodotto": "vesuvio-essential-foam",
+  "prodotto": "vesuvio-eco",
   "ruolo": "hero",
   "files": [
    [
@@ -16,7 +16,7 @@
   ]
  },
  {
-  "prodotto": "vesuvio-essential-foam",
+  "prodotto": "vesuvio-eco",
   "ruolo": "exploded",
   "files": [
    [
@@ -32,7 +32,7 @@
   ]
  },
  {
-  "prodotto": "vesuvio-essential-foam",
+  "prodotto": "vesuvio-eco",
   "ruolo": "detail",
   "files": [
    [
@@ -96,7 +96,7 @@
   ]
  },
  {
-  "prodotto": "vesuvio-pocket-2600-elite",
+  "prodotto": "vesuvio-pocket-3000-elite",
   "ruolo": "hero",
   "files": [
    [
@@ -112,7 +112,7 @@
   ]
  },
  {
-  "prodotto": "vesuvio-pocket-2600-elite",
+  "prodotto": "vesuvio-pocket-3000-elite",
   "ruolo": "exploded",
   "files": [
    [
@@ -128,7 +128,7 @@
   ]
  },
  {
-  "prodotto": "vesuvio-pocket-2600-elite",
+  "prodotto": "vesuvio-pocket-3000-elite",
   "ruolo": "detail",
   "files": [
    [

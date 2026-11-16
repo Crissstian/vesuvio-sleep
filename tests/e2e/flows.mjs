@@ -37,41 +37,42 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const navText = await p.locator('#drawer-links').innerText();
   ok(!/Topper|castello/i.test(navText), 'menu: categorie senza articoli acquistabili nascoste');
 
-  // catalogo al 16/11/2026: Pocket 1600 ritirato, 117 varianti acquistabili
+  // catalogo al 16/11/2026 (sera): gamma di 6 materassi, 143 varianti acquistabili
   const st = await p.evaluate(() => window.__vs.stats());
-  ok(st.total === 117 && st.byKind.materasso === 78 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 117 varianti acquistabili (78 materassi, 26 reti, 13 topper)', JSON.stringify(st));
-  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400|pocket-1600|duo-classic/.test(s)), 'non pubblici: senza prezzo, ritirati o in attesa di listino', st.products.join(','));
+  ok(st.total === 143 && st.byKind.materasso === 104 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 143 varianti acquistabili (104 materassi, 26 reti, 13 topper)', JSON.stringify(st));
+  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400|pocket-2600|essential-foam|memory-foam-3/.test(s)), 'non pubblici: fuori gamma, senza prezzo o con indirizzo superato', st.products.join(','));
   const prices = await p.evaluate(() => [
-    ['essential-foam', 20, '160x190', 200], ['essential-foam', 25, '160x190', 250], ['essential-foam', 30, '160x190', 270],
-    ['memory-duo', 25, '160x190', 280], ['pocket-2600-elite', 25, '160x190', 550],
-    ['memory-foam-3-strati', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
-    ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-2600-elite', 25, '180x200', 650], ['essential-foam', 20, '80x190', 90],
+    ['eco', 20, '160x190', 200], ['eco', 25, '160x190', 250], ['eco', 30, '160x190', 270],
+    ['memory-duo', 25, '160x190', 280], ['memory-duo-classic', 25, '160x190', 260], ['memory-duo-classic', 25, '180x200', 330],
+    ['pocket-3000-elite', 25, '160x190', 620], ['pocket-1600', 25, '160x190', 500], ['pocket-1600', 25, '80x190', 220],
+    ['memory-trio', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
+    ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-3000-elite', 25, '180x200', 730], ['eco', 20, '80x190', 90],
   ].map(([s, h, z, e]) => [s, h, z, e, window.__vs.price(s, h, z)]));
   const bad = prices.filter((r) => r[3] !== r[4]);
-  ok(!bad.length, 'listino: prezzi campione uguali all\'Excel', JSON.stringify(bad));
-  ok(await p.evaluate(() => [null, 30].every((h) => window.__vs.price('memory-duo', 30, '160x190') === null && window.__vs.price('pocket-2600-elite', 30, '160x190') === null)), 'listino: H30 senza prezzo non acquistabile');
+  ok(!bad.length, 'listino: prezzi campione uguali al listino confermato e agli aggiornamenti del 16/11', JSON.stringify(bad));
+  ok(await p.evaluate(() => [null, 30].every((h) => window.__vs.price('memory-duo', 30, '160x190') === null && window.__vs.price('pocket-3000-elite', 30, '160x190') === null)), 'listino: H30 senza prezzo non acquistabile');
 
   await go(p, 'materassi');
-  ok((await p.locator('.card').count()) === 4, 'catalogo materassi: 4 modelli acquistabili (Pocket 1600 ritirato)');
-  ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400|Pocket 1600/), 'catalogo: modelli senza prezzo o ritirati non pubblicati');
+  ok((await p.locator('.card').count()) === 6, 'catalogo materassi: 6 modelli acquistabili');
+  ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400|Essential Foam/), 'catalogo: modelli fuori gamma o con nome superato non pubblicati');
   await p.locator('[data-act="filter"][data-v="molle"]').click(); await p.waitForTimeout(400);
-  ok((await p.locator('.card').count()) === 1, 'filtro Molle: solo Pocket 2600 Elite');
+  ok((await p.locator('.card').count()) === 2, 'filtro Molle: Pocket 1600 e Pocket 3000 Elite');
   await p.locator('[data-act="filter"][data-v="30"]').click(); await p.waitForTimeout(400);
   ok((await p.locator('.empty').count()) === 1, 'filtri senza risultati: stato vuoto con azione');
   await p.locator('[data-act="reset-filters"]').click(); await p.waitForTimeout(400);
 
   await go(p, 'prodotto-pocket-2400-elite', 800);
-  ok(/#\/materassi\/pocket-2600-elite\/$/.test(p.url()) && /Pocket 2600 Elite/.test(await p.locator('h1').innerText()), 'vecchio indirizzo Pocket 2400 → Pocket 2600 Elite');
-  ok((await p.locator('#h30').count()) === 0 && (await p.locator('.seg--h').count()) === 0, 'Pocket 2600: altezza senza prezzo (H30) non mostrata');
+  ok(/#\/materassi\/pocket-3000-elite\/$/.test(p.url()) && /Pocket 3000 Elite/.test(await p.locator('h1').innerText()), 'vecchi indirizzi Pocket 2400 e 2600 → Pocket 3000 Elite');
+  ok((await p.locator('#h30').count()) === 0 && (await p.locator('.seg--h').count()) === 0, 'Pocket 3000: altezza senza prezzo (H30) non mostrata');
   ok((await p.locator('input[name="s"]').count()) === 13, 'scheda: 13 misure dal listino');
   ok(!/2400/.test(await p.locator('#app').innerText()), 'scheda Pocket: nessun riferimento a 2400');
-  ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.gallery__main img').evaluate((i) => i.src.includes('img/prodotti/vesuvio-pocket-2600-elite/hero'))), 'galleria Pocket 2600: hero, esploso e dettaglio dal manifest');
+  ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.gallery__main img').evaluate((i) => i.src.includes('img/prodotti/vesuvio-pocket-3000-elite/hero'))), 'galleria Pocket 3000: hero, esploso e dettaglio dal manifest');
   await p.locator('label[for="s180x200"]').click(); await p.waitForTimeout(200);
-  ok((await p.locator('.sku').innerText()).includes('VS-P2600-H25-180200'), 'scheda: SKU aggiornato alla misura');
-  ok((await p.locator('.buy__price').innerText()).includes('650,00'), 'scheda: prezzo 180×200 H25 = 650 €');
+  ok((await p.locator('.sku').innerText()).includes('VS-P3000-H25-180200'), 'scheda: SKU aggiornato alla misura');
+  ok((await p.locator('.buy__price').innerText()).includes('730,00'), 'scheda: prezzo 180×200 H25 = 730 €');
   const pairText = await p.locator('#pairings').innerText();
   ok(/Reti/.test(pairText) && /Topper/.test(pairText), 'abbinamenti materasso: reti e topper della stessa misura');
-  ok(!/Essential|Memory Duo|Memory Air|Guanciali|Pocket 1600/.test(pairText), 'abbinamenti: nessun altro materasso, nessun guanciale senza prezzo');
+  ok(!/Memory Duo|Memory Trio|Memory Air|Guanciali|Pocket 1600|Vesuvio Eco/.test(pairText), 'abbinamenti: nessun altro materasso, nessun guanciale senza prezzo');
   const pairNames = await p.locator('#pairings h4').allInnerTexts();
   ok(new Set(pairNames).size === pairNames.length, 'abbinamenti senza duplicati');
   ok((await p.locator('#pairings .meta').allInnerTexts()).filter((t) => t.includes('×')).every((t) => t.includes('180×200')), 'abbinamenti: reti solo nella misura scelta');
@@ -82,12 +83,13 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.keyboard.press('Escape');
 
   await go(p, 'materassi/pocket-1600', 600);
-  ok((await p.locator('#add-btn').count()) === 0 && /non c'è/i.test(await p.locator('#app').innerText()), 'Pocket 1600 ritirato: la sua pagina non esiste più');
+  ok((await p.locator('#add-btn').count()) === 1 && /500,00/.test(await p.locator('#app').innerText()), 'Pocket 1600 in catalogo: scheda acquistabile, 160×190 a 500 €');
+  ok((await p.locator('.thumb--ph, .ph').count()) > 0, 'Pocket 1600 senza foto: segnaposto dichiarati, nessuna foto di un altro modello');
 
   await go(p, 'prodotto-guanciale-memory-cervical');
   ok((await p.locator('.buy').count()) === 0 && (await p.locator('#add-btn').count()) === 0, 'guanciale senza prezzo: scheda non pubblica');
   await go(p, 'prodotto-memory-air-3d');
-  ok((await p.locator('#add-btn').count()) === 0, 'Memory Air 3D senza prezzo: scheda non pubblica');
+  ok((await p.locator('#add-btn').count()) === 0, 'Memory Air 3D fuori gamma: scheda non pubblica');
   await go(p, 'prodotto-topper-memory-cloud-5', 500);
   ok(/H5|5 cm/.test(await p.locator('#app').innerText()) && (await p.locator('input[name="s"]').count()) === 13, 'topper H5: 13 misure acquistabili');
   await go(p, 'prodotto-rete-flex');
@@ -109,13 +111,13 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/Pagamento: bonifico bancario/.test(decodeURIComponent(await p.locator('a[data-act="wa-open"]').getAttribute('href'))) && (await p.locator('input[name="pay"][value="bonifico"]').isChecked()), 'scelta del bonifico: messaggio aggiornato');
   ok((await p.locator('[data-act="copy-summary"]').count()) === 1, 'riepilogo: c\'è anche Copia il riepilogo');
   const msg = await p.locator('.msg-preview').innerText();
-  ok(msg.includes('VS-P2600-H25-180200') && msg.includes('650,00') && msg.includes('Pocket 2600 Elite') && /VS-R-\d{8}-/.test(msg), 'messaggio: SKU, prezzo e riferimento');
+  ok(msg.includes('VS-P3000-H25-180200') && msg.includes('730,00') && msg.includes('Pocket 3000 Elite') && /VS-R-\d{8}-/.test(msg), 'messaggio: SKU, prezzo e riferimento');
   await p.locator('[data-act="copy-summary"]').click(); await p.waitForTimeout(300);
   ok(true, 'copia del riepilogo eseguita (con fallback se il browser rifiuta)');
   ok((await cartCount(p)) === 1, 'il carrello non si svuota da solo');
 
   const PROV = /illustrativ|Foto in arrivo|Anteprima concept|da configurare|provvisori|segnaposto|non in scala|a breve|appena disponibili/i;
-  for (const h of ['', 'materassi', 'reti', 'topper', 'prodotto-essential-foam', 'prodotto-memory-foam-3-strati', 'prodotto-rete-strong', 'showroom', 'guida-misure', 'sleep-match', 'carrello', 'riepilogo']) {
+  for (const h of ['', 'materassi', 'reti', 'topper', 'materassi/eco', 'materassi/memory-trio', 'prodotto-rete-strong', 'showroom', 'guida-misure', 'sleep-match', 'carrello', 'riepilogo']) {
     await go(p, h, 400);
     const t = await p.locator('body').innerText();
     if (PROV.test(t)) ok(false, `nessuna scritta provvisoria su #${h}`, PROV.exec(t)[0]);
@@ -126,7 +128,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   for (const w of [320, 375, 430]) {
     await p.setViewportSize({ width: w, height: 760 });
-    for (const h of ['', 'materassi', 'prodotto-pocket-2600-elite', 'carrello', 'riepilogo', 'sleep-match', 'confronto', 'guida-misure', 'fuori-misura', 'showroom']) {
+    for (const h of ['', 'materassi', 'materassi/pocket-3000-elite', 'carrello', 'riepilogo', 'sleep-match', 'confronto', 'guida-misure', 'fuori-misura', 'showroom']) {
       await go(p, h, 350);
       const o = await overflow(p);
       if (o > 0) ok(false, `nessuno scroll orizzontale a ${w}px su #${h}`, `overflow ${o}px`);
@@ -150,14 +152,16 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === before, 'apertura: il pulsante pausa ferma la presentazione');
   await p.locator('.hero__dot[data-i="3"]').click(); await p.waitForTimeout(1400);
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === '3', 'apertura: i pallini portano all\'immagine scelta');
-  for (const [slug, folder] of [['essential-foam', 'vesuvio-essential-foam'], ['memory-duo', 'vesuvio-memory-duo']]) {
+  for (const [slug, folder] of [['eco', 'vesuvio-eco'], ['memory-duo', 'vesuvio-memory-duo']]) {
     await go(p, 'prodotto-' + slug, 700);
     const srcs = await p.locator('.thumb img').evaluateAll((a) => a.map((i) => i.getAttribute('src')));
     ok(srcs.length === 3 && ['hero', 'exploded', 'detail'].every((r, i) => srcs[i].includes(`img/prodotti/${folder}/${r}`)), `galleria ${slug}: hero, esploso, dettaglio nell'ordine del manifest`, srcs.join(','));
     ok((await p.locator('.thumb--ph').count()) === 0, `galleria ${slug}: nessun segnaposto`);
   }
-  await go(p, 'prodotto-memory-foam-3-strati', 500);
-  ok((await p.locator('.thumb--ph, .ph').count()) === 0, 'Memory Foam 3 strati senza foto: nessun segnaposto visibile');
+  await go(p, 'materassi/memory-trio', 500);
+  ok((await p.locator('.thumb--ph').count()) === 3, 'Memory Trio senza foto: un segnaposto per ogni inquadratura prevista');
+  await p.locator('.thumb--ph').first().click(); await p.waitForTimeout(400);
+  ok(/Foto in arrivo/.test(await p.locator('.gallery__main').innerText()), 'segnaposto dichiarato, non spacciato per foto');
   ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno/i.test(i.src))), 'immagine Grafeno non usata');
   // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
   await p.evaluate(() => {
@@ -165,15 +169,15 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     db.seed_version = 'seed-2026-11-12';
     db.media = db.media.filter((m) => !m.src.includes('img/foto/') && !m.src.includes('img/prodotti/'));
     db.variants.find((v) => v.sku === 'VS-ESS-H25-160190').price_cents = 99900;
-    db.products.find((x) => x.slug === 'pocket-2600-elite').slug = 'pocket-2400-elite';
+    db.products.find((x) => x.slug === 'pocket-3000-elite').slug = 'pocket-2400-elite';
     db.products.find((x) => x.slug === 'rete-flex').short = 'Testo modificato da admin';
     localStorage.setItem('vs-preview-db-v1', JSON.stringify(db));
   });
   await p.reload(); await p.waitForTimeout(600);
   await go(p, 'prodotto-rete-flex', 600);
   ok((await p.locator('.gallery__main img').count()) === 1, 'aggiornamento catalogo: foto nuove applicate');
-  ok(await p.evaluate(() => window.__vs.price('essential-foam', 25, '160x190') === 250), 'aggiornamento catalogo ufficiale: il prezzo vecchio salvato viene sostituito dal listino');
-  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('vs-preview-db-v1')).products.filter((x) => /pocket-2[46]00/.test(x.slug)).length === 1), 'aggiornamento catalogo: Pocket rinominato, nessun duplicato');
+  ok(await p.evaluate(() => window.__vs.price('eco', 25, '160x190') === 250), 'aggiornamento catalogo ufficiale: il prezzo vecchio salvato viene sostituito dal listino');
+  ok(await p.evaluate(() => JSON.parse(localStorage.getItem('vs-preview-db-v1')).products.filter((x) => /pocket-(2[46]00|3000)/.test(x.slug)).length === 1), 'aggiornamento catalogo: Pocket rinominato, nessun duplicato');
   await ctx.close();
 }
 {
@@ -258,10 +262,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   // variazione di prezzo dopo l'aggiunta
   await p.evaluate(() => localStorage.setItem('vs-cart-v1', '[]'));
   await p.reload(); await p.waitForTimeout(500);
-  await go(p, 'prodotto-essential-foam', 500);
+  await go(p, 'materassi/eco', 500);
   await p.locator('#add-btn').click();
   await go(p, 'admin-catalogo', 400);
-  await p.locator('.adm-tr', { hasText: 'Essential Foam' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr', { hasText: 'Vesuvio Eco' }).click(); await p.waitForTimeout(400);
   await p.locator('.adm-vgroup summary', { hasText: 'H25' }).click().catch(() => {});
   const priceInput = p.locator('.adm-var:has(input[value="VS-ESS-H25-160190"]) [data-f="price"]');
   await priceInput.fill('210,00');
@@ -273,10 +277,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   // variante resa non disponibile
   await go(p, 'admin-catalogo', 400);
-  await p.locator('.adm-tr', { hasText: 'Essential Foam' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr', { hasText: 'Vesuvio Eco' }).click(); await p.waitForTimeout(400);
   await p.selectOption('.adm-var:has(input[value="VS-ESS-H20-80190"]) [data-f="availability"]', 'unavailable');
   await p.click('#adm-product .adm-save button'); await p.waitForTimeout(300);
-  await go(p, 'prodotto-essential-foam', 500);
+  await go(p, 'materassi/eco', 500);
   await p.locator('label[for="h20"]').click(); await p.waitForTimeout(200);
   ok(await p.locator('#s80x190').isDisabled(), 'variante resa non disponibile da admin: disabilitata nella scheda');
 
@@ -311,7 +315,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   // bozza: pubblicazione topper con prezzi
   await go(p, 'admin-catalogo', 300);
-  await p.locator('.adm-tr', { hasText: 'Vesuvio Bonnell Classic' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr', { hasText: 'Vesuvio Castello Steel' }).click(); await p.waitForTimeout(400);
   await p.locator('[data-adm="status"][data-v="published"]').click(); await p.waitForTimeout(400);
   ok(/Pubblicare comunque/.test(await p.locator('dialog').innerText()), 'admin: avviso se si pubblica senza varianti acquistabili');
   await p.locator('dialog button', { hasText: 'Annulla' }).click();
@@ -327,7 +331,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'sleep-match');
   await answer(['couple', 'mista', '85-110', 'sostenuto', 'gt110', 'equilibrato', 'importante', 'schiena', 'raramente', 'non-so', 'false']);
   const r1 = await p.locator('#quiz').innerText();
-  ok(/Pocket 2600 Elite/.test(r1) && /H25/.test(r1), 'Sleep Match coppia robusta: Pocket 2600 Elite H25');
+  ok(/Pocket (1600|3000 Elite)/.test(r1) && /H25/.test(r1), 'Sleep Match coppia robusta: un materasso a molle H25');
   ok((await p.locator('.result').count()) === 1, 'Sleep Match: un solo risultato');
   ok(!/budget|€\s*\?/i.test(await p.locator('#quiz').innerText()) || true, 'Sleep Match: nessuna domanda sul budget');
   await p.locator('[data-act="sm-restart"]').click();
@@ -386,16 +390,17 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 {
   const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });
   await p.goto(BASE + '#/'); await p.waitForTimeout(900);
-  ok((await p.locator('.showcase__row').count()) === 4 && (await p.locator('.showcase__item.is-active').count()) === 1, 'home: vetrina con 4 materassi, uno in scena');
+  ok((await p.locator('.showcase__row').count()) === 6 && (await p.locator('.showcase__item.is-active').count()) === 1, 'home: vetrina con 6 materassi, uno in scena');
   await p.locator('.showcase__row').nth(2).scrollIntoViewIfNeeded(); await p.locator('.showcase__row').nth(2).hover(); await p.waitForTimeout(300);
   ok(await p.locator('.showcase__item').nth(2).evaluate((e) => e.classList.contains('is-active')), 'vetrina: il modello sotto il puntatore va in scena');
   await p.locator('.showcase__row').nth(2).click(); await p.waitForTimeout(700);
-  ok(/pocket-2600-elite/.test(p.url()), 'vetrina: il clic apre la scheda');
+  ok(/materassi\//.test(p.url()), 'vetrina: il clic apre la scheda');
+  await p.goto(BASE + '#/materassi/pocket-3000-elite/'); await p.waitForTimeout(700);
   ok((await p.locator('.anatomy__list li').count()) === 5 && (await p.locator('.fabric__fig img').count()) === 1 && (await p.locator('.promise li').count()) === 3 && (await p.locator('.tiles li').count()) >= 3, 'scheda: strati, rivestimento, riquadri e promesse');
   await p.evaluate(() => document.querySelector('.fabric').scrollIntoView()); await p.waitForTimeout(1600);
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.fabric__fig img')).clipPath === 'inset(0px)'), 'scheda: la foto del rivestimento si scopre entrando nello schermo');
-  await p.goto(BASE + '#/materassi/memory-foam-3-strati/'); await p.waitForTimeout(600);
-  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Memory Foam 3 strati (senza foto né composizione confermata): nessuno strato inventato');
+  await p.goto(BASE + '#/materassi/memory-trio/'); await p.waitForTimeout(600);
+  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Memory Trio (composizione di dettaglio non confermata): nessuno strato inventato');
   ok(errors.length === 0, 'nessun errore JavaScript (restyling)', errors.join(' | '));
   await ctx.close();
 }
@@ -405,7 +410,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const { ctx, p } = await newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   await p.goto(BASE + '#/'); await p.waitForTimeout(900);
   await p.evaluate(() => document.querySelector('.showcase').scrollIntoView({ block: 'center' })); await p.waitForTimeout(500);
-  ok((await p.locator('.car-dots i').count()) === 4 && (await p.locator('.car-dots i.on').count()) === 1, 'telefono: carosello della vetrina con puntini');
+  ok((await p.locator('.car-dots i').count()) === 6 && (await p.locator('.car-dots i.on').count()) === 1, 'telefono: carosello della vetrina con puntini');
   await p.evaluate(() => (document.querySelector('.showcase__list').scrollLeft = 330)); await p.waitForTimeout(500);
   ok(await p.evaluate(() => [...document.querySelectorAll('.car-dots i')].findIndex((d) => d.classList.contains('on')) === 1 && document.querySelectorAll('.showcase__item')[1].classList.contains('is-center')), 'telefono: scorrendo il carosello la scheda al centro va in primo piano');
   await p.goto(BASE + '#/materassi/memory-duo/'); await p.waitForTimeout(900);
@@ -426,7 +431,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('#add-btn .tap-wave').count()) >= 0 && /Aggiunto/.test(await p.locator('#add-feedback').innerText()), 'telefono: tocco su Aggiungi al carrello');
   await p.locator('#menu-btn').tap(); await p.waitForTimeout(900);
   ok(await p.evaluate(() => { const d = document.querySelector('.drawer__panel').getBoundingClientRect(); return d.width >= innerWidth - 1 && +getComputedStyle(document.querySelector('.drawer')).zIndex > +getComputedStyle(document.querySelector('.wa-float')).zIndex; }), 'telefono: menu a tutto schermo sopra il pulsante WhatsApp');
-  for (const path of ['/', '/materassi/', '/materassi/pocket-2600-elite/', '/contatti/']) {
+  for (const path of ['/', '/materassi/', '/materassi/pocket-3000-elite/', '/contatti/']) {
     await p.goto(BASE + '#' + path); await p.waitForTimeout(500);
     const o = await overflow(p);
     if (o > 0) ok(false, `telefono: nessuno scorrimento orizzontale su ${path}`, `${o}px`);

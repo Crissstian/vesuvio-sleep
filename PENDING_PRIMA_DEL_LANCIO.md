@@ -1,6 +1,6 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 16/11/2026 (catalogo aggiornato: Pocket 1600 ritirato, Memory Duo Classic in attesa di prezzi). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 16/11/2026, sera (gamma rifatta su indicazione dell'azienda: 6 materassi, Pocket 1600 rientrato, Memory Air 3D e Bonnell fuori gamma). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
 
 ## Bloccanti
 
@@ -20,15 +20,18 @@ Stato al 16/11/2026 (catalogo aggiornato: Pocket 1600 ritirato, Memory Duo Class
 
 | Voce | Stato |
 | --- | --- |
-| Prezzi | **Verificati** contro il listino confermato del 15/11/2026: 117 varianti (78/26/13), controllate dai test e2e, SQL e unitari. |
-| Foto prodotto | **Approvate dal manifest** per Essential Foam, Memory Duo, Pocket 2600 Elite (hero, esploso, dettaglio). **Mancanti** per Memory Foam 3 strati e Topper: mostrano un disegno senza strati. Non ho cercato foto su internet: dalla sessione la rete è bloccata e foto di terzi richiederebbero diritti e potrebbero non rappresentare il prodotto reale. Reti: foto generate del 13/11. |
+| Prezzi | **Verificati** contro il listino confermato del 15/11/2026 per Eco, Memory Duo, Memory Trio, reti e topper. **Ricostruiti** il 16/11/2026 per Pocket 3000 (ancora 160×190 = 620 €, fattore 1,1273) e Pocket 1600 (160×190 = 500 €, fattore 1,1111), arrotondati a 10 €. **Indicati dall'azienda** per il Memory Duo Classic (Duo meno 20 € a misura). In tutto 143 varianti (104/26/13), controllate dai test e2e, SQL e unitari. |
+| **Scale dei prezzi ricostruite** | **Da confermare dall'azienda misura per misura**: ho mantenuto le proporzioni del listino, non sono prezzi dettati. Due punti da guardare: il 120×190 viene 390 € sia sul Pocket 1600 sia sul Pocket 3000, e il Memory Duo Classic a 160×200 viene 280 € come l'Eco H25. |
+| Foto prodotto | **Approvate dal manifest** per Eco, Memory Duo, Pocket 3000 Elite (hero, esploso, dettaglio; le foto del Pocket sono quelle scattate il 15/11 con il nome precedente). **Mancanti** per Memory Trio, Memory Duo Classic, Pocket 1600 e Topper: la scheda mostra il disegno del modello e un segnaposto dichiarato «Foto in arrivo» per ogni inquadratura prevista. Non ho cercato foto su internet: dalla sessione la rete è bloccata e foto di terzi richiederebbero diritti e potrebbero non rappresentare il prodotto reale. Reti: foto generate del 13/11. |
 | Etichette «illustrativo» | **Tolte dal sito pubblico** su richiesta. Le foto di fabbrica, showroom, camera, consegna e reti sono generate con AI: valutare se va dichiarato (pubblicità ingannevole) o sostituirle con foto reali prima del lancio. |
-| Pocket 2600 Elite | Rinominato. Da confermare a quale misura si riferisce il numero di 2600 molle. Altezza H30 senza prezzo: non mostrata. |
-| **Memory Duo Classic** | **Prezzi mancanti**: l'azienda deve fornire i 13 prezzi (H25). Finché mancano resta in bozza e non compare sul sito. Da confermare anche se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per il suo tessuto. Nessuna foto propria. |
-| Memory Foam 3 strati | Pubblicato con il solo nome, la tipologia e l'altezza del listino. **Mancano** composizione, rigidità e foto. |
-| Pocket 1600 | **Ritirato dal catalogo** il 16/11/2026 su decisione dell'azienda: archiviato, recuperabile da Admin. |
+| **Pocket 3000 Elite** | Rinominato il 16/11/2026 (era Pocket 2600, prima ancora 2400). **Da confermare prima del lancio**: che le molle siano davvero 3000 e a quale misura si riferisce il numero, perché compare nel nome, nel titolo della pagina, nei dati strutturati e nel confronto. Le foto sono quelle del materasso fotografato il 15/11. Altezza H30 senza prezzo: non mostrata. |
+| Memory Duo Classic | **Pubblicato** il 16/11/2026 con i prezzi indicati dall'azienda (Duo meno 20 €). Da confermare se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per il suo tessuto: per ora non ne pubblica nessuno. Nessuna foto propria. |
+| **Memory Trio** | Rinominato il 16/11/2026 da «Memory Foam 3 strati» (nome di listino). **Mancano** la composizione di dettaglio dei tre strati, se è sfoderabile, la rigidità e le foto, annunciate dall'azienda. Il vecchio indirizzo reindirizza al nuovo. |
+| Pocket 1600 | **Rientrato in catalogo** il 16/11/2026 con i prezzi ricostruiti. **Mancano** la composizione di dettaglio, la conferma del numero di molle e le foto, annunciate dall'azienda. |
+| **Eco** | Rinominato il 16/11/2026 da «Vesuvio Essential Foam». Il nome «Eco» è una denominazione commerciale: sul sito non è accompagnato da nessuna dichiarazione ambientale, perché non ne abbiamo di documentate. **Da valutare con l'azienda** se il nome regge senza una certificazione alle spalle. Il vecchio indirizzo reindirizza al nuovo. |
+| Fuori gamma dal 16/11/2026 | Memory Air 3D e Bonnell Classic: archiviati, non compaiono sul sito, si ripubblicano da Admin. |
 | Topper Memory Cloud 5 | Pubblicato, H5. SKU `VS-TOP-MC5-…` proposto, da confermare. |
-| Sospesi (senza prezzo) | Memory Air 3D, Bonnell Classic, quattro guanciali, Castello Steel, Rete a tavole (non creata), H30 di Memory Duo / Pocket 2600 / Pocket 1600. Si pubblicano da Admin quando arriva il prezzo. |
+| Sospesi (senza prezzo) | Quattro guanciali, Castello Steel, Rete a tavole (non creata), H30 di Memory Duo / Pocket 3000 / Pocket 1600. Si pubblicano da Admin quando arriva il prezzo. |
 | Render «da assegnare» e foto di riferimento | **Non pubblicati**: serve indicare modello/SKU e autorizzazione per ciascuno. |
 | Foto reale di fabbrica/showroom | **Mancante**: la scena «lavorazione» è generata ed è indicata come illustrativa. |
 | Foto di Napoli per l'apertura | **Mancante**: l'apertura usa le foto generate (camera, consegna, fabbrica). Una foto reale con diritti d'uso si carica da Admin › Immagini del sito (spazio «Apertura: Napoli»). |
@@ -59,5 +62,5 @@ Stato al 16/11/2026 (catalogo aggiornato: Pocket 1600 ritirato, Memory Duo Class
 
 - Build TypeScript di `core/` senza errori; 10 test unitari (`npm run test:unit`).
 - 46 controlli SQL (130 varianti con prezzo, un solo Pocket, nessuno SKU 2400, una copertina per prodotto, nessuna immagine Grafeno, redirect leggibile dal pubblico): seed idempotente, RLS per pubblico/utente/admin, storage, funzioni, storico prezzi, eliminazione solo di bozze non collegate (`npm run test:sql`).
-- 95 controlli end-to-end sulla preview (`npm run test:e2e`): 130 varianti e 12 prezzi campione contro l'Excel, prodotti sospesi non pubblici, redirect 2400 → 2600, gallerie nell'ordine del manifest, nessuna scritta provvisoria su 12 pagine, varianti disponibili e non, foto da admin visibile dopo la pubblicazione, carrello persistente, WhatsApp con numero mancante e presente, messaggio breve per carrelli lunghi, nessun pagamento, accesso admin negato senza login, movimento ridotto, immagini mancanti, abbinamenti senza duplicati, nessuno scroll orizzontale a 320, 375 e 430 px.
+- 134 controlli end-to-end sulla preview (`npm run test:e2e`): 143 varianti e 15 prezzi campione contro il listino, prodotti sospesi non pubblici, redirect 2400 e 2600 → 3000, gallerie nell'ordine del manifest, nessuna scritta provvisoria su 12 pagine, varianti disponibili e non, foto da admin visibile dopo la pubblicazione, carrello persistente, WhatsApp con numero mancante e presente, messaggio breve per carrelli lunghi, nessun pagamento, accesso admin negato senza login, movimento ridotto, immagini mancanti, abbinamenti senza duplicati, nessuno scroll orizzontale a 320, 375 e 430 px.
 - **Non verificato**: Safari iOS reale (safe area e barra inferiore), lettori di schermo reali, misure Lighthouse su rete reale. I font Manrope e Inter non si caricano nell'ambiente di test, quindi gli screenshot usano un font di sistema.
