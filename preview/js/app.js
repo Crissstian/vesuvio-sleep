@@ -265,6 +265,16 @@ async function dispatch(cur) {
   if (seg.length === 2) return viewProduct(seg[1], seg[0]);
   return viewNotFound();
 }
+// Carrello e riepilogo aspettano il ricontrollo dei prezzi, che con il database collegato
+// è una chiamata di rete. Se nel frattempo si cambia pagina, quella risposta non deve più
+// disegnare niente: ogni navigazione alza il contatore e la vista vecchia si accorge di
+// essere stata superata.
+let renderSeq = 0;
+const freshRender = () => {
+  const mine = ++renderSeq;
+  return () => mine === renderSeq;
+};
+
 async function route() {
   // dopo la prima pagina l'entrata è finita: niente più ritardi sulle animazioni
   if (state.lastRoute !== undefined) document.documentElement.classList.remove('vs-intro');
@@ -1178,7 +1188,9 @@ function waBlock(plan, ref, kind) {
 
 // ---------------------------------------------------------------- CARRELLO
 async function viewCart() {
+  const current = freshRender();
   const v = await api.validateCart(cart.items);
+  if (!current()) return;
   const idx = catalog();
   setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep: verifica gli articoli e invia il riepilogo su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
@@ -1236,7 +1248,9 @@ async function viewReview() {
     go(P.cart, { replace: true });
     return;
   }
+  const current = freshRender();
   const v = await api.validateCart(cart.items); // ricontrollo lato server: con Supabase collegato lo fa il database
+  if (!current()) return;
   const head = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello', href: u(P.cart) }, { name: 'Verifica' }], 'Verifica il riepilogo')}
     <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
   if (!v.canSubmit) {
@@ -1253,6 +1267,7 @@ async function viewReview() {
     /* sessionStorage non disponibile */
   }
   const req = ref ? store.db.requests.find((r) => r.ref === ref) : await api.createCartRequest(v);
+  if (!current()) return;
   try {
     sessionStorage.setItem('vs-review', JSON.stringify({ sig, ref: req.ref }));
   } catch {

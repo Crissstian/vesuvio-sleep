@@ -298,7 +298,10 @@ export const api = {
   async validateCart(items) {
     if (remoteUsable()) {
       const r = await remote('validate_cart', { items: items.map((i) => ({ variant_id: i.variant_id, qty: i.qty, seen_price_cents: i.seen_price_cents ?? null })) });
-      if (r && Array.isArray(r.lines)) return remoteValidation(r, items);
+      if (r && Array.isArray(r.lines)) {
+        const mapped = remoteValidation(r, items);
+        if (mapped) return mapped;
+      }
     }
     return validateCart(catalog(), items);
   },
@@ -347,15 +350,30 @@ function localCartRequest(validation, ref, remota) {
   return r;
 }
 
-/** Le righe tornate dal database si riallineano al catalogo locale, per mostrarle in pagina. */
+/**
+ * Le righe tornate dal database si riallineano al catalogo in pagina, così la scheda si
+ * disegna come al solito. I nomi dei campi sono quelli di validate_cart: `can_submit`,
+ * non `canSubmit`, e la riga porta variant_id invece dell'oggetto variante.
+ */
 function remoteValidation(r, items) {
   const idx = catalog();
-  const lines = r.lines.map((l, i) => {
-    const variant = idx.variants.find((v) => v.id === l.variant_id) ?? null;
-    const product = variant ? idx.products.find((p) => p.id === variant.product_id) : null;
-    return { ...l, item: items[i], variant, product, unit_cents: l.unit_cents ?? variant?.price_cents ?? null };
+  const lines = r.lines.map((l) => {
+    // idx.variants e idx.products sono Map indicizzate per id
+    const variant = idx.variants.get(l.variant_id) ?? null;
+    const product = variant ? idx.products.get(variant.product_id) : null;
+    return {
+      status: l.status,
+      item: items.find((i) => i.variant_id === l.variant_id) ?? { variant_id: l.variant_id, qty: l.qty },
+      variant,
+      product,
+      unit_cents: l.unit_cents ?? null,
+      qty: l.qty,
+    };
   });
-  return { lines, total_cents: r.total_cents, ok: lines.every((l) => l.status === 'ok') };
+  // una riga che il database conosce ma il catalogo in pagina no: si rinuncia e si
+  // ricontrolla in locale, meglio che disegnare una riga senza nome né prezzo
+  if (lines.some((l) => l.status !== 'missing' && !l.variant)) return null;
+  return { lines, total_cents: r.total_cents, issues: r.issues, canSubmit: r.can_submit === true };
 }
 
 Object.assign(api, {
@@ -378,7 +396,15 @@ Object.assign(api, {
     db.requests.unshift(r);
     store.commit('requests');
     if (remoteUsable()) {
-      const res = await remote('create_quote_request', { payload: q });
+      // la funzione SQL ha i parametri separati, non un oggetto unico
+      const res = await remote('create_quote_request', {
+        p_product_id: q.product_id ?? null,
+        p_width_cm: q.width_cm ?? null,
+        p_length_cm: q.length_cm ?? null,
+        p_height_cm: q.height_cm ?? null,
+        p_notes: q.notes ?? '',
+        p_b2b: !!q.b2b,
+      });
       if (res?.ok && res.ref) {
         r.ref = res.ref;
         store.commit('requests');
