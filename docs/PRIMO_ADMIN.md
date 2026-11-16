@@ -2,6 +2,20 @@
 
 Non ci sono password predefinite né utenti creati dal seed.
 
+## Stato attuale
+
+Il **primo admin è già creato** sul progetto «Vesuvio Sleep – nuovo sito» (16/11/2026):
+l'utente esiste, l'email risulta confermata ed è già in `public.admins`.
+**Non ha una password**: la sceglie il titolare dell'indirizzo.
+
+1. Apri la pagina di accesso dell'area admin (o Supabase › Authentication › Users).
+2. Usa **«Password dimenticata»** con quell'indirizzo email.
+3. Dal link ricevuto imposta la password. Da quel momento l'accesso funziona.
+
+Nessuno, nemmeno chi ha costruito il sito, conosce quella password.
+
+## Aggiungere altri admin
+
 1. In Supabase › Authentication, invita l'utente con la sua email. L'utente sceglie la propria password dal link ricevuto.
 2. In SQL Editor (ruolo `postgres`), promuovilo:
 

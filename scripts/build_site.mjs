@@ -163,6 +163,46 @@ fs.writeFileSync(
     '',
   ].join('\n'),
 );
+// Stessa configurazione per Vercel, che non legge _redirects e _headers.
+// Si sceglie l'hosting al momento del caricamento: i file convivono senza darsi fastidio.
+fs.writeFileSync(
+  path.join(OUT, 'vercel.json'),
+  JSON.stringify(
+    {
+      $schema: 'https://openapi.vercel.sh/vercel.json',
+      trailingSlash: true,
+      redirects: [
+        ...REDIRECTS.map(({ old_slug, new_slug }) => ({
+          source: `/materassi/${old_slug}`,
+          destination: `/materassi/${new_slug}/`,
+          permanent: true,
+        })),
+        { source: '/prodotto/:path*', destination: '/materassi/', permanent: true },
+      ],
+      rewrites: [
+        { source: '/admin/:path*', destination: '/admin/index.html' },
+        { source: '/cerca/:path*', destination: '/cerca/index.html' },
+      ],
+      headers: [
+        {
+          source: '/(.*)',
+          headers: [
+            { key: 'X-Content-Type-Options', value: 'nosniff' },
+            { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+            { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+            { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          ],
+        },
+        { source: '/css/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+        { source: '/js/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+        { source: '/img/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000' }] },
+        { source: '/admin/(.*)', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      ],
+    },
+    null,
+    2,
+  ) + '\n',
+);
 fs.writeFileSync(
   path.join(OUT, '_headers'),
   [

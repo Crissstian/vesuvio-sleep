@@ -153,17 +153,19 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === before, 'apertura: il pulsante pausa ferma la presentazione');
   await p.locator('.hero__dot[data-i="3"]').click(); await p.waitForTimeout(1400);
   ok((await p.locator('.hero__dot.is-active').getAttribute('data-i')) === '3', 'apertura: i pallini portano all\'immagine scelta');
-  for (const [slug, folder] of [['eco', 'vesuvio-eco'], ['memory-duo', 'vesuvio-memory-duo']]) {
+  for (const [slug, folder] of [['eco', 'vesuvio-eco'], ['memory-duo', 'vesuvio-memory-duo'], ['memory-trio', 'vesuvio-memory-trio'], ['memory-duo-classic', 'vesuvio-memory-duo-classic']]) {
     await go(p, 'prodotto-' + slug, 700);
     const srcs = await p.locator('.thumb img').evaluateAll((a) => a.map((i) => i.getAttribute('src')));
     ok(srcs.length === 3 && ['hero', 'exploded', 'detail'].every((r, i) => srcs[i].includes(`img/prodotti/${folder}/${r}`)), `galleria ${slug}: hero, esploso, dettaglio nell'ordine del manifest`, srcs.join(','));
     ok((await p.locator('.thumb--ph').count()) === 0, `galleria ${slug}: nessun segnaposto`);
   }
   await go(p, 'materassi/memory-trio', 500);
-  ok((await p.locator('.thumb--ph').count()) === 3, 'Memory Trio senza foto: un segnaposto per ogni inquadratura prevista');
+  ok((await p.locator('.thumb--ph').count()) === 0 && (await p.locator('.thumb').count()) === 3, 'Memory Trio: le tre foto del 16/11, nessun segnaposto residuo');
+  await go(p, 'materassi/pocket-1600', 500);
+  ok((await p.locator('.thumb--ph').count()) === 3, 'Pocket 1600 senza foto: un segnaposto per ogni inquadratura prevista');
   await p.locator('.thumb--ph').first().click(); await p.waitForTimeout(400);
   ok(/Foto in arrivo/.test(await p.locator('.gallery__main').innerText()), 'segnaposto dichiarato, non spacciato per foto');
-  ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno/i.test(i.src))), 'immagine Grafeno non usata');
+  ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno|bamboo/i.test(i.alt))), 'testo alternativo: nessuna caratteristica di tessuto non verificata');
   // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
   await p.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
@@ -383,7 +385,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     }
     return out;
   });
-  ok(res.length === 3 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
+  ok(res.length === 5 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
   ok(res.every((r) => Math.abs(r.cx - 0.5) < 0.04 && Math.abs(r.cy - 0.5) < 0.06), 'foto prodotto: materasso al centro della foto', JSON.stringify(res.map((r) => [r.cx.toFixed(2), r.cy.toFixed(2)])));
   await ctx.close();
 }
@@ -402,7 +404,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.evaluate(() => document.querySelector('.fabric').scrollIntoView()); await p.waitForTimeout(1600);
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.fabric__fig img')).clipPath === 'inset(0px)'), 'scheda: la foto del rivestimento si scopre entrando nello schermo');
   await p.goto(BASE + '#/materassi/memory-trio/'); await p.waitForTimeout(600);
-  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Memory Trio (composizione di dettaglio non confermata): nessuno strato inventato');
+  ok((await p.locator('.anatomy').count()) === 0, 'Memory Trio (composizione di dettaglio non confermata): nessuno strato inventato');
+  ok((await p.locator('.fabric__fig img').count()) === 1 && !/grafene|grafeno/i.test(await p.locator('#app').innerText()), 'Memory Trio: la foto del tessuto c\'è, la scritta sul tessuto non diventa una caratteristica dichiarata');
   ok(errors.length === 0, 'nessun errore JavaScript (restyling)', errors.join(' | '));
   await ctx.close();
 }

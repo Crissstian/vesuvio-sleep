@@ -1,5 +1,13 @@
 # Changelog
 
+## Foto dei due modelli nuovi, primo admin, decisioni dell'azienda (16/11/2026, sera)
+- **Memory Trio** e **Memory Duo Classic** hanno le loro tre foto (prospettiva, esploso, dettaglio), consegnate dall'azienda. Lavorate con la stessa pipeline delle foto ufficiali: bianco ritagliato, prodotto centrato su tela 4:3, fondo reso trasparente, WebP a due larghezze. Restano con i segnaposto solo Pocket 1600 e Topper.
+- Le foto del Memory Trio portano la scritta **«Grafeno»** sul tessuto e quelle del Memory Duo Classic la scritta **«Bamboo»**. L'immagine Grafeno era marcata «non associare ad alcun prodotto» nel manifest del 15/11, con riserva «fino a istruzioni successive»: l'azienda l'ha assegnata a questo modello. **Le schede non riprendono né l'una né l'altra scritta**, nemmeno nel testo alternativo delle immagini, perché né il grafene né il bambù sono caratteristiche verificate. Un controllo automatico lo impedisce.
+- Il testo del Memory Duo Classic ora dice che il rivestimento è diverso da quello del Memory Duo, perché nelle foto si vede.
+- **Primo admin creato** su Supabase: utente promosso in `public.admins`, email confermata, **senza password** — la imposta il titolare dell'indirizzo con «Password dimenticata». Verificato che da quell'utente le policy RLS mostrano bozze, archiviati e note interne.
+- **`vercel.json` generato** insieme a `_redirects` e `_headers`: stessi redirect, stesse intestazioni di sicurezza e di cache, stessi rewrite per admin e ricerca. L'hosting si sceglie al caricamento.
+- Decisioni dell'azienda registrate nel pending: claim del rivestimento invariati, contrassegno senza sovrapprezzo, nome «Eco» confermato, foto generate con AI pubblicate senza dichiarazione (con la segnalazione del rischio agli atti).
+
 ## Listino confermato e altezze H30 a catalogo (16/11/2026, sera)
 L'azienda ha rimandato indietro il listino. Le scale che avevo ricostruito sono tornate invariate, quindi sono **confermate**; in più sono arrivati i prezzi delle tre altezze H30 che finora non erano in vendita.
 

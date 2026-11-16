@@ -96,6 +96,102 @@
   ]
  },
  {
+  "prodotto": "vesuvio-memory-duo-classic",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "hero-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-duo-classic",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-duo-classic",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    800
+   ],
+   [
+    "detail-720.webp",
+    720,
+    480
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-trio",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "hero-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-trio",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-memory-trio",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "detail-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
   "prodotto": "vesuvio-pocket-3000-elite",
   "ruolo": "hero",
   "files": [

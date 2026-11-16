@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-16d'
+CATALOG_VERSION = 'catalogo-2026-11-16e'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -120,15 +120,18 @@ MATTRESSES = {
         prices={'80x190': 110, '80x200': 120, '90x190': 140, '90x200': 150, '120x190': 200, '120x200': 210,
                 '140x190': 230, '140x200': 240, '160x190': 260, '160x200': 280, '165x190': 290,
                 '170x200': 310, '180x200': 330},
-        short='Lo stesso Memory Duo, con il rivestimento fisso.',
+        short='La costruzione del Memory Duo, con il rivestimento fisso.',
         description='Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante '
-                    'in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.',
+                    'in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile, ed è diverso da quello '
+                    'del Memory Duo: lo vedi nelle foto.',
         composition=old['memory-duo']['composition_public'],
         highlights=['Memory Foam 2 strati', 'Rivestimento fisso'],
         removable_cover=False,
-        notes='Aggiunto il 16/11/2026 su indicazione dell\'azienda. Prezzi: Memory Duo sfoderabile meno 20 euro '
+        notes='Aggiunto il 16/11/2026 su indicazione dell\'azienda. Foto consegnate la sera del 16/11/2026: il tessuto '
+              'porta la scritta "Bamboo", che la scheda non riprende perche\' non e\' una caratteristica verificata. '
+              'DA CONFERMARE: che sia il tessuto di questo modello. Prezzi: Memory Duo sfoderabile meno 20 euro '
               'per ogni misura, confermati dall\'azienda la sera del 16/11/2026 rimandando indietro il listino. Da confermare: se è reversibile estate/inverno come lo '
-              'sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria: la scheda mostra i segnaposto.',
+              'sfoderabile e quali claim valgono per questo tessuto.',
         match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
     'Vesuvio Pocket 2600 Elite': dict(
         key='pocket-2400-elite', slug='pocket-3000-elite', display='Vesuvio Pocket 3000 Elite', line='P3000', sort=6, hybrid=True,
@@ -188,7 +191,11 @@ MATTRESSES = {
         notes='Rinominato da "Memory Foam 3 strati" (nome di listino) a "Vesuvio Memory Trio" il 16/11/2026: '
               'il nome richiama il Memory Duo e dichiara i tre strati. Il vecchio indirizzo reindirizza qui. '
               'DA VERIFICARE PRIMA DEL LANCIO: la composizione di dettaglio dei tre strati e se è sfoderabile. '
-              'Foto annunciate dall\'azienda il 16/11/2026, non ancora ricevute: la scheda mostra i segnaposto.',
+              'Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta "Grafeno", ripetuta sul piano. '
+              'L\'immagine era marcata "non associare ad alcun prodotto" nel MEDIA_MANIFEST del 15/11, con riserva '
+              '"fino a istruzioni successive": l\'azienda le ha assegnate a questo modello la sera del 16/11. '
+              'La scheda non riprende la scritta, perche\' il grafene non e\' una caratteristica verificata. '
+              'DA CONFERMARE: che sia il tessuto di questo modello.',
         match=dict(tech='memory', welcome=1.5, ventilation=False, independent_springs=False)),
     'Vesuvio Memory Air 3D': dict(
         key='memory-air-3d', slug='memory-air-3d', line='MA3D', sort=6,
@@ -306,7 +313,8 @@ pid = lambda key: uid('prod', key)
 # ------------------------------------------------------------------ media
 # 1) immagini approvate del 15/11/2026 (MEDIA_MANIFEST.csv)
 IMG = json.load(open(os.path.join(ROOT, 'preview/img/prodotti/manifest.json')))
-FOLDER_KEY = {'vesuvio-eco': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-3000-elite': 'pocket-2400-elite'}
+FOLDER_KEY = {'vesuvio-eco': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-3000-elite': 'pocket-2400-elite',
+              'vesuvio-memory-trio': 'memory-foam-3-strati', 'vesuvio-memory-duo-classic': 'memory-duo-classic'}
 # Le cartelle sono state rinominate con i prodotti il 16/11/2026, ma l'ID della foto si
 # continua a calcolare dal nome originale: altrimenti il database vedrebbe foto nuove.
 ID_FOLDER = {'vesuvio-eco': 'vesuvio-essential-foam', 'vesuvio-pocket-3000-elite': 'vesuvio-pocket-2600-elite'}
@@ -321,6 +329,15 @@ ALT = {
     ('pocket-2400-elite', 'hero'): 'Vesuvio Pocket 3000 Elite con piano trapuntato e fascia laterale marrone chiaro',
     ('pocket-2400-elite', 'exploded'): 'Vista esplosa del Vesuvio Pocket 3000 Elite: rivestimento, Memory Foam, poliuretano e molle insacchettate',
     ('pocket-2400-elite', 'detail'): 'Dettaglio del rivestimento trapuntato e della cerniera del Vesuvio Pocket 3000 Elite',
+    # Foto consegnate dall'azienda il 16/11/2026. Il testo alternativo descrive la forma e i
+    # materiali visibili: la scritta sul tessuto non viene ripetuta, perché sarebbe una
+    # caratteristica dichiarata e la scheda non ne pubblica nessuna.
+    ('memory-foam-3-strati', 'hero'): 'Vesuvio Memory Trio in prospettiva, con il piano trapuntato bianco e la fascia perimetrale chiara',
+    ('memory-foam-3-strati', 'exploded'): 'Vista esplosa del Vesuvio Memory Trio: rivestimento e i tre strati di Memory Foam sopra la base',
+    ('memory-foam-3-strati', 'detail'): 'Dettaglio ravvicinato della trapuntatura e del bordo del Vesuvio Memory Trio',
+    ('memory-duo-classic', 'hero'): 'Vesuvio Memory Duo Classic in prospettiva, piano trapuntato chiaro e fascia laterale marrone con maniglie',
+    ('memory-duo-classic', 'exploded'): 'Vista esplosa del Vesuvio Memory Duo Classic: rivestimento, strato di Memory Foam e base portante',
+    ('memory-duo-classic', 'detail'): 'Dettaglio del bordo, della maniglia e della trapuntatura del Vesuvio Memory Duo Classic',
 }
 ORDER = {'hero': 1, 'exploded': 2, 'detail': 3}
 for it in IMG:
@@ -407,7 +424,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-16d', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-16e', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 # Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
 # Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.
