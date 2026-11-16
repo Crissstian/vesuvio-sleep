@@ -21,7 +21,8 @@ import {
 } from './core/index.js';
 import { MODE, P, u, abs, absAsset, current, go, isAt, legacyToPath, setNavigator, interceptLinks, IS_PREVIEW } from './nav.js';
 import { PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_METHODS, applySettings } from './pages.js';
-import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage } from './store.js';
+import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage, applyRemoteCatalog } from './store.js';
+import { configured as sbConfigured, loadCatalog as sbLoadCatalog } from './supabase.js';
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
 import { productIllustration, layersFor } from './illustrations.js';
 import { heroHtml } from './hero.js';
@@ -1176,8 +1177,8 @@ function waBlock(plan, ref, kind) {
 }
 
 // ---------------------------------------------------------------- CARRELLO
-function viewCart() {
-  const v = api.validateCart(cart.items);
+async function viewCart() {
+  const v = await api.validateCart(cart.items);
   const idx = catalog();
   setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep: verifica gli articoli e invia il riepilogo su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
@@ -1229,13 +1230,13 @@ function cartLine(idx, l) {
 function cartSignature(items) {
   return items.map((i) => `${i.variant_id}:${i.qty}:${i.seen_price_cents}`).sort().join('|');
 }
-function viewReview() {
+async function viewReview() {
   setMeta('Verifica il riepilogo', 'Controlla il riepilogo, scegli come pagare e invialo a Vesuvio Sleep su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
     go(P.cart, { replace: true });
     return;
   }
-  const v = api.validateCart(cart.items); // ricontrollo "lato server"
+  const v = await api.validateCart(cart.items); // ricontrollo lato server: con Supabase collegato lo fa il database
   const head = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello', href: u(P.cart) }, { name: 'Verifica' }], 'Verifica il riepilogo')}
     <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
   if (!v.canSubmit) {
@@ -1251,7 +1252,7 @@ function viewReview() {
   } catch {
     /* sessionStorage non disponibile */
   }
-  const req = ref ? store.db.requests.find((r) => r.ref === ref) : api.createCartRequest(v);
+  const req = ref ? store.db.requests.find((r) => r.ref === ref) : await api.createCartRequest(v);
   try {
     sessionStorage.setItem('vs-review', JSON.stringify({ sig, ref: req.ref }));
   } catch {
@@ -1670,7 +1671,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDrawer();
 });
 
-document.addEventListener('submit', (e) => {
+document.addEventListener('submit', async (e) => {
   if (e.target.id === 'search-form') {
     e.preventDefault();
     const q = String(new FormData(e.target).get('q') || '').trim();
@@ -1701,7 +1702,7 @@ document.addEventListener('submit', (e) => {
   const b2b = fd.get('b2b') === 'on';
   const notesExtra = b2b ? [num('rooms') ? `Camere/posti letto: ${num('rooms')}` : '', num('qty') ? `Quantità: ${num('qty')}` : ''].filter(Boolean).join('. ') : '';
   const notes = [notesExtra, String(fd.get('notes') || '').slice(0, 500)].filter(Boolean).join('. ');
-  const r = api.createQuoteRequest({ product_id: p?.id ?? null, product: p?.name ?? 'Da definire con il cliente', width_cm: w, length_cm: l, height_cm: h, notes, b2b });
+  const r = await api.createQuoteRequest({ product_id: p?.id ?? null, product: p?.name ?? 'Da definire con il cliente', width_cm: w, length_cm: l, height_cm: h, notes, b2b });
   const text = buildQuoteMessage({ ref: r.ref, product: (b2b ? '[Struttura ricettiva] ' : '') + (p?.name ?? 'Da definire'), width_cm: w, length_cm: l, height_cm: h, notes });
   state.lastSummary = text;
   const n = normalizeWhatsAppNumber(whatsappStatus().raw);
@@ -1777,5 +1778,18 @@ route();
   await Promise.race([media.init(), new Promise((r) => setTimeout(r, 1500))]);
   if (hasLocalPhotos) route();
   if (!store.storageOk) toast('Il browser blocca il salvataggio locale: carrello e admin non verranno ricordati');
+  // Catalogo dal database. La pagina è già disegnata con il catalogo compilato: se Supabase
+  // risponde si ridisegna con i dati veri, se non risponde non succede niente e resta quello.
+  if (sbConfigured()) {
+    try {
+      const cat = await Promise.race([sbLoadCatalog(), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo scaduto')), 4000))]);
+      if (cat?.products?.length) {
+        applyRemoteCatalog(cat);
+        route();
+      }
+    } catch (e) {
+      console.warn('Catalogo dal database non disponibile, resta quello compilato:', e.message);
+    }
+  }
 })();
 export { route };

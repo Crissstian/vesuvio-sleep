@@ -85,7 +85,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   await go(p, 'materassi/pocket-1600', 600);
   ok((await p.locator('#add-btn').count()) === 1 && /500,00/.test(await p.locator('#app').innerText()), 'Pocket 1600 in catalogo: scheda acquistabile, 160×190 a 500 €');
-  ok((await p.locator('.thumb--ph, .ph').count()) > 0, 'Pocket 1600 senza foto: segnaposto dichiarati, nessuna foto di un altro modello');
+  ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.thumb--ph').count()) === 0, 'Pocket 1600: le sue tre foto, nessun segnaposto');
 
   await go(p, 'prodotto-guanciale-memory-cervical');
   ok((await p.locator('.buy').count()) === 0 && (await p.locator('#add-btn').count()) === 0, 'guanciale senza prezzo: scheda non pubblica');
@@ -161,10 +161,21 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   }
   await go(p, 'materassi/memory-trio', 500);
   ok((await p.locator('.thumb--ph').count()) === 0 && (await p.locator('.thumb').count()) === 3, 'Memory Trio: le tre foto del 16/11, nessun segnaposto residuo');
+  // tutte le schede pubblicate hanno le foto: il segnaposto si prova togliendone una
   await go(p, 'materassi/pocket-1600', 500);
-  ok((await p.locator('.thumb--ph').count()) === 3, 'Pocket 1600 senza foto: un segnaposto per ogni inquadratura prevista');
+  ok((await p.locator('.thumb--ph').count()) === 0 && (await p.locator('.thumb').count()) === 3, 'Pocket 1600: le tre foto del 16/11, nessun segnaposto');
+  await p.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
+    const i = db.media.findIndex((m) => m.slot === 'fabric' && m.src.includes('vesuvio-pocket-1600'));
+    db.media.splice(i, 1);
+    localStorage.setItem('vs-preview-db-v1', JSON.stringify(db));
+  });
+  await p.reload(); await p.waitForTimeout(700);
+  ok((await p.locator('.thumb--ph').count()) === 1, 'tolta una foto: compare il segnaposto di quella sola inquadratura');
   await p.locator('.thumb--ph').first().click(); await p.waitForTimeout(400);
   ok(/Foto in arrivo/.test(await p.locator('.gallery__main').innerText()), 'segnaposto dichiarato, non spacciato per foto');
+  await p.evaluate(() => localStorage.removeItem('vs-preview-db-v1'));
+  await p.reload(); await p.waitForTimeout(600);
   ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno|bamboo/i.test(i.alt))), 'testo alternativo: nessuna caratteristica di tessuto non verificata');
   // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
   await p.evaluate(() => {
@@ -228,6 +239,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(/prefisso internazionale/.test(await p.locator('#wa-check').innerText()), 'admin: numero senza prefisso rifiutato');
   await p.fill('#s-wa', '+39 300 000 0000'); await p.click('#adm-settings button'); await p.waitForTimeout(400);
   ok(/wa\.me\/393000000000/.test(await p.locator('#wa-check').innerText()), 'admin: numero valido attivo');
+  // collegamento al database: senza rete la pagina lo dice invece di fingere
+  ok(/Database/.test(await p.locator('#app').innerText()) && (await p.locator('#db-state').count()) === 1, 'admin: pannello del database presente');
+  ok(/compilato nel sito/.test(await p.locator('#db-state').innerText()), 'admin: senza risposta dal database dice da dove arriva davvero il catalogo');
+  ok((await p.locator('[data-adm="db-signin"]').count()) === 1 && (await p.locator('[data-adm="db-push"]').count()) === 0, 'admin: senza accesso al database non si pubblica');
   await go(p, 'contatti', 500); await p.goto(p.url()); await p.waitForTimeout(500);
   ok((await p.locator('#wa-float').getAttribute('href')).startsWith('https://wa.me/393000000000'), 'il numero cambiato in admin vale anche per il pulsante fisso e i contatti');
 
@@ -310,7 +325,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   // immagine mancante -> fallback
   await p.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
-    Object.assign(db.media.find((m) => m.slot === 'hero' && m.src.includes('pocket')), { src: 'img/rotta.webp', srcset: 'img/rotta.webp 720w' });
+    Object.assign(db.media.find((m) => m.slot === 'hero' && m.src.includes('pocket-3000')), { src: 'img/rotta.webp', srcset: 'img/rotta.webp 720w' });
     localStorage.setItem('vs-preview-db-v1', JSON.stringify(db));
   });
   await go(p, 'prodotto-pocket-2400-elite', 100); await p.reload(); await p.waitForTimeout(1000);
@@ -385,7 +400,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     }
     return out;
   });
-  ok(res.length === 5 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
+  ok(res.length === 6 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
   ok(res.every((r) => Math.abs(r.cx - 0.5) < 0.04 && Math.abs(r.cy - 0.5) < 0.06), 'foto prodotto: materasso al centro della foto', JSON.stringify(res.map((r) => [r.cx.toFixed(2), r.cy.toFixed(2)])));
   await ctx.close();
 }

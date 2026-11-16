@@ -1,9 +1,13 @@
-// Livello dati della PREVIEW.
-// Simula il backend Supabase nel browser di chi la usa: localStorage per i dati,
-// IndexedDB per le foto caricate. Le funzioni `api.*` corrispondono alle funzioni
-// SQL in supabase/migrations/0003_functions.sql (validate_cart, create_request…).
+// Livello dati del sito.
+// Due modi, decisi dalla configurazione:
+//  - senza Supabase: localStorage per i dati e IndexedDB per le foto caricate, e le funzioni
+//    `api.*` rifanno nel browser quello che farebbe il database;
+//  - con Supabase collegato: il catalogo arriva dal database, e carrello e richieste passano
+//    dalle funzioni SQL vere (validate_cart, create_cart_request, create_quote_request).
+// In entrambi i casi il prezzo non viene mai creduto sulla parola del browser: si ricontrolla.
 
 import { SEED } from './seed.js';
+import { configured as sbConfigured, rpc as sbRpc } from './supabase.js';
 import { SITE_SLOTS } from './slots.js';
 import { CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber } from './core/index.js';
 
@@ -247,13 +251,71 @@ export const cart = {
 };
 
 // ---------- "Server" simulato ----------
+/**
+ * Sostituisce il catalogo con quello letto dal database: da quel momento il sito mostra
+ * quello che c'è su Supabase, non quello compilato nel bundle. Restano le foto caricate
+ * nel browser, le richieste, lo storico e le impostazioni scelte a mano nell'admin.
+ */
+export function applyRemoteCatalog(cat) {
+  const locali = db.media.filter((m) => String(m.src).startsWith('idb:'));
+  const remoti = new Set(cat.media.map((m) => m.id));
+  db.categories = clone(cat.categories);
+  db.products = clone(cat.products);
+  db.variants = clone(cat.variants);
+  db.media = [...clone(cat.media), ...locali.filter((m) => !remoti.has(m.id))];
+  db.redirects = clone(cat.redirects ?? []);
+  for (const [k, v] of Object.entries(cat.settings ?? {})) db.settings[k] = clone(v);
+  db.catalog_source = 'supabase';
+  db.catalog_at = nowIso();
+  store.commit('catalog');
+  return { prodotti: db.products.length, varianti: db.variants.length, foto: cat.media.length };
+}
+
+/** Da dove arriva il catalogo che si sta guardando. Serve all'admin per dirlo a chiaro. */
+export const catalogSource = () => (db.catalog_source === 'supabase' ? 'supabase' : 'bundle');
+
+// Il database non deve mai far aspettare chi sta comprando: ogni chiamata ha un tempo
+// massimo, e dopo un errore si smette di provarci per mezzo minuto invece di rallentare
+// ogni singola azione. Nel frattempo il controllo lo fa il catalogo che abbiamo in pagina.
+let remoteDownUntil = 0;
+const remoteUsable = () => sbConfigured() && Date.now() > remoteDownUntil;
+async function remote(fn, args, ms = 2500) {
+  try {
+    return await Promise.race([sbRpc(fn, args), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo scaduto')), ms))]);
+  } catch (e) {
+    remoteDownUntil = Date.now() + 30000;
+    console.warn(`${fn} dal database non riuscita (${e.message}): si continua con il catalogo in pagina`);
+    return null;
+  }
+}
+
 export const api = {
-  /** Ricontrollo come farebbe il server: legge sempre lo stato salvato, non quello della pagina. */
-  validateCart(items) {
+  /**
+   * Ricontrollo come farebbe il server: legge sempre lo stato salvato, non quello della pagina.
+   * Con il database collegato il ricontrollo lo fa il database, che è l'unico a sapere
+   * davvero quanto costa una variante adesso.
+   */
+  async validateCart(items) {
+    if (remoteUsable()) {
+      const r = await remote('validate_cart', { items: items.map((i) => ({ variant_id: i.variant_id, qty: i.qty, seen_price_cents: i.seen_price_cents ?? null })) });
+      if (r && Array.isArray(r.lines)) return remoteValidation(r, items);
+    }
     return validateCart(catalog(), items);
   },
-  createCartRequest(validation) {
-    const ref = makeRef('R', new Date());
+  async createCartRequest(validation) {
+    if (remoteUsable()) {
+      const r = await remote('create_cart_request', {
+        items: validation.lines.filter((l) => l.status === 'ok').map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents })),
+      });
+      if (r?.ok && r.ref) return localCartRequest(validation, r.ref, true);
+    }
+    return localCartRequest(validation, makeRef('R', new Date()), false);
+  },
+  createQuoteRequestRemoteFirst: null,
+};
+
+/** Il riepilogo resta anche nel browser: serve all'admin della preview e al tasto "copia". */
+function localCartRequest(validation, ref, remota) {
     const items = validation.lines
       .filter((l) => l.status === 'ok')
       .map((l) => ({
@@ -280,11 +342,24 @@ export const api = {
       updated_at: nowIso(),
       history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: 'Riepilogo generato dal carrello' }],
     };
-    db.requests.unshift(r);
-    store.commit('requests');
-    return r;
-  },
-  createQuoteRequest(q) {
+  db.requests.unshift(r);
+  store.commit('requests');
+  return r;
+}
+
+/** Le righe tornate dal database si riallineano al catalogo locale, per mostrarle in pagina. */
+function remoteValidation(r, items) {
+  const idx = catalog();
+  const lines = r.lines.map((l, i) => {
+    const variant = idx.variants.find((v) => v.id === l.variant_id) ?? null;
+    const product = variant ? idx.products.find((p) => p.id === variant.product_id) : null;
+    return { ...l, item: items[i], variant, product, unit_cents: l.unit_cents ?? variant?.price_cents ?? null };
+  });
+  return { lines, total_cents: r.total_cents, ok: lines.every((l) => l.status === 'ok') };
+}
+
+Object.assign(api, {
+  async createQuoteRequest(q) {
     const ref = makeRef('Q', new Date());
     const r = {
       id: rid(),
@@ -302,6 +377,13 @@ export const api = {
     };
     db.requests.unshift(r);
     store.commit('requests');
+    if (remoteUsable()) {
+      const res = await remote('create_quote_request', { payload: q });
+      if (res?.ok && res.ref) {
+        r.ref = res.ref;
+        store.commit('requests');
+      }
+    }
     return r;
   },
   /** Il click su WhatsApp NON prova l'invio: diventa solo "in attesa di contatto". */
@@ -314,7 +396,7 @@ export const api = {
     store.commit('requests');
   },
   customSku: (id) => customSku(new Date(), id),
-};
+});
 
 export const REQUEST_STATUS = {
   bozza: 'Bozza',

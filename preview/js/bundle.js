@@ -1370,8 +1370,8 @@ __exp.VIEW_SEO = VIEW_SEO;
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-16e",
- "catalog_version": "catalogo-2026-11-16e",
+ "version": "seed-2026-11-16f",
+ "catalog_version": "catalogo-2026-11-16f",
  "authoritative": true,
  "categories": [
   {
@@ -1587,7 +1587,7 @@ const SEED = {
     "ventilation": false,
     "independent_springs": true
    },
-   "internal_notes": "Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro (fattore 1,1111) e CONFERMATI dall'azienda la sera del 16/11. H30 indicata la stessa sera. Un solo valore corretto su autorizzazione: in H30 il 160x190 era scritto 540 euro, piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce anche l'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.",
+   "internal_notes": "Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro (fattore 1,1111) e CONFERMATI dall'azienda la sera del 16/11. H30 indicata la stessa sera. Un solo valore corretto su autorizzazione: in H30 il 160x190 era scritto 540 euro, piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce anche l'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e la composizione di dettaglio. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Antibatterico\", che la scheda non riprende perche' non e' una caratteristica verificata. DA CONFERMARE: che sia il tessuto di questo modello.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 1600"
   },
@@ -1758,7 +1758,7 @@ const SEED = {
    "sort": 20,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": null,
-   "internal_notes": "Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto.",
+   "internal_notes": "Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Aloe Vera\", che la scheda non riprende perche' non e' una caratteristica verificata. Nessuna delle due e' un primo piano del tessuto: la seconda mostra la cerniera sul bordo ed e' usata nello spazio \"dettaglio\". DA CONFERMARE il tessuto.",
    "category_id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d",
    "name": "Vesuvio Topper Memory Cloud 5"
   },
@@ -4736,6 +4736,63 @@ const SEED = {
    "focal_y": 50
   },
   {
+   "id": "31391401-b075-537f-b024-66ceb2ec5eef",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "slot": "hero",
+   "src": "img/prodotti/vesuvio-pocket-1600/hero-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-1600/hero-720.webp 720w, img/prodotti/vesuvio-pocket-1600/hero-1200.webp 1200w",
+   "width": 1200,
+   "height": 900,
+   "alt": "Vesuvio Pocket 1600 in prospettiva, piano trapuntato chiaro e fascia laterale marrone con maniglie",
+   "caption": "",
+   "illustrative": false,
+   "fit": "contain",
+   "bg": "white",
+   "is_cover": true,
+   "published": true,
+   "sort": 1,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
+   "id": "7458e37b-68b1-5dfb-bcc1-d8f6db6c4544",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "slot": "exploded",
+   "src": "img/prodotti/vesuvio-pocket-1600/exploded-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-1600/exploded-720.webp 720w, img/prodotti/vesuvio-pocket-1600/exploded-1200.webp 1200w",
+   "width": 1200,
+   "height": 900,
+   "alt": "Vista esplosa del Vesuvio Pocket 1600: rivestimento, due strati in schiuma, le molle insacchettate e la base",
+   "caption": "",
+   "illustrative": true,
+   "fit": "contain",
+   "bg": "white",
+   "is_cover": false,
+   "published": true,
+   "sort": 2,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
+   "id": "d25bec2d-2288-56e8-b10c-b9a88751cf58",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "slot": "fabric",
+   "src": "img/prodotti/vesuvio-pocket-1600/detail-1200.webp",
+   "srcset": "img/prodotti/vesuvio-pocket-1600/detail-720.webp 720w, img/prodotti/vesuvio-pocket-1600/detail-1200.webp 1200w",
+   "width": 1200,
+   "height": 1200,
+   "alt": "Dettaglio dell'angolo, della maniglia e della trapuntatura del Vesuvio Pocket 1600",
+   "caption": "",
+   "illustrative": false,
+   "fit": "cover",
+   "bg": null,
+   "is_cover": false,
+   "published": true,
+   "sort": 3,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
    "id": "5afbdd62-6147-5395-9b0e-9ecf6c6cc9f5",
    "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slot": "hero",
@@ -4786,6 +4843,44 @@ const SEED = {
    "illustrative": false,
    "fit": "cover",
    "bg": null,
+   "is_cover": false,
+   "published": true,
+   "sort": 3,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
+   "id": "1a6641df-3699-54ee-8c17-f0fa218c5e78",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "slot": "hero",
+   "src": "img/prodotti/vesuvio-topper-memory-cloud-5/hero-1200.webp",
+   "srcset": "img/prodotti/vesuvio-topper-memory-cloud-5/hero-720.webp 720w, img/prodotti/vesuvio-topper-memory-cloud-5/hero-1200.webp 1200w",
+   "width": 1200,
+   "height": 900,
+   "alt": "Vesuvio Topper Memory Cloud 5 in prospettiva, piano trapuntato bianco con cerniera perimetrale",
+   "caption": "",
+   "illustrative": false,
+   "fit": "contain",
+   "bg": "white",
+   "is_cover": true,
+   "published": true,
+   "sort": 1,
+   "focal_x": 50,
+   "focal_y": 50
+  },
+  {
+   "id": "a61f8acc-c7d7-59bb-87f2-184e4bef9016",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "slot": "fabric",
+   "src": "img/prodotti/vesuvio-topper-memory-cloud-5/fabric-1200.webp",
+   "srcset": "img/prodotti/vesuvio-topper-memory-cloud-5/fabric-720.webp 720w, img/prodotti/vesuvio-topper-memory-cloud-5/fabric-1200.webp 1200w",
+   "width": 1200,
+   "height": 800,
+   "alt": "Il rivestimento sfoderabile del Topper Memory Cloud 5 con la cerniera che corre lungo il bordo",
+   "caption": "",
+   "illustrative": false,
+   "fit": "contain",
+   "bg": "white",
    "is_cover": false,
    "published": true,
    "sort": 3,
@@ -5081,6 +5176,183 @@ const SEED = {
 
 __exp.SEED = SEED;
 });
+__def("supabase.js", function (__exp) {
+// Collegamento al database Supabase.
+//
+// Il sito funziona anche senza: il catalogo compilato nel bundle resta la riserva, e tutto
+// quello che c'è qui dentro degrada in silenzio se la rete non risponde o se la configurazione
+// è vuota. Quando invece il collegamento c'è, il database diventa la fonte di verità:
+// il catalogo mostrato è quello letto da Supabase, non quello compilato.
+//
+// Sicurezza: qui si usa SOLO la chiave pubblicabile, quella che Supabase prevede per il browser.
+// La service role non compare in nessun file del sito. Chi non ha fatto l'accesso vede quello
+// che le policy RLS concedono al ruolo anonimo: prodotti pubblicati, foto pubblicate,
+// impostazioni pubbliche. Prezzi, bozze e note interne restano protetti dal database, non dal
+// JavaScript.
+
+const ENV = window.VS_CONFIG ?? {};
+const SB = { url: (ENV.supabaseUrl ?? '').replace(/\/$/, ''), key: ENV.supabaseKey ?? '', bucket: ENV.supabaseBucket ?? 'product-media' };
+
+/** C'è una configurazione? Senza, il sito resta sul catalogo compilato e non chiama nulla. */
+const configured = () => !!(SB.url && SB.key);
+
+const SESSION_KEY = 'vs-sb-session-v1';
+const readSession = () => {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    return s && s.expires_at * 1000 > Date.now() ? s : null;
+  } catch {
+    return null;
+  }
+};
+let session = configured() ? readSession() : null;
+
+const currentUser = () => session?.user ?? null;
+
+function authHeader() {
+  return { apikey: SB.key, Authorization: `Bearer ${session?.access_token || SB.key}` };
+}
+
+/** Una chiamata a PostgREST. Restituisce i dati, oppure solleva con il messaggio del database. */
+async function rest(path, { method = 'GET', body, prefer } = {}) {
+  const res = await fetch(`${SB.url}/rest/v1/${path}`, {
+    method,
+    headers: {
+      ...authHeader(),
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(prefer ? { Prefer: prefer } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || `${res.status} ${res.statusText}`);
+  return data;
+}
+
+/** Una funzione del database (validate_cart, create_cart_request, create_quote_request). */
+async function rpc(fn, args) {
+  return rest(`rpc/${fn}`, { method: 'POST', body: args });
+}
+
+// ------------------------------------------------------------------ accesso
+/** Accesso con email e password. La password viaggia solo verso Supabase e non viene salvata. */
+async function signIn(email, password) {
+  const res = await fetch(`${SB.url}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error_description || data?.msg || 'Accesso non riuscito');
+  session = { ...data, expires_at: Math.floor(Date.now() / 1000) + (data.expires_in ?? 3600) };
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {}
+  return session.user;
+}
+
+/** Link per reimpostare la password: serve al primo accesso, che nasce senza password. */
+async function sendRecovery(email) {
+  const res = await fetch(`${SB.url}/auth/v1/recover`, {
+    method: 'POST',
+    headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error('Non è stato possibile inviare il link');
+}
+
+function signOut() {
+  session = null;
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
+}
+
+/** L'utente collegato è un amministratore? Lo decide il database, non il browser. */
+async function isAdmin() {
+  if (!session) return false;
+  try {
+    return (await rpc('is_admin', {})) === true;
+  } catch {
+    return false;
+  }
+}
+
+// ------------------------------------------------------------------ catalogo
+/** `seed/img/...` è una foto compilata nel sito; tutto il resto sta nel bucket. */
+function srcOf(storage_path) {
+  if (!storage_path) return '';
+  if (storage_path.startsWith('seed/')) return storage_path.slice(5);
+  if (/^(https?:|idb:)/.test(storage_path)) return storage_path;
+  return `${SB.url}/storage/v1/object/public/${SB.bucket}/${storage_path}`;
+}
+/** Le foto del catalogo esistono a due larghezze: la piccola si ricava dal nome della grande. */
+function srcsetOf(src, width) {
+  const small = src.replace(/-1200\.webp$/, '-720.webp');
+  return small !== src ? `${small} 720w, ${src} ${width || 1200}w` : '';
+}
+
+/**
+ * Legge il catalogo dal database e lo restituisce nella stessa forma del catalogo compilato,
+ * così il resto del sito non sa nemmeno da dove arriva.
+ */
+async function loadCatalog() {
+  const [categories, products, variants, mediaRows, settingsRows, redirects] = await Promise.all([
+    rest('categories?select=*&order=sort'),
+    rest('products?select=*&order=sort'),
+    rest('variants?select=*&order=sort'),
+    rest('media?select=*&order=sort'),
+    rest('settings?select=key,value'),
+    rest('slug_redirects?select=old_slug,new_slug'),
+  ]);
+  const media = mediaRows.map((m) => {
+    const src = srcOf(m.storage_path);
+    return { ...m, src, srcset: srcsetOf(src, m.width), width: m.width ?? null, height: m.height ?? null };
+  });
+  const settings = Object.fromEntries(settingsRows.map((r) => [r.key, r.value]));
+  return { categories, products, variants, media, settings, redirects, source: 'supabase' };
+}
+
+/**
+ * Manda al database il catalogo così com'è nell'admin. Solo per un amministratore collegato:
+ * per chiunque altro le policy RLS rifiutano la scrittura, e va bene così.
+ */
+async function pushCatalog(db) {
+  const keep = (o, ks) => Object.fromEntries(ks.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
+  const P = ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition', 'highlights',
+    'claims', 'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match'];
+  const V = ['id', 'product_id', 'sku', 'size', 'height_cm', 'price_cents', 'availability', 'active', 'sort'];
+  const C = ['id', 'slug', 'kind', 'name', 'description', 'sort', 'status'];
+  const up = (t, rows) => (rows.length ? rest(`${t}?on_conflict=id`, { method: 'POST', body: rows, prefer: 'resolution=merge-duplicates,return=minimal' }) : null);
+  await up('categories', db.categories.map((c) => keep(c, C)));
+  await up('products', db.products.map((p) => keep(p, P)));
+  await up('variants', db.variants.map((v) => keep(v, V)));
+  // le foto caricate nel browser (idb:) restano dove sono: non esiste un file da collegare
+  const media = db.media
+    .filter((m) => !String(m.src).startsWith('idb:'))
+    .map((m) => ({
+      ...keep(m, ['id', 'product_id', 'slot', 'alt', 'caption', 'illustrative', 'is_cover', 'published', 'sort', 'focal_x', 'focal_y', 'width', 'height', 'fit', 'bg']),
+      storage_path: m.storage_path ?? (String(m.src).startsWith('http') ? m.src : `seed/${m.src}`),
+    }));
+  await up('media', media);
+  const settings = Object.entries(db.settings ?? {}).map(([key, value]) => ({ key, value }));
+  if (settings.length) await rest('settings?on_conflict=key', { method: 'POST', body: settings, prefer: 'resolution=merge-duplicates,return=minimal' });
+  return { prodotti: db.products.length, varianti: db.variants.length, foto: media.length };
+}
+
+__exp.SB = SB;
+__exp.configured = configured;
+__exp.currentUser = currentUser;
+__exp.rpc = rpc;
+__exp.signIn = signIn;
+__exp.sendRecovery = sendRecovery;
+__exp.signOut = signOut;
+__exp.isAdmin = isAdmin;
+__exp.loadCatalog = loadCatalog;
+__exp.pushCatalog = pushCatalog;
+});
 __def("slots.js", function (__exp) {
 // Spazi immagine del sito (non legati a un prodotto). Ogni spazio mostra, in
 // ordine: la foto caricata e pubblicata dall'admin, l'immagine predefinita
@@ -5144,12 +5416,16 @@ __exp.HERO_CAPTIONS = HERO_CAPTIONS;
 __exp.PRODUCT_SLOTS = PRODUCT_SLOTS;
 });
 __def("store.js", function (__exp) {
-// Livello dati della PREVIEW.
-// Simula il backend Supabase nel browser di chi la usa: localStorage per i dati,
-// IndexedDB per le foto caricate. Le funzioni `api.*` corrispondono alle funzioni
-// SQL in supabase/migrations/0003_functions.sql (validate_cart, create_request…).
+// Livello dati del sito.
+// Due modi, decisi dalla configurazione:
+//  - senza Supabase: localStorage per i dati e IndexedDB per le foto caricate, e le funzioni
+//    `api.*` rifanno nel browser quello che farebbe il database;
+//  - con Supabase collegato: il catalogo arriva dal database, e carrello e richieste passano
+//    dalle funzioni SQL vere (validate_cart, create_cart_request, create_quote_request).
+// In entrambi i casi il prezzo non viene mai creduto sulla parola del browser: si ricontrolla.
 
 const {SEED} = __req("seed.js");
+const {configured: sbConfigured, rpc: sbRpc} = __req("supabase.js");
 const {SITE_SLOTS} = __req("slots.js");
 const {CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber} = __req("core/index.js");
 
@@ -5393,13 +5669,71 @@ const cart = {
 };
 
 // ---------- "Server" simulato ----------
+/**
+ * Sostituisce il catalogo con quello letto dal database: da quel momento il sito mostra
+ * quello che c'è su Supabase, non quello compilato nel bundle. Restano le foto caricate
+ * nel browser, le richieste, lo storico e le impostazioni scelte a mano nell'admin.
+ */
+function applyRemoteCatalog(cat) {
+  const locali = db.media.filter((m) => String(m.src).startsWith('idb:'));
+  const remoti = new Set(cat.media.map((m) => m.id));
+  db.categories = clone(cat.categories);
+  db.products = clone(cat.products);
+  db.variants = clone(cat.variants);
+  db.media = [...clone(cat.media), ...locali.filter((m) => !remoti.has(m.id))];
+  db.redirects = clone(cat.redirects ?? []);
+  for (const [k, v] of Object.entries(cat.settings ?? {})) db.settings[k] = clone(v);
+  db.catalog_source = 'supabase';
+  db.catalog_at = nowIso();
+  store.commit('catalog');
+  return { prodotti: db.products.length, varianti: db.variants.length, foto: cat.media.length };
+}
+
+/** Da dove arriva il catalogo che si sta guardando. Serve all'admin per dirlo a chiaro. */
+const catalogSource = () => (db.catalog_source === 'supabase' ? 'supabase' : 'bundle');
+
+// Il database non deve mai far aspettare chi sta comprando: ogni chiamata ha un tempo
+// massimo, e dopo un errore si smette di provarci per mezzo minuto invece di rallentare
+// ogni singola azione. Nel frattempo il controllo lo fa il catalogo che abbiamo in pagina.
+let remoteDownUntil = 0;
+const remoteUsable = () => sbConfigured() && Date.now() > remoteDownUntil;
+async function remote(fn, args, ms = 2500) {
+  try {
+    return await Promise.race([sbRpc(fn, args), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo scaduto')), ms))]);
+  } catch (e) {
+    remoteDownUntil = Date.now() + 30000;
+    console.warn(`${fn} dal database non riuscita (${e.message}): si continua con il catalogo in pagina`);
+    return null;
+  }
+}
+
 const api = {
-  /** Ricontrollo come farebbe il server: legge sempre lo stato salvato, non quello della pagina. */
-  validateCart(items) {
+  /**
+   * Ricontrollo come farebbe il server: legge sempre lo stato salvato, non quello della pagina.
+   * Con il database collegato il ricontrollo lo fa il database, che è l'unico a sapere
+   * davvero quanto costa una variante adesso.
+   */
+  async validateCart(items) {
+    if (remoteUsable()) {
+      const r = await remote('validate_cart', { items: items.map((i) => ({ variant_id: i.variant_id, qty: i.qty, seen_price_cents: i.seen_price_cents ?? null })) });
+      if (r && Array.isArray(r.lines)) return remoteValidation(r, items);
+    }
     return validateCart(catalog(), items);
   },
-  createCartRequest(validation) {
-    const ref = makeRef('R', new Date());
+  async createCartRequest(validation) {
+    if (remoteUsable()) {
+      const r = await remote('create_cart_request', {
+        items: validation.lines.filter((l) => l.status === 'ok').map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents })),
+      });
+      if (r?.ok && r.ref) return localCartRequest(validation, r.ref, true);
+    }
+    return localCartRequest(validation, makeRef('R', new Date()), false);
+  },
+  createQuoteRequestRemoteFirst: null,
+};
+
+/** Il riepilogo resta anche nel browser: serve all'admin della preview e al tasto "copia". */
+function localCartRequest(validation, ref, remota) {
     const items = validation.lines
       .filter((l) => l.status === 'ok')
       .map((l) => ({
@@ -5426,11 +5760,24 @@ const api = {
       updated_at: nowIso(),
       history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: 'Riepilogo generato dal carrello' }],
     };
-    db.requests.unshift(r);
-    store.commit('requests');
-    return r;
-  },
-  createQuoteRequest(q) {
+  db.requests.unshift(r);
+  store.commit('requests');
+  return r;
+}
+
+/** Le righe tornate dal database si riallineano al catalogo locale, per mostrarle in pagina. */
+function remoteValidation(r, items) {
+  const idx = catalog();
+  const lines = r.lines.map((l, i) => {
+    const variant = idx.variants.find((v) => v.id === l.variant_id) ?? null;
+    const product = variant ? idx.products.find((p) => p.id === variant.product_id) : null;
+    return { ...l, item: items[i], variant, product, unit_cents: l.unit_cents ?? variant?.price_cents ?? null };
+  });
+  return { lines, total_cents: r.total_cents, ok: lines.every((l) => l.status === 'ok') };
+}
+
+Object.assign(api, {
+  async createQuoteRequest(q) {
     const ref = makeRef('Q', new Date());
     const r = {
       id: rid(),
@@ -5448,6 +5795,13 @@ const api = {
     };
     db.requests.unshift(r);
     store.commit('requests');
+    if (remoteUsable()) {
+      const res = await remote('create_quote_request', { payload: q });
+      if (res?.ok && res.ref) {
+        r.ref = res.ref;
+        store.commit('requests');
+      }
+    }
     return r;
   },
   /** Il click su WhatsApp NON prova l'invio: diventa solo "in attesa di contatto". */
@@ -5460,7 +5814,7 @@ const api = {
     store.commit('requests');
   },
   customSku: (id) => customSku(new Date(), id),
-};
+});
 
 const REQUEST_STATUS = {
   bozza: 'Bozza',
@@ -5485,6 +5839,8 @@ __exp.catalog = catalog;
 __exp.mediaFor = mediaFor;
 __exp.coverFor = coverFor;
 __exp.cart = cart;
+__exp.applyRemoteCatalog = applyRemoteCatalog;
+__exp.catalogSource = catalogSource;
 __exp.api = api;
 __exp.REQUEST_STATUS = REQUEST_STATUS;
 __exp.REQUEST_TYPE = REQUEST_TYPE;
@@ -6576,7 +6932,8 @@ __def("admin.js", function (__exp) {
 
 const {adminKey, go, P, legacyToPath} = __req("nav.js");
 const {formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex} = __req("core/index.js");
-const {store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api} = __req("store.js");
+const {store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api, applyRemoteCatalog, catalogSource} = __req("store.js");
+const {configured: sbConfigured, currentUser: sbUser, signIn: sbSignIn, signOut: sbSignOut, sendRecovery: sbRecovery, isAdmin: sbIsAdmin, loadCatalog: sbLoad, pushCatalog: sbPush, SB} = __req("supabase.js");
 const {SITE_SLOTS} = __req("slots.js");
 const {esc, $, $$, toast, copyText, confirmDialog, openDialog, icon, slugify, fmtDate} = __req("ui.js");
 
@@ -7053,11 +7410,39 @@ function viewSettings() {
       <div class="adm-filters"><input class="input" id="sm-base" value="https://vesuviosleep.it" aria-label="Dominio"><button class="btn btn--ghost btn--sm" data-adm="sitemap">Genera</button></div>
       <textarea class="textarea" id="sm-out" readonly rows="6" aria-label="Sitemap" hidden></textarea>
     </section>
+    ${databaseCard()}
     <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Dati dell'anteprima</h2>
       <p class="small muted">Catalogo, richieste e foto sono salvati solo in questo browser.</p>
       <div class="btn-row"><button class="btn btn--ghost btn--sm" data-adm="export">Esporta i dati in JSON</button><button class="btn btn--danger btn--sm" data-adm="reset">Ripristina i dati iniziali</button></div>
       <textarea class="textarea" id="export-out" readonly rows="6" hidden aria-label="Esportazione"></textarea>
     </section>`);
+}
+
+/** Stato del collegamento a Supabase: da dove arriva il catalogo e che cosa si può fare. */
+function databaseCard() {
+  if (!sbConfigured())
+    return `<section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Database</h2>
+      <p class="small muted">Nessun collegamento configurato: il sito usa il catalogo compilato nel bundle.
+      Si attiva mettendo <code>supabaseUrl</code> e <code>supabaseKey</code> in <code>js/config.js</code>.</p></section>`;
+  const da = catalogSource() === 'supabase';
+  const u = sbUser();
+  return `<section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Database</h2>
+    <p class="note ${da ? 'note--ok' : 'note--warn'} small" id="db-state">${da
+      ? `Il catalogo che stai guardando arriva dal <strong>database</strong>${db().catalog_at ? ` (letto ${esc(fmtDate(db().catalog_at))})` : ''}.`
+      : 'Il catalogo che stai guardando è quello <strong>compilato nel sito</strong>: il database non ha risposto, oppure non è stato ancora letto.'}</p>
+    <p class="small muted">Progetto: <code>${esc(SB.url.replace('https://', ''))}</code>. La chiave in pagina è quella pubblicabile: che cosa si legge e si scrive lo decidono le policy del database.</p>
+    <div class="btn-row"><button class="btn btn--ghost btn--sm" data-adm="db-pull">Rileggi dal database</button></div>
+    <hr class="adm-hr">
+    ${u
+      ? `<p class="small">Collegato come <strong>${esc(u.email)}</strong>. <span id="db-admin"></span></p>
+         <div class="btn-row"><button class="btn btn--primary btn--sm" data-adm="db-push">Pubblica il catalogo sul database</button><button class="btn btn--ghost btn--sm" data-adm="db-signout">Esci</button></div>
+         <p class="small muted">«Pubblica» manda al database prodotti, varianti, foto e impostazioni come li vedi qui. Le foto caricate in questo browser non partono: non esiste ancora un file da collegare.</p>`
+      : `<div class="field"><label for="db-mail">Email</label><input class="input" id="db-mail" type="email" autocomplete="username"></div>
+         <div class="field"><label for="db-pw">Password</label><input class="input" id="db-pw" type="password" autocomplete="current-password"></div>
+         <p class="err-msg" id="db-err" role="alert"></p>
+         <div class="btn-row"><button class="btn btn--primary btn--sm" data-adm="db-signin">Accedi al database</button><button class="btn btn--ghost btn--sm" data-adm="db-recover">Non ho una password</button></div>
+         <p class="small muted">Il primo amministratore nasce senza password: usa «Non ho una password» e la imposti dal link che ricevi per email.</p>`}
+  </section>`;
 }
 
 function viewAudit() {
@@ -7549,6 +7934,62 @@ function bind() {
         out.value = buildSitemap($('#sm-base').value.trim() || 'https://vesuviosleep.it', window.__vs.routes().map((r) => ({ path: r.path, images: r.images })));
         break;
       }
+      case 'db-pull': {
+        try {
+          const cat = await sbLoad();
+          const n = applyRemoteCatalog(cat);
+          toast(`Catalogo letto dal database: ${n.prodotti} prodotti, ${n.varianti} varianti`);
+          rerender();
+        } catch (err) {
+          toast('Il database non risponde: ' + err.message);
+        }
+        break;
+      }
+      case 'db-signin': {
+        const err = $('#db-err');
+        err.textContent = '';
+        try {
+          await sbSignIn($('#db-mail').value.trim(), $('#db-pw').value);
+          if (!(await sbIsAdmin())) {
+            sbSignOut();
+            err.textContent = 'Questo utente non è un amministratore del database.';
+            return;
+          }
+          toast('Collegato al database');
+          rerender();
+        } catch (e2) {
+          err.textContent = e2.message;
+        }
+        break;
+      }
+      case 'db-recover': {
+        const mail = $('#db-mail').value.trim();
+        if (!mail) return ($('#db-err').textContent = 'Scrivi prima la tua email.');
+        try {
+          await sbRecovery(mail);
+          toast('Se l\'indirizzo esiste, arriva un link per impostare la password');
+        } catch (e3) {
+          $('#db-err').textContent = e3.message;
+        }
+        break;
+      }
+      case 'db-signout':
+        sbSignOut();
+        toast('Uscito dal database');
+        rerender();
+        break;
+      case 'db-push': {
+        if (!(await confirmDialog('Pubblicare il catalogo sul database?', 'Prodotti, varianti, foto e impostazioni di questa anteprima sostituiranno quelli sul database. Le richieste e lo storico non vengono toccati.', 'Pubblica'))) return;
+        try {
+          const n = await sbPush(d);
+          store.audit('database', 'catalogo', `Pubblicati ${n.prodotti} prodotti, ${n.varianti} varianti, ${n.foto} foto`);
+          store.commit('audit');
+          toast(`Pubblicato: ${n.prodotti} prodotti, ${n.varianti} varianti`);
+        } catch (err2) {
+          toast('Pubblicazione rifiutata: ' + err2.message);
+        }
+        break;
+      }
       case 'export': {
         const out = $('#export-out');
         out.hidden = false;
@@ -7590,7 +8031,8 @@ const {formatCents,
   websiteJsonLd,} = __req("core/index.js");
 const {MODE, P, u, abs, absAsset, current, go, isAt, legacyToPath, setNavigator, interceptLinks, IS_PREVIEW} = __req("nav.js");
 const {PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_METHODS, applySettings} = __req("pages.js");
-const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage} = __req("store.js");
+const {store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage, applyRemoteCatalog} = __req("store.js");
+const {configured: sbConfigured, loadCatalog: sbLoadCatalog} = __req("supabase.js");
 const {esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion} = __req("ui.js");
 const {productIllustration, layersFor} = __req("illustrations.js");
 const {heroHtml} = __req("hero.js");
@@ -8745,8 +9187,8 @@ function waBlock(plan, ref, kind) {
 }
 
 // ---------------------------------------------------------------- CARRELLO
-function viewCart() {
-  const v = api.validateCart(cart.items);
+async function viewCart() {
+  const v = await api.validateCart(cart.items);
   const idx = catalog();
   setMeta('Carrello', 'Il tuo carrello Vesuvio Sleep: verifica gli articoli e invia il riepilogo su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
@@ -8798,13 +9240,13 @@ function cartLine(idx, l) {
 function cartSignature(items) {
   return items.map((i) => `${i.variant_id}:${i.qty}:${i.seen_price_cents}`).sort().join('|');
 }
-function viewReview() {
+async function viewReview() {
   setMeta('Verifica il riepilogo', 'Controlla il riepilogo, scegli come pagare e invialo a Vesuvio Sleep su WhatsApp.', [], { noindex: true });
   if (!cart.items.length) {
     go(P.cart, { replace: true });
     return;
   }
-  const v = api.validateCart(cart.items); // ricontrollo "lato server"
+  const v = await api.validateCart(cart.items); // ricontrollo lato server: con Supabase collegato lo fa il database
   const head = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello', href: u(P.cart) }, { name: 'Verifica' }], 'Verifica il riepilogo')}
     <div class="wrap" style="padding-top:22px"><ol class="steps-mini" aria-label="Passaggi"><li>Carrello</li><li aria-current="step">Verifica</li><li>WhatsApp</li></ol></div>`;
   if (!v.canSubmit) {
@@ -8820,7 +9262,7 @@ function viewReview() {
   } catch {
     /* sessionStorage non disponibile */
   }
-  const req = ref ? store.db.requests.find((r) => r.ref === ref) : api.createCartRequest(v);
+  const req = ref ? store.db.requests.find((r) => r.ref === ref) : await api.createCartRequest(v);
   try {
     sessionStorage.setItem('vs-review', JSON.stringify({ sig, ref: req.ref }));
   } catch {
@@ -9239,7 +9681,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDrawer();
 });
 
-document.addEventListener('submit', (e) => {
+document.addEventListener('submit', async (e) => {
   if (e.target.id === 'search-form') {
     e.preventDefault();
     const q = String(new FormData(e.target).get('q') || '').trim();
@@ -9270,7 +9712,7 @@ document.addEventListener('submit', (e) => {
   const b2b = fd.get('b2b') === 'on';
   const notesExtra = b2b ? [num('rooms') ? `Camere/posti letto: ${num('rooms')}` : '', num('qty') ? `Quantità: ${num('qty')}` : ''].filter(Boolean).join('. ') : '';
   const notes = [notesExtra, String(fd.get('notes') || '').slice(0, 500)].filter(Boolean).join('. ');
-  const r = api.createQuoteRequest({ product_id: p?.id ?? null, product: p?.name ?? 'Da definire con il cliente', width_cm: w, length_cm: l, height_cm: h, notes, b2b });
+  const r = await api.createQuoteRequest({ product_id: p?.id ?? null, product: p?.name ?? 'Da definire con il cliente', width_cm: w, length_cm: l, height_cm: h, notes, b2b });
   const text = buildQuoteMessage({ ref: r.ref, product: (b2b ? '[Struttura ricettiva] ' : '') + (p?.name ?? 'Da definire'), width_cm: w, length_cm: l, height_cm: h, notes });
   state.lastSummary = text;
   const n = normalizeWhatsAppNumber(whatsappStatus().raw);
@@ -9346,6 +9788,19 @@ route();
   await Promise.race([media.init(), new Promise((r) => setTimeout(r, 1500))]);
   if (hasLocalPhotos) route();
   if (!store.storageOk) toast('Il browser blocca il salvataggio locale: carrello e admin non verranno ricordati');
+  // Catalogo dal database. La pagina è già disegnata con il catalogo compilato: se Supabase
+  // risponde si ridisegna con i dati veri, se non risponde non succede niente e resta quello.
+  if (sbConfigured()) {
+    try {
+      const cat = await Promise.race([sbLoadCatalog(), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo scaduto')), 4000))]);
+      if (cat?.products?.length) {
+        applyRemoteCatalog(cat);
+        route();
+      }
+    } catch (e) {
+      console.warn('Catalogo dal database non disponibile, resta quello compilato:', e.message);
+    }
+  }
 })();
 
 

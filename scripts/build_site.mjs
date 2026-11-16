@@ -38,6 +38,14 @@ const OUT = path.join(ROOT, 'dist');
 const argSite = process.argv.indexOf('--site');
 const SITE = (argSite > 0 ? process.argv[argSite + 1] : process.env.SITE_URL || 'https://vesuviosleep.it').replace(/\/$/, '');
 const TODAY = new Date().toISOString().slice(0, 10);
+// Collegamento al database del sito pubblico: si legge dalla configurazione della preview,
+// così esiste un posto solo da cambiare. In prerendering la rete non c'è e il generatore
+// usa comunque il catalogo compilato: l'HTML statico non dipende da Supabase.
+const SUPABASE = (() => {
+  const src = fs.readFileSync(path.join(SRC, 'js/config.js'), 'utf8');
+  const get = (k) => (new RegExp(`${k}:\\s*'([^']*)'`).exec(src) ?? [])[1] ?? '';
+  return { url: get('supabaseUrl'), key: get('supabaseKey'), bucket: get('supabaseBucket') || 'product-media' };
+})();
 
 // ------------------------------------------------------------------ file statici
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -49,7 +57,11 @@ execFileSync('python3', ['-I', path.join(ROOT, 'scripts/bundle.py'), path.join(S
   '--seed', path.join(SRC, 'js/seed.public.js'), '--out', path.join(OUT, 'js/bundle.js')], { stdio: 'pipe' });
 fs.writeFileSync(
   path.join(OUT, 'js/config.js'),
-  `// Sito pubblico: indirizzi veri e indicizzazione attiva.\nwindow.VS_CONFIG = ${JSON.stringify({ preview: false, routing: 'path', siteUrl: SITE, whatsappNumber: '', mapEmbed: false }, null, 1)};\n`,
+  `// Sito pubblico: indirizzi veri e indicizzazione attiva.\n// La chiave Supabase è quella pubblicabile: sta nel browser per progetto, e a decidere\n// che cosa si legge sono le policy RLS. La service role non è in nessun file.\nwindow.VS_CONFIG = ${JSON.stringify(
+    { preview: false, routing: 'path', siteUrl: SITE, whatsappNumber: '', mapEmbed: false, supabaseUrl: SUPABASE.url, supabaseKey: SUPABASE.key, supabaseBucket: SUPABASE.bucket },
+    null,
+    1,
+  )};\n`,
 );
 // le immagini del vecchio Pocket 2400 restano solo in archivio, non sul sito pubblico
 for (const f of fs.readdirSync(path.join(OUT, 'img'))) if (f.startsWith('pocket-2400-')) fs.rmSync(path.join(OUT, 'img', f));

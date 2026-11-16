@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-16e'
+CATALOG_VERSION = 'catalogo-2026-11-16f'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -178,7 +178,9 @@ MATTRESSES = {
               'piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, '
               'cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce '
               'anche l\'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato '
-              'e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.',
+              'e la composizione di dettaglio. Foto consegnate la sera del 16/11/2026: il tessuto porta la '
+              'scritta "Antibatterico", che la scheda non riprende perche\' non e\' una caratteristica verificata. '
+              'DA CONFERMARE: che sia il tessuto di questo modello.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Memory Foam 3 strati': dict(
         key='memory-foam-3-strati', slug='memory-trio', display='Vesuvio Memory Trio', line='MF3', sort=4,
@@ -291,7 +293,10 @@ for r in TOPPER_X:
                     description='Topper in Memory Foam alto 5 cm con rivestimento sfoderabile, nelle stesse misure dei nostri materassi.',
                     composition='Memory Foam, altezza 5 cm.', highlights=['Altezza 5 cm', 'Sfoderabile'], removable_cover=True,
                     line_code='MC5', sort=20, lead_time=LEAD,
-                    internal_notes='Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto.')
+                    internal_notes='Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto. '
+                                   'Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta "Aloe Vera", che la scheda non '
+                                   'riprende perche\' non e\' una caratteristica verificata. Nessuna delle due e\' un primo piano del tessuto: '
+                                   'la seconda mostra la cerniera sul bordo ed e\' usata nello spazio "dettaglio". DA CONFERMARE il tessuto.')
     add_variants(p, 'topper', 'MC5', [r], 'topper')
 
 # Guanciali e letti a castello: nessun prezzo nel listino -> bozza, varianti senza prezzo
@@ -314,11 +319,12 @@ pid = lambda key: uid('prod', key)
 # 1) immagini approvate del 15/11/2026 (MEDIA_MANIFEST.csv)
 IMG = json.load(open(os.path.join(ROOT, 'preview/img/prodotti/manifest.json')))
 FOLDER_KEY = {'vesuvio-eco': 'essential-foam', 'vesuvio-memory-duo': 'memory-duo', 'vesuvio-pocket-3000-elite': 'pocket-2400-elite',
-              'vesuvio-memory-trio': 'memory-foam-3-strati', 'vesuvio-memory-duo-classic': 'memory-duo-classic'}
+              'vesuvio-memory-trio': 'memory-foam-3-strati', 'vesuvio-memory-duo-classic': 'memory-duo-classic',
+              'vesuvio-pocket-1600': 'pocket-1600', 'vesuvio-topper-memory-cloud-5': 'topper-memory-cloud-5'}
 # Le cartelle sono state rinominate con i prodotti il 16/11/2026, ma l'ID della foto si
 # continua a calcolare dal nome originale: altrimenti il database vedrebbe foto nuove.
 ID_FOLDER = {'vesuvio-eco': 'vesuvio-essential-foam', 'vesuvio-pocket-3000-elite': 'vesuvio-pocket-2600-elite'}
-SLOT = {'hero': 'hero', 'exploded': 'exploded', 'detail': 'fabric'}
+SLOT = {'hero': 'hero', 'exploded': 'exploded', 'detail': 'fabric', 'fabric': 'fabric'}
 ALT = {
     ('essential-foam', 'hero'): 'Vesuvio Eco, materasso con rivestimento bianco trapuntato',
     ('essential-foam', 'exploded'): 'Vista esplosa del Vesuvio Eco: rivestimento e anima in poliuretano espanso',
@@ -338,8 +344,13 @@ ALT = {
     ('memory-duo-classic', 'hero'): 'Vesuvio Memory Duo Classic in prospettiva, piano trapuntato chiaro e fascia laterale marrone con maniglie',
     ('memory-duo-classic', 'exploded'): 'Vista esplosa del Vesuvio Memory Duo Classic: rivestimento, strato di Memory Foam e base portante',
     ('memory-duo-classic', 'detail'): 'Dettaglio del bordo, della maniglia e della trapuntatura del Vesuvio Memory Duo Classic',
+    ('pocket-1600', 'hero'): 'Vesuvio Pocket 1600 in prospettiva, piano trapuntato chiaro e fascia laterale marrone con maniglie',
+    ('pocket-1600', 'exploded'): 'Vista esplosa del Vesuvio Pocket 1600: rivestimento, due strati in schiuma, le molle insacchettate e la base',
+    ('pocket-1600', 'detail'): 'Dettaglio dell\'angolo, della maniglia e della trapuntatura del Vesuvio Pocket 1600',
+    ('topper-memory-cloud-5', 'hero'): 'Vesuvio Topper Memory Cloud 5 in prospettiva, piano trapuntato bianco con cerniera perimetrale',
+    ('topper-memory-cloud-5', 'fabric'): 'Il rivestimento sfoderabile del Topper Memory Cloud 5 con la cerniera che corre lungo il bordo',
 }
-ORDER = {'hero': 1, 'exploded': 2, 'detail': 3}
+ORDER = {'hero': 1, 'exploded': 2, 'detail': 3, 'fabric': 3}
 for it in IMG:
     key = FOLDER_KEY[it['prodotto']]
     (big, bw, bh), (small, sw, sh) = it['files'][0], it['files'][1]
@@ -424,7 +435,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-16e', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-16f', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 # Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
 # Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.

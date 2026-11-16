@@ -4,7 +4,8 @@
 
 import { adminKey, go, P, legacyToPath } from './nav.js';
 import { formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex } from './core/index.js';
-import { store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api } from './store.js';
+import { store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api, applyRemoteCatalog, catalogSource } from './store.js';
+import { configured as sbConfigured, currentUser as sbUser, signIn as sbSignIn, signOut as sbSignOut, sendRecovery as sbRecovery, isAdmin as sbIsAdmin, loadCatalog as sbLoad, pushCatalog as sbPush, SB } from './supabase.js';
 import { SITE_SLOTS } from './slots.js';
 import { esc, $, $$, toast, copyText, confirmDialog, openDialog, icon, slugify, fmtDate } from './ui.js';
 
@@ -481,11 +482,39 @@ function viewSettings() {
       <div class="adm-filters"><input class="input" id="sm-base" value="https://vesuviosleep.it" aria-label="Dominio"><button class="btn btn--ghost btn--sm" data-adm="sitemap">Genera</button></div>
       <textarea class="textarea" id="sm-out" readonly rows="6" aria-label="Sitemap" hidden></textarea>
     </section>
+    ${databaseCard()}
     <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Dati dell'anteprima</h2>
       <p class="small muted">Catalogo, richieste e foto sono salvati solo in questo browser.</p>
       <div class="btn-row"><button class="btn btn--ghost btn--sm" data-adm="export">Esporta i dati in JSON</button><button class="btn btn--danger btn--sm" data-adm="reset">Ripristina i dati iniziali</button></div>
       <textarea class="textarea" id="export-out" readonly rows="6" hidden aria-label="Esportazione"></textarea>
     </section>`);
+}
+
+/** Stato del collegamento a Supabase: da dove arriva il catalogo e che cosa si può fare. */
+function databaseCard() {
+  if (!sbConfigured())
+    return `<section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Database</h2>
+      <p class="small muted">Nessun collegamento configurato: il sito usa il catalogo compilato nel bundle.
+      Si attiva mettendo <code>supabaseUrl</code> e <code>supabaseKey</code> in <code>js/config.js</code>.</p></section>`;
+  const da = catalogSource() === 'supabase';
+  const u = sbUser();
+  return `<section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Database</h2>
+    <p class="note ${da ? 'note--ok' : 'note--warn'} small" id="db-state">${da
+      ? `Il catalogo che stai guardando arriva dal <strong>database</strong>${db().catalog_at ? ` (letto ${esc(fmtDate(db().catalog_at))})` : ''}.`
+      : 'Il catalogo che stai guardando è quello <strong>compilato nel sito</strong>: il database non ha risposto, oppure non è stato ancora letto.'}</p>
+    <p class="small muted">Progetto: <code>${esc(SB.url.replace('https://', ''))}</code>. La chiave in pagina è quella pubblicabile: che cosa si legge e si scrive lo decidono le policy del database.</p>
+    <div class="btn-row"><button class="btn btn--ghost btn--sm" data-adm="db-pull">Rileggi dal database</button></div>
+    <hr class="adm-hr">
+    ${u
+      ? `<p class="small">Collegato come <strong>${esc(u.email)}</strong>. <span id="db-admin"></span></p>
+         <div class="btn-row"><button class="btn btn--primary btn--sm" data-adm="db-push">Pubblica il catalogo sul database</button><button class="btn btn--ghost btn--sm" data-adm="db-signout">Esci</button></div>
+         <p class="small muted">«Pubblica» manda al database prodotti, varianti, foto e impostazioni come li vedi qui. Le foto caricate in questo browser non partono: non esiste ancora un file da collegare.</p>`
+      : `<div class="field"><label for="db-mail">Email</label><input class="input" id="db-mail" type="email" autocomplete="username"></div>
+         <div class="field"><label for="db-pw">Password</label><input class="input" id="db-pw" type="password" autocomplete="current-password"></div>
+         <p class="err-msg" id="db-err" role="alert"></p>
+         <div class="btn-row"><button class="btn btn--primary btn--sm" data-adm="db-signin">Accedi al database</button><button class="btn btn--ghost btn--sm" data-adm="db-recover">Non ho una password</button></div>
+         <p class="small muted">Il primo amministratore nasce senza password: usa «Non ho una password» e la imposti dal link che ricevi per email.</p>`}
+  </section>`;
 }
 
 function viewAudit() {
@@ -975,6 +1004,62 @@ function bind() {
         out.hidden = false;
         // stessa sitemap che scripts/build_site.mjs pubblica con il sito
         out.value = buildSitemap($('#sm-base').value.trim() || 'https://vesuviosleep.it', window.__vs.routes().map((r) => ({ path: r.path, images: r.images })));
+        break;
+      }
+      case 'db-pull': {
+        try {
+          const cat = await sbLoad();
+          const n = applyRemoteCatalog(cat);
+          toast(`Catalogo letto dal database: ${n.prodotti} prodotti, ${n.varianti} varianti`);
+          rerender();
+        } catch (err) {
+          toast('Il database non risponde: ' + err.message);
+        }
+        break;
+      }
+      case 'db-signin': {
+        const err = $('#db-err');
+        err.textContent = '';
+        try {
+          await sbSignIn($('#db-mail').value.trim(), $('#db-pw').value);
+          if (!(await sbIsAdmin())) {
+            sbSignOut();
+            err.textContent = 'Questo utente non è un amministratore del database.';
+            return;
+          }
+          toast('Collegato al database');
+          rerender();
+        } catch (e2) {
+          err.textContent = e2.message;
+        }
+        break;
+      }
+      case 'db-recover': {
+        const mail = $('#db-mail').value.trim();
+        if (!mail) return ($('#db-err').textContent = 'Scrivi prima la tua email.');
+        try {
+          await sbRecovery(mail);
+          toast('Se l\'indirizzo esiste, arriva un link per impostare la password');
+        } catch (e3) {
+          $('#db-err').textContent = e3.message;
+        }
+        break;
+      }
+      case 'db-signout':
+        sbSignOut();
+        toast('Uscito dal database');
+        rerender();
+        break;
+      case 'db-push': {
+        if (!(await confirmDialog('Pubblicare il catalogo sul database?', 'Prodotti, varianti, foto e impostazioni di questa anteprima sostituiranno quelli sul database. Le richieste e lo storico non vengono toccati.', 'Pubblica'))) return;
+        try {
+          const n = await sbPush(d);
+          store.audit('database', 'catalogo', `Pubblicati ${n.prodotti} prodotti, ${n.varianti} varianti, ${n.foto} foto`);
+          store.commit('audit');
+          toast(`Pubblicato: ${n.prodotti} prodotti, ${n.varianti} varianti`);
+        } catch (err2) {
+          toast('Pubblicazione rifiutata: ' + err2.message);
+        }
         break;
       }
       case 'export': {

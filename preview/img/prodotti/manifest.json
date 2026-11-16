@@ -192,6 +192,54 @@
   ]
  },
  {
+  "prodotto": "vesuvio-pocket-1600",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "hero-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-pocket-1600",
+  "ruolo": "exploded",
+  "files": [
+   [
+    "exploded-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "exploded-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-pocket-1600",
+  "ruolo": "detail",
+  "files": [
+   [
+    "detail-1200.webp",
+    1200,
+    1200
+   ],
+   [
+    "detail-720.webp",
+    720,
+    720
+   ]
+  ]
+ },
+ {
   "prodotto": "vesuvio-pocket-3000-elite",
   "ruolo": "hero",
   "files": [
@@ -236,6 +284,38 @@
     "detail-720.webp",
     720,
     720
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-topper-memory-cloud-5",
+  "ruolo": "hero",
+  "files": [
+   [
+    "hero-1200.webp",
+    1200,
+    900
+   ],
+   [
+    "hero-720.webp",
+    720,
+    540
+   ]
+  ]
+ },
+ {
+  "prodotto": "vesuvio-topper-memory-cloud-5",
+  "ruolo": "fabric",
+  "files": [
+   [
+    "fabric-1200.webp",
+    1200,
+    800
+   ],
+   [
+    "fabric-720.webp",
+    720,
+    480
    ]
   ]
  }

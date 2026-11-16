@@ -399,3 +399,10 @@ a.adm-tr:hover {
   font: 700 0.95rem var(--f-display);
   color: var(--deep);
 }
+
+/* Separatore dentro una scheda dell'admin */
+.adm-hr {
+  border: 0;
+  border-top: 1px solid var(--line, #e3ddd3);
+  margin: 16px 0;
+}

@@ -41,7 +41,7 @@ set request.jwt.claim.sub = '';
 select pg_temp.check((select count(*) from public.products) = 9, 'anon vede solo i 9 prodotti in catalogo');
 select pg_temp.check(not exists (select 1 from public.products where slug in ('memory-air-3d','bonnell-classic','guanciale-piuma','castello-steel')), 'anon non vede i prodotti sospesi (senza prezzo)');
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
-select pg_temp.check((select count(*) from public.media) = 19, 'anon vede solo le foto pubblicate di prodotti pubblicati (19)');
+select pg_temp.check((select count(*) from public.media) = 24, 'anon vede solo le foto pubblicate di prodotti pubblicati (24)');
 select pg_temp.check((select count(*) from storage.objects) = 1, 'anon scarica solo file di foto pubblicate (non la vecchia foto 2400)');
 select pg_temp.check((select count(*) from public.settings) = 6, 'anon legge solo le impostazioni pubbliche (contatti, pagamenti, spedizione, claim)');
 select pg_temp.check((select value #>> '{}' from public.settings where key = 'whatsapp_number') = '+39 366 121 8346', 'numero WhatsApp aziendale pubblico');

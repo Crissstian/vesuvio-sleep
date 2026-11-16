@@ -28,6 +28,11 @@ def load(path):
         return
     file = SEED_SRC if (SEED_SRC and path == 'seed.js') else os.path.join(ROOT, path)
     src = open(file, encoding='utf-8').read()
+    # il bundler riscrive solo gli import con le graffe: se ne sfugge uno di altra forma
+    # finirebbe nel bundle così com'è e il browser lo rifiuterebbe. Meglio fermarsi qui.
+    bad = [l for l in src.splitlines() if l.startswith('import ') and ' from ' in l and not l.lstrip().startswith('import {')]
+    if bad:
+        raise SystemExit(f"{path}: forma di import non supportata dal bundler: {bad[0]}")
     mods[path] = None
     deps = re.findall(r"""from\s+['"](\.[^'"]+)['"]""", src) + re.findall(r"""import\(\s*['"](\.[^'"]+)['"]\s*\)""", src)
     for d in deps:

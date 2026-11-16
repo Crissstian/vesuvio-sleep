@@ -18,7 +18,8 @@ head = src_code.split('src, out = sys.argv', 1)[0]
 exec(compile(head, 'build_product_images.py', 'exec'), mod.__dict__)
 
 SRC, OUT = sys.argv[1], sys.argv[2]
-FOLDER = {'memory-trio': 'vesuvio-memory-trio', 'memory-duo-classic': 'vesuvio-memory-duo-classic'}
+FOLDER = {'memory-trio': 'vesuvio-memory-trio', 'memory-duo-classic': 'vesuvio-memory-duo-classic',
+          'pocket-1600': 'vesuvio-pocket-1600', 'topper-memory-cloud-5': 'vesuvio-topper-memory-cloud-5'}
 
 manifest = json.load(open(os.path.join(OUT, 'manifest.json'), encoding='utf-8'))
 added = 0
@@ -41,7 +42,7 @@ for f in sorted(os.listdir(SRC)):
     manifest = [m for m in manifest if not (m['prodotto'] == prodotto and m['ruolo'] == ruolo)]
     manifest.append(dict(prodotto=prodotto, ruolo=ruolo, files=files))
     added += 1
-order = {'hero': 0, 'exploded': 1, 'detail': 2}
+order = {'hero': 0, 'exploded': 1, 'detail': 2, 'fabric': 3}
 manifest.sort(key=lambda m: (m['prodotto'], order.get(m['ruolo'], 9)))
 json.dump(manifest, open(os.path.join(OUT, 'manifest.json'), 'w'), indent=1)
 print(added, 'immagini aggiunte,', len(manifest), 'in manifest')
