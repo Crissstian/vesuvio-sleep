@@ -67,11 +67,11 @@ test('listino 15/11/2026: 13 misure standard e redirect degli slug', async () =>
   assert.equal(core.resolveRedirect(r, 'memory-duo'), null);
 });
 
-test('seed: 143 varianti acquistabili, nessun prezzo zero o inventato', async () => {
+test('seed: 182 varianti acquistabili, nessun prezzo zero o inventato', async () => {
   const { SEED } = await import('../../preview/js/seed.js');
   const pub = new Set(SEED.products.filter((p) => p.status === 'published').map((p) => p.id));
   const priced = SEED.variants.filter((v) => v.price_cents !== null);
-  assert.equal(priced.filter((v) => pub.has(v.product_id)).length, 143);
+  assert.equal(priced.filter((v) => pub.has(v.product_id)).length, 182);
   assert.ok(priced.every((v) => v.price_cents > 0));
   // un prodotto fuori gamma conserva i prezzi di listino ma non è pubblico
   const air = SEED.products.find((p) => p.slug === 'memory-air-3d');

@@ -1,5 +1,14 @@
 # Changelog
 
+## Listino confermato e altezze H30 a catalogo (16/11/2026, sera)
+L'azienda ha rimandato indietro il listino. Le scale che avevo ricostruito sono tornate invariate, quindi sono **confermate**; in più sono arrivati i prezzi delle tre altezze H30 che finora non erano in vendita.
+
+- **Memory Duo H30**, **Pocket 1600 H30** e **Pocket 3000 Elite H30** ora si comprano: 39 misure in più. Varianti acquistabili da 143 a **182** (143 materassi, 26 reti, 13 topper).
+- Sulle schede compare la scelta dell'altezza anche per Memory Duo e per i due Pocket.
+- **Due prezzi segnalati e non modificati**, pubblicati come sono stati scritti: Memory Duo H30 160×190 = 329 € (unico prezzo non multiplo di 10) e Pocket 1600 H30 160×190 = 540 € contro i 530 € del 160×200 e del 165×190, cioè il prezzo scende al crescere della misura.
+- **Sleep Match**: quando propone un'altezza, il prezzo «da» è ora quello di quell'altezza. Prima mostrava il minimo del modello, che poteva appartenere a un'altra altezza: con le H30 a listino sarebbe stato un prezzo diverso da quello proposto.
+- Applicato al database Supabase (182 varianti acquistabili, nessun prezzo a zero, 78 variazioni a storico).
+
 ## Gamma rifatta: 6 materassi (16/11/2026, sera)
 L'azienda ha indicato l'elenco definitivo dei materassi. Il catalogo, le schede, i testi del sito e il database Supabase sono stati allineati; i prezzi non dettati sono stati **ricostruiti in proporzione**, non inventati.
 

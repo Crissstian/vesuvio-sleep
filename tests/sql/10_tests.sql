@@ -17,14 +17,15 @@ insert into public.media (product_id, slot, storage_path, alt, published)
   select id, 'extra', 'bozze/foto-non-pubblicata.webp', '', false from public.products where slug = 'memory-duo';
 
 select pg_temp.check((select count(*) from public.variants) = 238, 'seed: 238 varianti (listino completo, anche senza prezzo)');
-select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 143, 'listino: 143 varianti con prezzo');
+select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 182, 'listino: 182 varianti con prezzo');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H25-160190') = 28000, 'Memory Duo H25 160x190 = 280 € (listino 15/11/2026)');
-select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H30-160190') is null, 'Pocket H30 senza prezzo');
+select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H30-160190') = 65000, 'Pocket 3000 H30 160x190 = 650 € (16/11/2026 sera)');
+select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H30-160190') = 32900, 'Memory Duo H30 160x190 = 329 € come indicato dall''azienda');
 select pg_temp.check((select count(*) from public.products where slug in ('pocket-2400-elite', 'pocket-2600-elite', 'pocket-3000-elite')) = 1, 'Pocket 3000 Elite: un solo prodotto, nessun duplicato dei nomi precedenti');
 select pg_temp.check((select count(*) from public.variants where sku like 'VS-P2400-%' or sku like 'VS-P2600-%') = 0, 'nessuno SKU dei nomi precedenti del Pocket');
 select pg_temp.check((select count(*) from (select product_id from public.media where is_cover group by product_id having count(*) > 1) x) = 0, 'una sola copertina per prodotto');
 select pg_temp.check((select count(*) from public.media where storage_path ilike '%grafeno%') = 0, 'immagine Grafeno non caricata');
-select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 143, '143 varianti acquistabili, tutte su prodotti pubblicati');
+select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 182, '182 varianti acquistabili, tutte su prodotti pubblicati');
 select pg_temp.check((select status from public.products where slug = 'pocket-1600') = 'published', 'Pocket 1600 rientrato in catalogo');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P1600-H25-160190') = 50000, 'Pocket 1600 H25 160x190 = 500 € (16/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H25-160190') = 62000, 'Pocket 3000 H25 160x190 = 620 € (16/11/2026)');
@@ -51,7 +52,7 @@ select pg_temp.expect_error('select * from public.product_private', 'anon non le
 select pg_temp.expect_error($q$update public.variants set price_cents = 1$q$, 'anon non modifica i prezzi');
 select pg_temp.expect_error($q$insert into public.requests (ref, type) values ('X', 'cart')$q$, 'anon non inserisce richieste direttamente');
 
-select pg_temp.check((public.validate_cart(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H30-160190'), 'qty', 1))) -> 'lines' -> 0 ->> 'status') = 'unavailable', 'validate_cart: Pocket H30 non acquistabile');
+select pg_temp.check((public.validate_cart(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MDC-H25-80190'), 'qty', 1))) -> 'lines' -> 0 ->> 'status') = 'ok', 'validate_cart: variante a listino acquistabile');
 select pg_temp.check((public.validate_cart(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-160190'), 'qty', 2, 'seen_price_cents', 25000))) -> 'lines' -> 0 ->> 'status') = 'price_changed', 'validate_cart: prezzo cambiato segnalato');
 select pg_temp.check((public.validate_cart(jsonb_build_array(jsonb_build_object('variant_id', gen_random_uuid(), 'qty', 1))) -> 'lines' -> 0 ->> 'status') = 'missing', 'validate_cart: variante inesistente');
 select pg_temp.check((public.validate_cart(jsonb_build_array(
@@ -59,7 +60,7 @@ select pg_temp.check((public.validate_cart(jsonb_build_array(
     jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-FLEX-160190'), 'qty', 1)
   )) ->> 'total_cents')::int = 74000, 'validate_cart: totale 2×280 + 180 = 740 €');
 select pg_temp.expect_error($q$select public.validate_cart('[{"variant_id":"00000000-0000-0000-0000-000000000000","qty":99}]')$q$, 'validate_cart: quantità fuori limite');
-select pg_temp.check((public.create_cart_request(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H30-160190'), 'qty', 1))) ->> 'ok')::boolean = false, 'create_cart_request rifiuta carrello non valido');
+select pg_temp.check((public.create_cart_request(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-BON-H25-160190'), 'qty', 1))) ->> 'ok')::boolean = false, 'create_cart_request rifiuta carrello non valido');
 select set_config('test.ref', public.create_cart_request(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-ESS-H25-160190'), 'qty', 1, 'seen_price_cents', 25000))) ->> 'ref', false);
 select pg_temp.check(current_setting('test.ref') ~ '^VS-R-\d{8}-[2-9A-Z]{4}$', 'create_cart_request restituisce un riferimento');
 select public.mark_request_waiting(current_setting('test.ref'));

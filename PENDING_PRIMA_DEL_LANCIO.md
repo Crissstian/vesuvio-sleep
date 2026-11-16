@@ -1,6 +1,6 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 16/11/2026, sera (gamma rifatta su indicazione dell'azienda: 6 materassi, Pocket 1600 rientrato, Memory Air 3D e Bonnell fuori gamma). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 16/11/2026, sera (gamma di 6 materassi; listino rimandato indietro dall'azienda con i prezzi H30 e la conferma delle scale ricostruite). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
 
 ## Bloccanti
 
@@ -20,8 +20,8 @@ Stato al 16/11/2026, sera (gamma rifatta su indicazione dell'azienda: 6 materass
 
 | Voce | Stato |
 | --- | --- |
-| Prezzi | **Verificati** contro il listino confermato del 15/11/2026 per Eco, Memory Duo, Memory Trio, reti e topper. **Ricostruiti** il 16/11/2026 per Pocket 3000 (ancora 160×190 = 620 €, fattore 1,1273) e Pocket 1600 (160×190 = 500 €, fattore 1,1111), arrotondati a 10 €. **Indicati dall'azienda** per il Memory Duo Classic (Duo meno 20 € a misura). In tutto 143 varianti (104/26/13), controllate dai test e2e, SQL e unitari. |
-| **Scale dei prezzi ricostruite** | **Da confermare dall'azienda misura per misura**: ho mantenuto le proporzioni del listino, non sono prezzi dettati. Due punti da guardare: il 120×190 viene 390 € sia sul Pocket 1600 sia sul Pocket 3000, e il Memory Duo Classic a 160×200 viene 280 € come l'Eco H25. |
+| Prezzi | **Tutti confermati dall'azienda**: il listino è stato rimandato indietro la sera del 16/11/2026 con le scale ricostruite lasciate invariate (quindi approvate) e le tre altezze H30 compilate. In tutto 182 varianti (143 materassi, 26 reti, 13 topper), controllate dai test e2e, SQL e unitari. |
+| **Due prezzi da ricontrollare** | Non li ho modificati, sono pubblicati come li hai scritti. 1) **Memory Duo H30, 160×190 = 329 €**: è l'unico prezzo dei materassi che non sia un multiplo di 10, tra un 290 e un 340. 2) **Pocket 1600 H30**: il 160×190 costa 540 € mentre il 160×200 e il 165×190 ne costano 530, cioè il prezzo scende al crescere della misura; in H25 lo stesso passaggio sale (500, 510, 510). |
 | Foto prodotto | **Approvate dal manifest** per Eco, Memory Duo, Pocket 3000 Elite (hero, esploso, dettaglio; le foto del Pocket sono quelle scattate il 15/11 con il nome precedente). **Mancanti** per Memory Trio, Memory Duo Classic, Pocket 1600 e Topper: la scheda mostra il disegno del modello e un segnaposto dichiarato «Foto in arrivo» per ogni inquadratura prevista. Non ho cercato foto su internet: dalla sessione la rete è bloccata e foto di terzi richiederebbero diritti e potrebbero non rappresentare il prodotto reale. Reti: foto generate del 13/11. |
 | Etichette «illustrativo» | **Tolte dal sito pubblico** su richiesta. Le foto di fabbrica, showroom, camera, consegna e reti sono generate con AI: valutare se va dichiarato (pubblicità ingannevole) o sostituirle con foto reali prima del lancio. |
 | **Pocket 3000 Elite** | Rinominato il 16/11/2026 (era Pocket 2600, prima ancora 2400). **Da confermare prima del lancio**: che le molle siano davvero 3000 e a quale misura si riferisce il numero, perché compare nel nome, nel titolo della pagina, nei dati strutturati e nel confronto. Le foto sono quelle del materasso fotografato il 15/11. Altezza H30 senza prezzo: non mostrata. |
@@ -31,7 +31,7 @@ Stato al 16/11/2026, sera (gamma rifatta su indicazione dell'azienda: 6 materass
 | **Eco** | Rinominato il 16/11/2026 da «Vesuvio Essential Foam». Il nome «Eco» è una denominazione commerciale: sul sito non è accompagnato da nessuna dichiarazione ambientale, perché non ne abbiamo di documentate. **Da valutare con l'azienda** se il nome regge senza una certificazione alle spalle. Il vecchio indirizzo reindirizza al nuovo. |
 | Fuori gamma dal 16/11/2026 | Memory Air 3D e Bonnell Classic: archiviati, non compaiono sul sito, si ripubblicano da Admin. |
 | Topper Memory Cloud 5 | Pubblicato, H5. SKU `VS-TOP-MC5-…` proposto, da confermare. |
-| Sospesi (senza prezzo) | Quattro guanciali, Castello Steel, Rete a tavole (non creata), H30 di Memory Duo / Pocket 3000 / Pocket 1600. Si pubblicano da Admin quando arriva il prezzo. |
+| Sospesi (senza prezzo) | Quattro guanciali, Castello Steel, Rete a tavole (non creata). Si pubblicano da Admin quando arriva il prezzo. |
 | Render «da assegnare» e foto di riferimento | **Non pubblicati**: serve indicare modello/SKU e autorizzazione per ciascuno. |
 | Foto reale di fabbrica/showroom | **Mancante**: la scena «lavorazione» è generata ed è indicata come illustrativa. |
 | Foto di Napoli per l'apertura | **Mancante**: l'apertura usa le foto generate (camera, consegna, fabbrica). Una foto reale con diritti d'uso si carica da Admin › Immagini del sito (spazio «Apertura: Napoli»). |
@@ -62,5 +62,5 @@ Stato al 16/11/2026, sera (gamma rifatta su indicazione dell'azienda: 6 materass
 
 - Build TypeScript di `core/` senza errori; 10 test unitari (`npm run test:unit`).
 - 46 controlli SQL (130 varianti con prezzo, un solo Pocket, nessuno SKU 2400, una copertina per prodotto, nessuna immagine Grafeno, redirect leggibile dal pubblico): seed idempotente, RLS per pubblico/utente/admin, storage, funzioni, storico prezzi, eliminazione solo di bozze non collegate (`npm run test:sql`).
-- 134 controlli end-to-end sulla preview (`npm run test:e2e`): 143 varianti e 15 prezzi campione contro il listino, prodotti sospesi non pubblici, redirect 2400 e 2600 → 3000, gallerie nell'ordine del manifest, nessuna scritta provvisoria su 12 pagine, varianti disponibili e non, foto da admin visibile dopo la pubblicazione, carrello persistente, WhatsApp con numero mancante e presente, messaggio breve per carrelli lunghi, nessun pagamento, accesso admin negato senza login, movimento ridotto, immagini mancanti, abbinamenti senza duplicati, nessuno scroll orizzontale a 320, 375 e 430 px.
+- 135 controlli end-to-end sulla preview (`npm run test:e2e`): 182 varianti e 18 prezzi campione contro il listino, prodotti sospesi non pubblici, redirect 2400 e 2600 → 3000, gallerie nell'ordine del manifest, nessuna scritta provvisoria su 12 pagine, varianti disponibili e non, foto da admin visibile dopo la pubblicazione, carrello persistente, WhatsApp con numero mancante e presente, messaggio breve per carrelli lunghi, nessun pagamento, accesso admin negato senza login, movimento ridotto, immagini mancanti, abbinamenti senza duplicati, nessuno scroll orizzontale a 320, 375 e 430 px.
 - **Non verificato**: Safari iOS reale (safe area e barra inferiore), lettori di schermo reali, misure Lighthouse su rete reale. I font Manrope e Inter non si caricano nell'ambiente di test, quindi gli screenshot usano un font di sistema.

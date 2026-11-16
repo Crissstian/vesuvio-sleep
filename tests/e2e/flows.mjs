@@ -37,33 +37,34 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const navText = await p.locator('#drawer-links').innerText();
   ok(!/Topper|castello/i.test(navText), 'menu: categorie senza articoli acquistabili nascoste');
 
-  // catalogo al 16/11/2026 (sera): gamma di 6 materassi, 143 varianti acquistabili
+  // catalogo al 16/11/2026 (sera): gamma di 6 materassi, H30 a listino, 182 varianti acquistabili
   const st = await p.evaluate(() => window.__vs.stats());
-  ok(st.total === 143 && st.byKind.materasso === 104 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 143 varianti acquistabili (104 materassi, 26 reti, 13 topper)', JSON.stringify(st));
+  ok(st.total === 182 && st.byKind.materasso === 143 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 182 varianti acquistabili (143 materassi, 26 reti, 13 topper)', JSON.stringify(st));
   ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400|pocket-2600|essential-foam|memory-foam-3/.test(s)), 'non pubblici: fuori gamma, senza prezzo o con indirizzo superato', st.products.join(','));
   const prices = await p.evaluate(() => [
     ['eco', 20, '160x190', 200], ['eco', 25, '160x190', 250], ['eco', 30, '160x190', 270],
     ['memory-duo', 25, '160x190', 280], ['memory-duo-classic', 25, '160x190', 260], ['memory-duo-classic', 25, '180x200', 330],
     ['pocket-3000-elite', 25, '160x190', 620], ['pocket-1600', 25, '160x190', 500], ['pocket-1600', 25, '80x190', 220],
     ['memory-trio', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
+    ['memory-duo', 30, '160x190', 329], ['pocket-1600', 30, '160x190', 540], ['pocket-3000-elite', 30, '180x200', 800],
     ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-3000-elite', 25, '180x200', 730], ['eco', 20, '80x190', 90],
   ].map(([s, h, z, e]) => [s, h, z, e, window.__vs.price(s, h, z)]));
   const bad = prices.filter((r) => r[3] !== r[4]);
   ok(!bad.length, 'listino: prezzi campione uguali al listino confermato e agli aggiornamenti del 16/11', JSON.stringify(bad));
-  ok(await p.evaluate(() => [null, 30].every((h) => window.__vs.price('memory-duo', 30, '160x190') === null && window.__vs.price('pocket-3000-elite', 30, '160x190') === null)), 'listino: H30 senza prezzo non acquistabile');
+  ok(await p.evaluate(() => window.__vs.price('memory-trio', 30, '160x190') === null && window.__vs.price('memory-duo-classic', 30, '160x190') === null), 'listino: un\'altezza che non esiste non è acquistabile');
 
   await go(p, 'materassi');
   ok((await p.locator('.card').count()) === 6, 'catalogo materassi: 6 modelli acquistabili');
   ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400|Essential Foam/), 'catalogo: modelli fuori gamma o con nome superato non pubblicati');
   await p.locator('[data-act="filter"][data-v="molle"]').click(); await p.waitForTimeout(400);
   ok((await p.locator('.card').count()) === 2, 'filtro Molle: Pocket 1600 e Pocket 3000 Elite');
-  await p.locator('[data-act="filter"][data-v="30"]').click(); await p.waitForTimeout(400);
-  ok((await p.locator('.empty').count()) === 1, 'filtri senza risultati: stato vuoto con azione');
+  await p.locator('[data-act="filter"][data-v="20"]').click(); await p.waitForTimeout(400);
+  ok((await p.locator('.empty').count()) === 1, 'filtri senza risultati (molle + H20): stato vuoto con azione');
   await p.locator('[data-act="reset-filters"]').click(); await p.waitForTimeout(400);
 
   await go(p, 'prodotto-pocket-2400-elite', 800);
   ok(/#\/materassi\/pocket-3000-elite\/$/.test(p.url()) && /Pocket 3000 Elite/.test(await p.locator('h1').innerText()), 'vecchi indirizzi Pocket 2400 e 2600 → Pocket 3000 Elite');
-  ok((await p.locator('#h30').count()) === 0 && (await p.locator('.seg--h').count()) === 0, 'Pocket 3000: altezza senza prezzo (H30) non mostrata');
+  ok((await p.locator('#h25').count()) === 1 && (await p.locator('#h30').count()) === 1 && (await p.locator('#h30[disabled]').count()) === 0, 'Pocket 3000: H25 e H30 entrambe acquistabili dal 16/11 sera');
   ok((await p.locator('input[name="s"]').count()) === 13, 'scheda: 13 misure dal listino');
   ok(!/2400/.test(await p.locator('#app').innerText()), 'scheda Pocket: nessun riferimento a 2400');
   ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.gallery__main img').evaluate((i) => i.src.includes('img/prodotti/vesuvio-pocket-3000-elite/hero'))), 'galleria Pocket 3000: hero, esploso e dettaglio dal manifest');
@@ -331,7 +332,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'sleep-match');
   await answer(['couple', 'mista', '85-110', 'sostenuto', 'gt110', 'equilibrato', 'importante', 'schiena', 'raramente', 'non-so', 'false']);
   const r1 = await p.locator('#quiz').innerText();
-  ok(/Pocket (1600|3000 Elite)/.test(r1) && /H25/.test(r1), 'Sleep Match coppia robusta: un materasso a molle H25');
+  ok(/Pocket (1600|3000 Elite)/.test(r1) && /H30/.test(r1), 'Sleep Match coppia robusta: un materasso a molle, H30 ora che è a listino');
+  ok(/240,00/.test(r1), 'Sleep Match: il prezzo "da" è quello dell\'altezza proposta, non di un\'altra');
   ok((await p.locator('.result').count()) === 1, 'Sleep Match: un solo risultato');
   ok(!/budget|€\s*\?/i.test(await p.locator('#quiz').innerText()) || true, 'Sleep Match: nessuna domanda sul budget');
   await p.locator('[data-act="sm-restart"]').click();

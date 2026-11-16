@@ -91,10 +91,13 @@ function resolveProductPath(slug) {
   }
   return p ? prodPath(p) : null;
 }
-function priceFrom(idx, p) {
-  const min = idx.minPrice(p);
-  const max = idx.maxPrice(p);
-  if (min === null) return '';
+function priceFrom(idx, p, height = null) {
+  // con un'altezza indicata il "da" è quello di quell'altezza: altrimenti si mostrerebbe
+  // il prezzo di una configurazione diversa da quella proposta
+  const prices = height === null ? null : idx.purchasableVariants(p).filter((v) => v.height_cm === height).map((v) => v.price_cents);
+  const min = prices?.length ? Math.min(...prices) : idx.minPrice(p);
+  const max = prices?.length ? Math.max(...prices) : idx.maxPrice(p);
+  if (min === null || min === undefined) return '';
   return min === max ? `<span class="price">${formatCents(min)}</span>` : `<span class="price"><small>da</small>${formatCents(min)}</span>`;
 }
 const DEFAULT_DESC = VIEW_SEO.home.description;
@@ -1015,7 +1018,7 @@ function renderSM(animate = false) {
         <div><span class="buy__tech">${esc(r.product.technical_name)}</span><h2>${esc(r.product.name)}</h2>
           <ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
           ${r.heightReason ? `<p class="note">${esc(r.heightReason)}</p>` : ''}
-          <p>${priceFrom(idx, r.product)} <span class="small muted">IVA inclusa</span></p>
+          <p>${priceFrom(idx, r.product, r.height ?? null)} <span class="small muted">IVA inclusa${r.height ? `, H${r.height}` : ''}</span></p>
           <div class="btn-row"><a class="btn btn--primary" href="${href.product(r.product)}">Configura il tuo materasso</a><button class="btn btn--ghost" data-act="sm-restart">Ricomincia</button></div>
           <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
     }

@@ -1371,8 +1371,8 @@ __def("seed.js", function (__exp) {
 // Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,
 // senza bozze, archiviati e note interne. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-16b",
- "catalog_version": "catalogo-2026-11-16b",
+ "version": "seed-2026-11-16c",
+ "catalog_version": "catalogo-2026-11-16c",
  "authoritative": true,
  "categories": [
   {
@@ -2265,8 +2265,8 @@ const SEED = {
    "sku": "VS-MD-H30-80190",
    "size": "80x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 15000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3000
   },
@@ -2276,8 +2276,8 @@ const SEED = {
    "sku": "VS-MD-H30-80200",
    "size": "80x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 16000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3001
   },
@@ -2287,8 +2287,8 @@ const SEED = {
    "sku": "VS-MD-H30-90190",
    "size": "90x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 18000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3002
   },
@@ -2298,8 +2298,8 @@ const SEED = {
    "sku": "VS-MD-H30-90200",
    "size": "90x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 19000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3003
   },
@@ -2309,8 +2309,8 @@ const SEED = {
    "sku": "VS-MD-H30-120190",
    "size": "120x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 25000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3004
   },
@@ -2320,8 +2320,8 @@ const SEED = {
    "sku": "VS-MD-H30-120200",
    "size": "120x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 26000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3005
   },
@@ -2331,8 +2331,8 @@ const SEED = {
    "sku": "VS-MD-H30-140190",
    "size": "140x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 28000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3006
   },
@@ -2342,8 +2342,8 @@ const SEED = {
    "sku": "VS-MD-H30-140200",
    "size": "140x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 29000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3007
   },
@@ -2353,8 +2353,8 @@ const SEED = {
    "sku": "VS-MD-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 32900,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3008
   },
@@ -2364,8 +2364,8 @@ const SEED = {
    "sku": "VS-MD-H30-160200",
    "size": "160x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 34000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3009
   },
@@ -2375,8 +2375,8 @@ const SEED = {
    "sku": "VS-MD-H30-165190",
    "size": "165x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 34000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3010
   },
@@ -2386,8 +2386,8 @@ const SEED = {
    "sku": "VS-MD-H30-170200",
    "size": "170x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 36000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3011
   },
@@ -2397,8 +2397,8 @@ const SEED = {
    "sku": "VS-MD-H30-180200",
    "size": "180x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 39000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3012
   },
@@ -2694,8 +2694,8 @@ const SEED = {
    "sku": "VS-P3000-H30-80190",
    "size": "80x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 26000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3000
   },
@@ -2705,8 +2705,8 @@ const SEED = {
    "sku": "VS-P3000-H30-80200",
    "size": "80x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 27000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3001
   },
@@ -2716,8 +2716,8 @@ const SEED = {
    "sku": "VS-P3000-H30-90190",
    "size": "90x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 30000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3002
   },
@@ -2727,8 +2727,8 @@ const SEED = {
    "sku": "VS-P3000-H30-90200",
    "size": "90x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 31000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3003
   },
@@ -2738,8 +2738,8 @@ const SEED = {
    "sku": "VS-P3000-H30-120190",
    "size": "120x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 42000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3004
   },
@@ -2749,8 +2749,8 @@ const SEED = {
    "sku": "VS-P3000-H30-120200",
    "size": "120x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 44000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3005
   },
@@ -2760,8 +2760,8 @@ const SEED = {
    "sku": "VS-P3000-H30-140190",
    "size": "140x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 50000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3006
   },
@@ -2771,8 +2771,8 @@ const SEED = {
    "sku": "VS-P3000-H30-140200",
    "size": "140x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 52000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3007
   },
@@ -2782,8 +2782,8 @@ const SEED = {
    "sku": "VS-P3000-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 65000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3008
   },
@@ -2793,8 +2793,8 @@ const SEED = {
    "sku": "VS-P3000-H30-160200",
    "size": "160x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 66000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3009
   },
@@ -2804,8 +2804,8 @@ const SEED = {
    "sku": "VS-P3000-H30-165190",
    "size": "165x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 66000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3010
   },
@@ -2815,8 +2815,8 @@ const SEED = {
    "sku": "VS-P3000-H30-170200",
    "size": "170x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 72000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3011
   },
@@ -2826,8 +2826,8 @@ const SEED = {
    "sku": "VS-P3000-H30-180200",
    "size": "180x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 80000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3012
   },
@@ -2980,8 +2980,8 @@ const SEED = {
    "sku": "VS-P1600-H30-80190",
    "size": "80x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 24000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3000
   },
@@ -2991,8 +2991,8 @@ const SEED = {
    "sku": "VS-P1600-H30-80200",
    "size": "80x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 26000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3001
   },
@@ -3002,8 +3002,8 @@ const SEED = {
    "sku": "VS-P1600-H30-90190",
    "size": "90x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 29000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3002
   },
@@ -3013,8 +3013,8 @@ const SEED = {
    "sku": "VS-P1600-H30-90200",
    "size": "90x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 31000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3003
   },
@@ -3024,8 +3024,8 @@ const SEED = {
    "sku": "VS-P1600-H30-120190",
    "size": "120x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 42000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3004
   },
@@ -3035,8 +3035,8 @@ const SEED = {
    "sku": "VS-P1600-H30-120200",
    "size": "120x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 42000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3005
   },
@@ -3046,8 +3046,8 @@ const SEED = {
    "sku": "VS-P1600-H30-140190",
    "size": "140x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 44000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3006
   },
@@ -3057,8 +3057,8 @@ const SEED = {
    "sku": "VS-P1600-H30-140200",
    "size": "140x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 45000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3007
   },
@@ -3068,8 +3068,8 @@ const SEED = {
    "sku": "VS-P1600-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 54000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3008
   },
@@ -3079,8 +3079,8 @@ const SEED = {
    "sku": "VS-P1600-H30-160200",
    "size": "160x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 53000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3009
   },
@@ -3090,8 +3090,8 @@ const SEED = {
    "sku": "VS-P1600-H30-165190",
    "size": "165x190",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 53000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3010
   },
@@ -3101,8 +3101,8 @@ const SEED = {
    "sku": "VS-P1600-H30-170200",
    "size": "170x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 55000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3011
   },
@@ -3112,8 +3112,8 @@ const SEED = {
    "sku": "VS-P1600-H30-180200",
    "size": "180x200",
    "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 60000,
+   "availability": "made_to_order",
    "active": true,
    "sort": 3012
   },
@@ -6552,10 +6552,13 @@ function resolveProductPath(slug) {
   }
   return p ? prodPath(p) : null;
 }
-function priceFrom(idx, p) {
-  const min = idx.minPrice(p);
-  const max = idx.maxPrice(p);
-  if (min === null) return '';
+function priceFrom(idx, p, height = null) {
+  // con un'altezza indicata il "da" è quello di quell'altezza: altrimenti si mostrerebbe
+  // il prezzo di una configurazione diversa da quella proposta
+  const prices = height === null ? null : idx.purchasableVariants(p).filter((v) => v.height_cm === height).map((v) => v.price_cents);
+  const min = prices?.length ? Math.min(...prices) : idx.minPrice(p);
+  const max = prices?.length ? Math.max(...prices) : idx.maxPrice(p);
+  if (min === null || min === undefined) return '';
   return min === max ? `<span class="price">${formatCents(min)}</span>` : `<span class="price"><small>da</small>${formatCents(min)}</span>`;
 }
 const DEFAULT_DESC = VIEW_SEO.home.description;
@@ -7476,7 +7479,7 @@ function renderSM(animate = false) {
         <div><span class="buy__tech">${esc(r.product.technical_name)}</span><h2>${esc(r.product.name)}</h2>
           <ul class="reasons">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
           ${r.heightReason ? `<p class="note">${esc(r.heightReason)}</p>` : ''}
-          <p>${priceFrom(idx, r.product)} <span class="small muted">IVA inclusa</span></p>
+          <p>${priceFrom(idx, r.product, r.height ?? null)} <span class="small muted">IVA inclusa${r.height ? `, H${r.height}` : ''}</span></p>
           <div class="btn-row"><a class="btn btn--primary" href="${href.product(r.product)}">Configura il tuo materasso</a><button class="btn btn--ghost" data-act="sm-restart">Ricomincia</button></div>
           <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
     }

@@ -61,7 +61,7 @@ const b = await chromium.launch();
   const prod = await get('/materassi/pocket-3000-elite/');
   const ld = JSON.parse(/<script type="application\/ld\+json" id="ld">([\s\S]*?)<\/script>/.exec(prod)[1]);
   const product = ld.find((x) => x['@type'] === 'Product');
-  ok(product && product.offers.lowPrice === '230.00' && product.offers.highPrice === '730.00' && product.offers.offers.length === 13, 'dati strutturati Pocket 3000: 13 offerte, 230–730 €');
+  ok(product && product.offers.lowPrice === '230.00' && product.offers.highPrice === '800.00' && product.offers.offers.length === 26, 'dati strutturati Pocket 3000: 26 offerte (H25 e H30), 230–800 €');
   ok(product.image.every((i) => i.startsWith('https://vesuviosleep.it/img/prodotti/vesuvio-pocket-3000-elite/')) && product.offers.offers[0].shippingDetails && product.offers.offers[0].hasMerchantReturnPolicy.merchantReturnDays === 14, 'dati strutturati: immagini assolute, spedizione gratuita, reso 14 giorni');
   ok(ld.find((x) => x['@type'] === 'BreadcrumbList').itemListElement.every((i) => i.item.startsWith('https://')), 'briciole con URL assoluti');
   ok(/property="og:image" content="https:\/\/vesuviosleep\.it\/img\/prodotti\//.test(prod), 'Open Graph: foto del prodotto per WhatsApp e social');
@@ -71,7 +71,7 @@ const b = await chromium.launch();
   ok(!/Sospeso:|Fuori catalogo|Fuori gamma dal|non verificata: non pubblicare|Rinominato da|Storico del nome|DA VERIFICARE PRIMA DEL LANCIO|era un errore/i.test(bundle), 'nessuna nota interna nel JavaScript pubblico');
   ok(!/Bonnell Classic|Memory Air 3D|Castello Steel|Vesuvio Piuma|Essential Foam|Pocket 2600/.test(bundle), 'nel JavaScript pubblico nessun prodotto fuori gamma, in bozza o con nome superato');
   ok(!/"status":"draft"|"status":"archived"/.test(bundle), 'nel JavaScript pubblico solo prodotti pubblicati');
-  ok(/Vesuvio Pocket 3000 Elite/.test(bundle) && /73000/.test(bundle) && /Vesuvio Memory Trio/.test(bundle) && /Vesuvio Eco/.test(bundle), 'il catalogo pubblicato c\'è tutto');
+  ok(/Vesuvio Pocket 3000 Elite/.test(bundle) && /80000/.test(bundle) && /Vesuvio Memory Trio/.test(bundle) && /Vesuvio Eco/.test(bundle), 'il catalogo pubblicato c\'è tutto');
   ok(!/<html lang="it" class="js">/.test(home) && !/vs-err/.test(home.replace(/getElementById\('vs-err'\)|b\.id = 'vs-err'/g, '')), 'HTML pulito: nessuna classe di runtime o errore salvato');
 }
 
