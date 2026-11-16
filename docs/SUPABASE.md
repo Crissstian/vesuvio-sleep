@@ -25,14 +25,14 @@ Migrazioni applicate, nell'ordine (le stesse di `supabase/migrations/`):
 6. `20261116000006_permessi_minimi` — il pubblico legge solo il catalogo, non scrive niente
 7. `20261116000007_consigli_supabase` — correzioni suggerite dai controlli di Supabase
 
-Dati caricati: 5 categorie, 15 prodotti (8 pubblicati), 225 varianti di cui **130 con prezzo**
-(identiche al listino: impronta controllata riga per riga), 23 foto, 1 redirect, 7 impostazioni
+Dati caricati (aggiornati il 16/11/2026): 5 categorie, 16 prodotti (7 pubblicati), 238 varianti di cui **117 acquistabili**
+(identiche al listino: impronta controllata riga per riga; il Pocket 1600, ritirato, conserva i suoi 13 prezzi ma è archiviato), 23 foto, 1 redirect, 7 impostazioni
 (WhatsApp, telefono, email, pagamenti contrassegno e bonifico, spedizione, claim, pagamenti online spenti).
 Gli ID sono gli stessi del sito: un carrello fatto sul sito si valida sul database.
 
 ## Verificato come visitatore anonimo
 
-- vede 8 prodotti e 130 varianti con prezzo, nessuna nota interna, nessuna richiesta;
+- vede 7 prodotti e 117 varianti acquistabili, nessuna nota interna, nessuna richiesta;
 - non può scrivere su nessuna tabella né usare le funzioni interne;
 - il carrello si valida lato server (Memory Duo 160×190 = 280 €, Pocket 2600 180×200 = 650 €).
 

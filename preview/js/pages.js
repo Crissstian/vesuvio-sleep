@@ -57,7 +57,6 @@ const L = {
   essential: '/materassi/essential-foam/',
   duo: '/materassi/memory-duo/',
   pocket: '/materassi/pocket-2600-elite/',
-  p1600: '/materassi/pocket-1600/',
   mf3: '/materassi/memory-foam-3-strati/',
   flex: '/reti/rete-flex/',
   strong: '/reti/rete-strong/',
@@ -136,7 +135,7 @@ export const CATEGORY_SEO = {
     description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
     html: () => `<h2>Come scegliere tra i nostri materassi</h2>
       <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
-      <p>Chi cerca un sostegno più deciso o dorme in due guarda ai modelli a molle: il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} unisce 2600 molle insacchettate e Memory Foam, il ${a(L.p1600, 'Vesuvio Pocket 1600')} è a molle insacchettate, alto 25 cm.</p>
+      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda al ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}: 2600 molle insacchettate che lavorano una per una, con sopra uno strato di Memory Foam.</p>
       <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
   },
   rete: {
@@ -423,12 +422,12 @@ export const PAGES = {
       ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
         <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
       ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
-        <p>I nostri modelli: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con Memory Foam; ${a(L.p1600, 'Vesuvio Pocket 1600')}, a molle insacchettate.</p>`)}
+        <p>Il nostro modello: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con uno strato di comfort in Memory Foam.</p>`)}
       ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
         <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
         <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
         <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
-        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}, ${a(L.p1600, 'Pocket 1600')}</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}</td></tr>
         </tbody></table></div>
         <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
   },

@@ -67,12 +67,16 @@ test('listino 15/11/2026: 13 misure standard e redirect degli slug', async () =>
   assert.equal(core.resolveRedirect(r, 'memory-duo'), null);
 });
 
-test('seed: 130 varianti acquistabili, nessun prezzo zero o inventato', async () => {
+test('seed: 117 varianti acquistabili, nessun prezzo zero o inventato', async () => {
   const { SEED } = await import('../../preview/js/seed.js');
   const pub = new Set(SEED.products.filter((p) => p.status === 'published').map((p) => p.id));
   const priced = SEED.variants.filter((v) => v.price_cents !== null);
-  assert.equal(priced.length, 130);
-  assert.ok(priced.every((v) => v.price_cents > 0 && pub.has(v.product_id)));
+  assert.equal(priced.filter((v) => pub.has(v.product_id)).length, 117);
+  assert.ok(priced.every((v) => v.price_cents > 0));
+  // un prodotto ritirato conserva i prezzi di listino ma non è pubblico
+  const p1600 = SEED.products.find((p) => p.slug === 'pocket-1600');
+  assert.equal(p1600.status, 'archived');
+  assert.ok(!pub.has(p1600.id));
   assert.ok(!SEED.media.some((m) => /grafeno/i.test(m.src)));
   assert.ok(!SEED.products.some((p) => p.status === 'published' && /2400/.test(p.name + p.slug + p.description + p.highlights.join(' '))));
 });

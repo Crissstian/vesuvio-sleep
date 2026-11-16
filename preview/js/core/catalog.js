@@ -31,7 +31,7 @@ export function baseSku(line, size) {
 export function pillowSku(line) {
     return `VS-GUA-${line}`;
 }
-/** Proposta per i topper: non definita nel Master Spec, da confermare. */
+/** Codice articolo dei topper. */
 export function topperSku(line, size) {
     return `VS-TOP-${line}-${size.replace('x', '')}`;
 }

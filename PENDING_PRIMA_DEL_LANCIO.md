@@ -1,6 +1,6 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 15/11/2026 sera (contatti, pagamenti, pagine legali e sito SEO). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 16/11/2026 (catalogo aggiornato: Pocket 1600 ritirato, Memory Duo Classic in attesa di prezzi). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
 
 ## Bloccanti
 
@@ -20,11 +20,13 @@ Stato al 15/11/2026 sera (contatti, pagamenti, pagine legali e sito SEO). Ogni v
 
 | Voce | Stato |
 | --- | --- |
-| Prezzi | **Verificati** contro il listino confermato del 15/11/2026: 130 varianti (91/26/13), controllate dai test e2e, SQL e unitari. |
-| Foto prodotto | **Approvate dal manifest** per Essential Foam, Memory Duo, Pocket 2600 Elite (hero, esploso, dettaglio). **Mancanti** per Pocket 1600, Memory Foam 3 strati e Topper: mostrano un disegno senza strati. Non ho cercato foto su internet: dalla sessione la rete è bloccata e foto di terzi richiederebbero diritti e potrebbero non rappresentare il prodotto reale. Reti: foto generate del 13/11. |
+| Prezzi | **Verificati** contro il listino confermato del 15/11/2026: 117 varianti (78/26/13), controllate dai test e2e, SQL e unitari. |
+| Foto prodotto | **Approvate dal manifest** per Essential Foam, Memory Duo, Pocket 2600 Elite (hero, esploso, dettaglio). **Mancanti** per Memory Foam 3 strati e Topper: mostrano un disegno senza strati. Non ho cercato foto su internet: dalla sessione la rete è bloccata e foto di terzi richiederebbero diritti e potrebbero non rappresentare il prodotto reale. Reti: foto generate del 13/11. |
 | Etichette «illustrativo» | **Tolte dal sito pubblico** su richiesta. Le foto di fabbrica, showroom, camera, consegna e reti sono generate con AI: valutare se va dichiarato (pubblicità ingannevole) o sostituirle con foto reali prima del lancio. |
 | Pocket 2600 Elite | Rinominato. Da confermare a quale misura si riferisce il numero di 2600 molle. Altezza H30 senza prezzo: non mostrata. |
-| Pocket 1600, Memory Foam 3 strati | Pubblicati con il solo nome, la tipologia e l'altezza del listino. **Mancano** composizione, rigidità e foto. |
+| **Memory Duo Classic** | **Prezzi mancanti**: l'azienda deve fornire i 13 prezzi (H25). Finché mancano resta in bozza e non compare sul sito. Da confermare anche se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per il suo tessuto. Nessuna foto propria. |
+| Memory Foam 3 strati | Pubblicato con il solo nome, la tipologia e l'altezza del listino. **Mancano** composizione, rigidità e foto. |
+| Pocket 1600 | **Ritirato dal catalogo** il 16/11/2026 su decisione dell'azienda: archiviato, recuperabile da Admin. |
 | Topper Memory Cloud 5 | Pubblicato, H5. SKU `VS-TOP-MC5-…` proposto, da confermare. |
 | Sospesi (senza prezzo) | Memory Air 3D, Bonnell Classic, quattro guanciali, Castello Steel, Rete a tavole (non creata), H30 di Memory Duo / Pocket 2600 / Pocket 1600. Si pubblicano da Admin quando arriva il prezzo. |
 | Render «da assegnare» e foto di riferimento | **Non pubblicati**: serve indicare modello/SKU e autorizzazione per ciascuno. |

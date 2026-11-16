@@ -67,6 +67,11 @@ const b = await chromium.launch();
   ok(/property="og:image" content="https:\/\/vesuviosleep\.it\/img\/prodotti\//.test(prod), 'Open Graph: foto del prodotto per WhatsApp e social');
   const home = await get('/');
   ok(/"@type":"FurnitureStore"/.test(home) && /"telephone":"\+39 366 121 8346"/.test(home) && /"email":"fdimaterassi@gmail.com"/.test(home), 'home: attività locale con telefono ed email');
+  const bundle = await get('/js/bundle.js');
+  ok(!/Sospeso:|Fuori catalogo|non verificata: non pubblicare|Rinominato da|era un errore/i.test(bundle), 'nessuna nota interna nel JavaScript pubblico');
+  ok(!/Pocket 1600|Memory Duo Classic|Bonnell Classic|Memory Air 3D|Castello Steel|Vesuvio Piuma/.test(bundle), 'nel JavaScript pubblico nessun prodotto ritirato, in bozza o sospeso');
+  ok(!/"status":"draft"|"status":"archived"/.test(bundle), 'nel JavaScript pubblico solo prodotti pubblicati');
+  ok(/Vesuvio Pocket 2600 Elite/.test(bundle) && /65000/.test(bundle), 'il catalogo pubblicato c\'è tutto');
   ok(!/<html lang="it" class="js">/.test(home) && !/vs-err/.test(home.replace(/getElementById\('vs-err'\)|b\.id = 'vs-err'/g, '')), 'HTML pulito: nessuna classe di runtime o errore salvato');
 }
 

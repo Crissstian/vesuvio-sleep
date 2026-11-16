@@ -13,6 +13,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { buildSitemap } from '../preview/js/core/seo.js';
@@ -29,7 +30,9 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'js'), { recursive: true });
 fs.cpSync(path.join(SRC, 'css'), path.join(OUT, 'css'), { recursive: true });
 fs.cpSync(path.join(SRC, 'img'), path.join(OUT, 'img'), { recursive: true });
-fs.copyFileSync(path.join(SRC, 'js/bundle.js'), path.join(OUT, 'js/bundle.js'));
+// bundle del sito pubblico: stesso codice, catalogo senza bozze né note interne
+execFileSync('python3', ['-I', path.join(ROOT, 'scripts/bundle.py'), path.join(SRC, 'js'),
+  '--seed', path.join(SRC, 'js/seed.public.js'), '--out', path.join(OUT, 'js/bundle.js')], { stdio: 'pipe' });
 fs.writeFileSync(
   path.join(OUT, 'js/config.js'),
   `// Sito pubblico: indirizzi veri e indicizzazione attiva.\nwindow.VS_CONFIG = ${JSON.stringify({ preview: false, routing: 'path', siteUrl: SITE, whatsappNumber: '', mapEmbed: false }, null, 1)};\n`,

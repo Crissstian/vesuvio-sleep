@@ -10,8 +10,8 @@
 | `preview/` | Sorgente del sito e anteprima navigabile: vetrina, catalogo, schede, Sleep Match, confronto, guida alle misure, fuori misura, carrello, riepilogo WhatsApp e admin. I dati vivono nel browser (localStorage + IndexedDB). |
 | `core/` | Logica condivisa in TypeScript: prezzi, SKU, acquistabilità, abbinamenti, Sleep Match, messaggio e link WhatsApp, validazione carrello, dati strutturati e sitemap, interfaccia pagamenti disattivata. Compilata in `preview/js/core/`. |
 | `docs/SUPABASE.md` | Il progetto Supabase del nuovo sito: cosa contiene, cosa è verificato, cosa manca. |
-| `supabase/` | Migrazioni (schema, RLS, storage, funzioni server), `seed.sql` idempotente e `catalog/2026-11-15_catalogo_ufficiale.sql` per aggiornare un database già popolato. |
-| `scripts/` | `build_seed.py` genera il catalogo dal listino Excel confermato (prezzi) e dal dataset (testi); `build_product_images.py` converte le foto approvate di `MEDIA_MANIFEST.csv`; `build_assets.py` genera i WebP pubblici dal kit. |
+| `supabase/` | Migrazioni (schema, RLS, storage, funzioni server), `seed.sql` idempotente e `catalog/catalogo_corrente.sql` per aggiornare un database già popolato. |
+| `scripts/` | `build_seed.py` genera il catalogo dal listino Excel confermato (prezzi) e dal dataset (testi), in due versioni: `seed.js` completo per l'anteprima e l'admin, `seed.public.js` per il sito pubblico (solo pubblicati, senza note interne); `build_product_images.py` converte le foto approvate di `MEDIA_MANIFEST.csv`; `build_assets.py` genera i WebP pubblici dal kit. |
 | `tests/` | Test unitari, test SQL su Postgres locale, test end-to-end con Playwright. |
 | `input-vesuvio/` | Il kit originale (dati, prompt, asset). Non è pubblico: da qui si generano solo gli asset approvati. |
 

@@ -13,7 +13,7 @@ Fonti:
 Output:
   - preview/js/seed.js
   - supabase/seed.sql (installazione nuova: ON CONFLICT DO NOTHING)
-  - supabase/catalog/2026-11-15_catalogo_ufficiale.sql (database esistente: upsert del catalogo)
+  - supabase/catalog/catalogo_corrente.sql (database esistente: upsert del catalogo)
 
 Regole: una variante è acquistabile solo con prezzo > 0 nell'Excel. Nessun prezzo
 storico, nessuna interpolazione, nessuno zero al posto delle celle vuote. I prodotti
@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-15'
+CATALOG_VERSION = 'catalogo-2026-11-16'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -103,8 +103,22 @@ MATTRESSES = {
         removable_cover=True, summer_winter=True, firmness=old['memory-duo'].get('firmness_display'),
         claims=old['memory-duo'].get('claims', []),
         match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
+    # Prezzi non presenti nel listino del 15/11/2026: li fornisce l'azienda.
+    # Finché la riga è vuota il prodotto resta in bozza e non compare sul sito.
+    'Vesuvio Memory Duo Classic': dict(
+        key='memory-duo-classic', slug='memory-duo-classic', line='MDC', sort=3, heights=[25],
+        prices={},
+        short='Lo stesso Memory Duo, con il rivestimento fisso.',
+        description='Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante '
+                    'in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.',
+        composition=old['memory-duo']['composition_public'],
+        highlights=['Memory Foam 2 strati', 'Rivestimento fisso'],
+        removable_cover=False,
+        notes='Aggiunto il 16/11/2026 su indicazione dell\'azienda. Da confermare: prezzi, se è reversibile '
+              'estate/inverno come lo sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria.',
+        match=dict(tech='memory', welcome=2, ventilation=False, independent_springs=False)),
     'Vesuvio Pocket 2600 Elite': dict(
-        key='pocket-2400-elite', slug='pocket-2600-elite', line='P2600', sort=3, hybrid=True,
+        key='pocket-2400-elite', slug='pocket-2600-elite', line='P2600', sort=4, hybrid=True,
         short='2600 molle insacchettate e Memory Foam: il nostro Hybrid più sostenuto.',
         description="Molle indipendenti insacchettate, uno strato di comfort in Memory Foam ed elementi in poliuretano ad alta densità per stabilizzazione e supporto. "
                     "Pensato per chi cerca più sostegno e per chi dorme in due. Rivestimento sfoderabile.",
@@ -115,12 +129,13 @@ MATTRESSES = {
         notes='Rinominato da "Pocket 2400 Elite" il 15/11/2026 (2600 molle confermate). Da verificare a quale misura si riferisce il numero di molle.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Vesuvio Pocket 1600': dict(
-        key='pocket-1600', slug='pocket-1600', line='P1600', sort=4,
+        key='pocket-1600', slug='pocket-1600', line='P1600', sort=8, status='archived',
         short='Molle insacchettate, alto 25 cm.',
         description='Materasso a molle insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria.',
         composition='Molle insacchettate.',
         highlights=['Molle insacchettate', 'Altezza 25 cm'],
-        notes='Specifiche di dettaglio e foto non ancora fornite.',
+        notes='Fuori catalogo dal 16/11/2026 per decisione dell\'azienda: archiviato, non compare sul sito. '
+              'I prezzi restano quelli del listino, si ripubblica da Admin se rientra in gamma.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Memory Foam 3 strati': dict(
         key='memory-foam-3-strati', slug='memory-foam-3-strati', line='MF3', sort=5,
@@ -179,6 +194,11 @@ def add_variants(p, key, line, rows, kind):
 
 for name, spec in MATTRESSES.items():
     rows = [r for r in MATT if r['name'] == name]
+    if not rows and 'heights' in spec:
+        # modello non presente nel listino Excel: misure standard, prezzi solo se forniti
+        rows = [dict(name=name, tipologia='Memory Foam 2 strati', height=h,
+                     prices={z: (spec['prices'].get(z) if spec['prices'] else None) for z in SIZES})
+                for h in spec['heights']]
     priced = any(v for r in rows for v in r['prices'].values())
     p = add_product(spec['key'], slug=spec['slug'], category_id=cat['materasso'], name=name,
                     technical_name=rows[0]['tipologia'] if rows else '', short=spec['short'], description=spec['description'],
@@ -186,7 +206,7 @@ for name, spec in MATTRESSES.items():
                     removable_cover=spec.get('removable_cover'), reversible=spec.get('summer_winter'),
                     summer_winter=spec.get('summer_winter'), hybrid=spec.get('hybrid', False),
                     firmness_display=spec.get('firmness'), line_code=spec['line'], sort=spec['sort'],
-                    status='published' if priced else 'draft', lead_time=LEAD if priced else None,
+                    status=spec.get('status') or ('published' if priced else 'draft'), lead_time=LEAD if priced else None,
                     match=spec.get('match'), internal_notes=spec.get('notes', ''))
     add_variants(p, spec['key'], spec['line'], rows, 'materasso')
 
@@ -306,9 +326,13 @@ kind_of = {c['id']: c['kind'] for c in categories}
 for v in buyable:
     k = kind_of[pub_prods[v['product_id']]['category_id']]
     by_kind[k] = by_kind.get(k, 0) + 1
-assert len(buyable) == 130, len(buyable)
-assert by_kind == {'materasso': 91, 'rete': 26, 'topper': 13}, by_kind
-assert all(v['price_cents'] is None for v in variants if v['product_id'] not in pub_prods)
+assert by_kind.get('rete') == 26 and by_kind.get('topper') == 13, by_kind
+assert len(buyable) == sum(by_kind.values())
+# un prodotto in bozza non ha prezzi (regola "senza prezzo non si pubblica");
+# un prodotto archiviato può conservarli: è stato tolto dal catalogo, non svenduto
+draft_ids = {p['id'] for p in products if p['status'] == 'draft'}
+assert all(v['price_cents'] is None for v in variants if v['product_id'] in draft_ids)
+assert not [p for p in products if p['status'] == 'archived' and p['id'] in pub_prods]
 assert len({v['sku'] for v in variants}) == len(variants), 'SKU duplicati'
 assert len({v['id'] for v in variants}) == len(variants), 'ID duplicati'
 covers = {}
@@ -317,8 +341,24 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-15e', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-16a', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
+# Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
+# Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.
+pub_cat_ids = {c['id'] for c in categories if c['status'] == 'published'}
+pub_ids = set(pub_prods)
+public = dict(
+    seed,
+    categories=[{k: v for k, v in c.items()} for c in categories if c['status'] == 'published'],
+    products=[{k: v for k, v in p.items() if k != 'internal_notes'} for p in products if p['id'] in pub_ids],
+    variants=[v for v in variants if v['product_id'] in pub_ids],
+    media=[m for m in media if m['published'] and m['product_id'] in pub_ids],
+)
+with open(os.path.join(ROOT, 'preview/js/seed.public.js'), 'w', encoding='utf-8') as f:
+    f.write('// Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,\n')
+    f.write('// senza bozze, archiviati e note interne. Non modificare a mano.\n')
+    f.write('export const SEED = ' + json.dumps(public, ensure_ascii=False, indent=1) + ';\n')
+
 with open(os.path.join(ROOT, 'preview/js/seed.js'), 'w', encoding='utf-8') as f:
     f.write('// Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.\n')
     f.write('export const SEED = ' + json.dumps(seed, ensure_ascii=False, indent=1) + ';\n')
@@ -364,7 +404,7 @@ seed_sql.append('commit;')
 open(os.path.join(ROOT, 'supabase/seed.sql'), 'w', encoding='utf-8').write('\n'.join(seed_sql) + '\n')
 
 upd_sql = [
-    '-- Aggiornamento UFFICIALE del catalogo (15/11/2026) per un database già popolato.',
+    f'-- Catalogo corrente ({CATALOG_VERSION}) per un database già popolato.',
     '-- Generato da scripts/build_seed.py. Upsert per ID: nessun duplicato, storico richieste intatto.',
     '-- Eseguire dopo le migrazioni, una volta. Rieseguibile.',
     'begin;',
@@ -388,7 +428,7 @@ for k, v in settings.items():
     upd_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {val}, {pub}) on conflict (key) do update set value = excluded.value, is_public = excluded.is_public where public.settings.value in ('\"\"'::jsonb, 'null'::jsonb);")
 upd_sql.append('commit;')
 os.makedirs(os.path.join(ROOT, 'supabase/catalog'), exist_ok=True)
-open(os.path.join(ROOT, 'supabase/catalog/2026-11-15_catalogo_ufficiale.sql'), 'w', encoding='utf-8').write('\n'.join(upd_sql) + '\n')
+open(os.path.join(ROOT, 'supabase/catalog/catalogo_corrente.sql'), 'w', encoding='utf-8').write('\n'.join(upd_sql) + '\n')
 
 print(f'{len(categories)} categorie, {len(products)} prodotti, {len(variants)} varianti, {len(media)} media')
 print('acquistabili:', len(buyable), by_kind)

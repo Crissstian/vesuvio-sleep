@@ -950,7 +950,6 @@ const L = {
   essential: '/materassi/essential-foam/',
   duo: '/materassi/memory-duo/',
   pocket: '/materassi/pocket-2600-elite/',
-  p1600: '/materassi/pocket-1600/',
   mf3: '/materassi/memory-foam-3-strati/',
   flex: '/reti/rete-flex/',
   strong: '/reti/rete-strong/',
@@ -1029,7 +1028,7 @@ const CATEGORY_SEO = {
     description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
     html: () => `<h2>Come scegliere tra i nostri materassi</h2>
       <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
-      <p>Chi cerca un sostegno più deciso o dorme in due guarda ai modelli a molle: il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} unisce 2600 molle insacchettate e Memory Foam, il ${a(L.p1600, 'Vesuvio Pocket 1600')} è a molle insacchettate, alto 25 cm.</p>
+      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda al ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}: 2600 molle insacchettate che lavorano una per una, con sopra uno strato di Memory Foam.</p>
       <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
   },
   rete: {
@@ -1316,12 +1315,12 @@ const PAGES = {
       ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
         <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
       ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
-        <p>I nostri modelli: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con Memory Foam; ${a(L.p1600, 'Vesuvio Pocket 1600')}, a molle insacchettate.</p>`)}
+        <p>Il nostro modello: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con uno strato di comfort in Memory Foam.</p>`)}
       ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
         <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
         <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
         <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
-        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}, ${a(L.p1600, 'Pocket 1600')}</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}</td></tr>
         </tbody></table></div>
         <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
   },
@@ -1367,10 +1366,11 @@ __exp.PAGES = PAGES;
 __exp.VIEW_SEO = VIEW_SEO;
 });
 __def("seed.js", function (__exp) {
-// Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
+// Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,
+// senza bozze, archiviati e note interne. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-15e",
- "catalog_version": "catalogo-2026-11-15",
+ "version": "seed-2026-11-16a",
+ "catalog_version": "catalogo-2026-11-16",
  "authoritative": true,
  "categories": [
   {
@@ -1408,15 +1408,6 @@ const SEED = {
    "status": "published",
    "description": "Guanciali in piuma e in Memory.",
    "id": "d13d67b4-9aa1-5b1d-b636-53db094666e6"
-  },
-  {
-   "slug": "letti-a-castello",
-   "kind": "letto",
-   "name": "Letti a castello",
-   "sort": 5,
-   "status": "draft",
-   "description": "Letti a castello in acciaio.",
-   "id": "f2317874-21e7-594e-982e-5154d66caf0a"
   }
  ],
  "products": [
@@ -1452,7 +1443,6 @@ const SEED = {
     "ventilation": false,
     "independent_springs": false
    },
-   "internal_notes": "",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Essential Foam"
   },
@@ -1488,7 +1478,6 @@ const SEED = {
     "ventilation": false,
     "independent_springs": false
    },
-   "internal_notes": "",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Duo"
   },
@@ -1516,37 +1505,6 @@ const SEED = {
    "firmness_display": "Sostenuto / medio-rigido",
    "line_code": "P2600",
    "status": "published",
-   "sort": 3,
-   "lead_time": "Produzione in circa 2 giorni prima della spedizione",
-   "match": {
-    "tech": "molle",
-    "welcome": 1,
-    "ventilation": false,
-    "independent_springs": true
-   },
-   "internal_notes": "Rinominato da \"Pocket 2400 Elite\" il 15/11/2026 (2600 molle confermate). Da verificare a quale misura si riferisce il numero di molle.",
-   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Pocket 2600 Elite"
-  },
-  {
-   "id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "slug": "pocket-1600",
-   "technical_name": "Molle insacchettate",
-   "short": "Molle insacchettate, alto 25 cm.",
-   "description": "Materasso a molle insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria.",
-   "composition": "Molle insacchettate.",
-   "highlights": [
-    "Molle insacchettate",
-    "Altezza 25 cm"
-   ],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "P1600",
-   "status": "published",
    "sort": 4,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
@@ -1555,9 +1513,8 @@ const SEED = {
     "ventilation": false,
     "independent_springs": true
    },
-   "internal_notes": "Specifiche di dettaglio e foto non ancora fornite.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Pocket 1600"
+   "name": "Vesuvio Pocket 2600 Elite"
   },
   {
    "id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
@@ -1586,69 +1543,8 @@ const SEED = {
     "ventilation": false,
     "independent_springs": false
    },
-   "internal_notes": "Nome dal listino. Composizione di dettaglio e foto non ancora fornite.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Memory Foam 3 strati"
-  },
-  {
-   "id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "slug": "memory-air-3d",
-   "technical_name": "Memory + fascia 3D",
-   "short": "Memory Foam e poliuretano ad alta densità con fascia perimetrale 3D traspirante.",
-   "description": "Memory Foam e poliuretano ad alta densità, con una fascia perimetrale 3D traspirante che favorisce la ventilazione laterale. Reversibile con lato invernale e lato estivo, rivestimento sfoderabile.",
-   "composition": "Memory Foam premium + poliuretano ad alta densità + fascia perimetrale 3D traspirante.",
-   "highlights": [
-    "Fascia perimetrale 3D traspirante",
-    "Lato invernale e lato estivo",
-    "Sfoderabile"
-   ],
-   "claims": [
-    "antiacaro",
-    "ipoallergenico",
-    "Free Humidity",
-    "fascia 3D traspirante"
-   ],
-   "removable_cover": true,
-   "reversible": true,
-   "summer_winter": true,
-   "hybrid": false,
-   "firmness_display": "Medio-rigido",
-   "line_code": "MA3D",
-   "status": "draft",
-   "sort": 6,
-   "lead_time": null,
-   "match": {
-    "tech": "memory",
-    "welcome": 1.5,
-    "ventilation": true,
-    "independent_springs": false
-   },
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Memory Air 3D"
-  },
-  {
-   "id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "slug": "bonnell-classic",
-   "technical_name": "Molle Bonnell",
-   "short": "Molle Bonnell.",
-   "description": "",
-   "composition": "Molle Bonnell.",
-   "highlights": [],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "BON",
-   "status": "draft",
-   "sort": 7,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
-   "name": "Vesuvio Bonnell Classic"
   },
   {
    "id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
@@ -1673,7 +1569,6 @@ const SEED = {
    "sort": 10,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Flex"
   },
@@ -1700,7 +1595,6 @@ const SEED = {
    "sort": 11,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Strong"
   },
@@ -1726,132 +1620,8 @@ const SEED = {
    "sort": 20,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": null,
-   "internal_notes": "Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto.",
    "category_id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d",
    "name": "Vesuvio Topper Memory Cloud 5"
-  },
-  {
-   "id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
-   "slug": "guanciale-piuma",
-   "technical_name": "Guanciale piuma",
-   "short": "Guanciale in piuma.",
-   "description": "Guanciale in piuma.",
-   "composition": "Piuma.",
-   "highlights": [
-    "Piuma"
-   ],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "PIUMA",
-   "status": "draft",
-   "sort": 30,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
-   "name": "Vesuvio Piuma"
-  },
-  {
-   "id": "f18a729c-0e68-54f0-b748-72904165b275",
-   "slug": "guanciale-memory-flakes",
-   "technical_name": "Guanciale fiocchi di memory",
-   "short": "Guanciale in fiocchi di memory.",
-   "description": "Guanciale in fiocchi di memory.",
-   "composition": "Fiocchi di Memory.",
-   "highlights": [
-    "Fiocchi di Memory"
-   ],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "MFLAKES",
-   "status": "draft",
-   "sort": 31,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
-   "name": "Vesuvio Memory Flakes"
-  },
-  {
-   "id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
-   "slug": "guanciale-memory-classic",
-   "technical_name": "Guanciale memory",
-   "short": "Guanciale in memory.",
-   "description": "Guanciale in memory.",
-   "composition": "Memory.",
-   "highlights": [
-    "Memory"
-   ],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "MCLASSIC",
-   "status": "draft",
-   "sort": 32,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
-   "name": "Vesuvio Memory Classic"
-  },
-  {
-   "id": "97116d49-df22-5e8e-8419-28d3b7acee61",
-   "slug": "guanciale-memory-cervical",
-   "technical_name": "Guanciale memory foam",
-   "short": "Guanciale in memory foam.",
-   "description": "Guanciale in memory foam.",
-   "composition": "Memory Foam.",
-   "highlights": [
-    "Memory Foam"
-   ],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "MCERV",
-   "status": "draft",
-   "sort": 33,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
-   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
-   "name": "Vesuvio Memory Cervical"
-  },
-  {
-   "id": "776e1cc9-7936-5184-8e16-a64dafe637fc",
-   "slug": "castello-steel",
-   "technical_name": "Letto a castello in acciaio",
-   "short": "",
-   "description": "",
-   "composition": "",
-   "highlights": [],
-   "claims": [],
-   "removable_cover": null,
-   "reversible": null,
-   "summer_winter": null,
-   "hybrid": false,
-   "firmness_display": null,
-   "line_code": "CAST",
-   "status": "draft",
-   "sort": 50,
-   "lead_time": null,
-   "match": null,
-   "internal_notes": "Sospeso: misure e prezzi non presenti nel listino.",
-   "category_id": "f2317874-21e7-594e-982e-5154d66caf0a",
-   "name": "Vesuvio Castello Steel"
   }
  ],
  "variants": [
@@ -2857,292 +2627,6 @@ const SEED = {
    "sort": 3012
   },
   {
-   "id": "a5b3abfc-9968-57d2-9d7d-6999c941c581",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-80190",
-   "size": "80x190",
-   "height_cm": 25,
-   "price_cents": 20000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2500
-  },
-  {
-   "id": "fa586bbf-6536-5250-828a-ce413197d6a9",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-80200",
-   "size": "80x200",
-   "height_cm": 25,
-   "price_cents": 22000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2501
-  },
-  {
-   "id": "06d92d1f-0a6e-5e4a-80ee-990f4e93ef98",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-90190",
-   "size": "90x190",
-   "height_cm": 25,
-   "price_cents": 24000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2502
-  },
-  {
-   "id": "691b9046-9401-591b-bbd3-012dcd30f233",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-90200",
-   "size": "90x200",
-   "height_cm": 25,
-   "price_cents": 25000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2503
-  },
-  {
-   "id": "1b16ed89-2f4e-58d1-a571-bae714410524",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-120190",
-   "size": "120x190",
-   "height_cm": 25,
-   "price_cents": 35000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2504
-  },
-  {
-   "id": "29b846f4-d529-5bf0-ad74-9b0ea97af288",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-120200",
-   "size": "120x200",
-   "height_cm": 25,
-   "price_cents": 36000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2505
-  },
-  {
-   "id": "9a59d6f3-1fdd-555a-b0a7-6c2bc200e709",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-140190",
-   "size": "140x190",
-   "height_cm": 25,
-   "price_cents": 38000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2506
-  },
-  {
-   "id": "e2ee03b9-da11-55d6-a730-b795d6959645",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-140200",
-   "size": "140x200",
-   "height_cm": 25,
-   "price_cents": 40000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2507
-  },
-  {
-   "id": "ab57b3ce-1cc5-58dc-a2e1-612614d9cebf",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-160190",
-   "size": "160x190",
-   "height_cm": 25,
-   "price_cents": 45000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2508
-  },
-  {
-   "id": "736ec404-b9a6-5896-a08d-528c0a9739c0",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-160200",
-   "size": "160x200",
-   "height_cm": 25,
-   "price_cents": 46000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2509
-  },
-  {
-   "id": "d0756e61-1bf9-5c84-a2f5-e528299f8c97",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-165190",
-   "size": "165x190",
-   "height_cm": 25,
-   "price_cents": 46000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2510
-  },
-  {
-   "id": "ad3ae3ea-a037-5782-9a5e-e3eb35cbd6d8",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-170200",
-   "size": "170x200",
-   "height_cm": 25,
-   "price_cents": 48000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2511
-  },
-  {
-   "id": "6f9ef276-6be3-5c4d-a328-c6e3d6ed6c9d",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H25-180200",
-   "size": "180x200",
-   "height_cm": 25,
-   "price_cents": 52000,
-   "availability": "made_to_order",
-   "active": true,
-   "sort": 2512
-  },
-  {
-   "id": "7ba990fc-3a86-53bc-82d4-5b22b9b7f149",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-80190",
-   "size": "80x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3000
-  },
-  {
-   "id": "86652a03-f4a9-5b0f-948a-84b75d748384",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-80200",
-   "size": "80x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3001
-  },
-  {
-   "id": "15ea634e-ef9e-5a43-9cbf-c92ba1c4c619",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-90190",
-   "size": "90x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3002
-  },
-  {
-   "id": "73b1d071-9059-5610-9a9e-a21356e21a6c",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-90200",
-   "size": "90x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3003
-  },
-  {
-   "id": "b5642e1b-8349-5e90-9420-19c1ff56a7f7",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-120190",
-   "size": "120x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3004
-  },
-  {
-   "id": "657fbb0a-3689-59ff-9e16-5abc31ec31cd",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-120200",
-   "size": "120x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3005
-  },
-  {
-   "id": "ba5c1c10-6086-5ea8-8d17-32b7526ed41a",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-140190",
-   "size": "140x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3006
-  },
-  {
-   "id": "3a9f558b-a10e-5ef2-8827-86595005ea78",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-140200",
-   "size": "140x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3007
-  },
-  {
-   "id": "18d25f34-e226-5de6-b314-fdb0b451d639",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-160190",
-   "size": "160x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3008
-  },
-  {
-   "id": "918a2681-c27f-52fd-a721-5637a9774c6c",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-160200",
-   "size": "160x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3009
-  },
-  {
-   "id": "c1a4834a-3333-5953-89d6-a0f787480288",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-165190",
-   "size": "165x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3010
-  },
-  {
-   "id": "cf81b548-7c68-5a7e-8b33-f0d85e16f26b",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-170200",
-   "size": "170x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3011
-  },
-  {
-   "id": "f35faa70-ca85-54b1-a160-c35a76ea2033",
-   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
-   "sku": "VS-P1600-H30-180200",
-   "size": "180x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3012
-  },
-  {
    "id": "73a2a46a-0abd-57dd-970e-63c14de13324",
    "product_id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
    "sku": "VS-MF3-H27-80190",
@@ -3284,578 +2768,6 @@ const SEED = {
    "availability": "made_to_order",
    "active": true,
    "sort": 2712
-  },
-  {
-   "id": "6b7223c1-96db-51d4-aaf4-af12634d0509",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-80190",
-   "size": "80x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2500
-  },
-  {
-   "id": "74deb536-261a-532e-b83f-84372c9d7a72",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-80200",
-   "size": "80x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2501
-  },
-  {
-   "id": "fdba6b31-40ea-5226-80b3-085eec79dd6b",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-90190",
-   "size": "90x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2502
-  },
-  {
-   "id": "43db3f73-2e99-5f0b-8f18-31d2af08a9b0",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-90200",
-   "size": "90x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2503
-  },
-  {
-   "id": "9461b4eb-b4da-5aa8-a3b8-473feccf663c",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-120190",
-   "size": "120x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2504
-  },
-  {
-   "id": "a181d895-1d6d-53be-91e6-7b37ccc48f52",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-120200",
-   "size": "120x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2505
-  },
-  {
-   "id": "3e224857-bced-5d13-8397-d5cff4615458",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-140190",
-   "size": "140x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2506
-  },
-  {
-   "id": "b2148e7f-23bd-5661-8337-3512e9d0f9c0",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-140200",
-   "size": "140x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2507
-  },
-  {
-   "id": "724992db-f61d-5611-9730-2fa77ddbabb7",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-160190",
-   "size": "160x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2508
-  },
-  {
-   "id": "efd57e0a-d972-507b-ae05-9089f686153f",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-160200",
-   "size": "160x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2509
-  },
-  {
-   "id": "c34c6f7b-888a-5424-b605-cb1a3978ed6f",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-165190",
-   "size": "165x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2510
-  },
-  {
-   "id": "e55ddb0b-6170-5556-bf7d-a7a8215a5943",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-170200",
-   "size": "170x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2511
-  },
-  {
-   "id": "0843a6e8-6981-5039-bd3e-ab44168b3481",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H25-180200",
-   "size": "180x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2512
-  },
-  {
-   "id": "d03ed27d-b429-5b8d-a6a6-46577a32976a",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-80190",
-   "size": "80x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3000
-  },
-  {
-   "id": "2f2193a4-ed86-54cf-ae63-016151a0c458",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-80200",
-   "size": "80x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3001
-  },
-  {
-   "id": "814aafc8-c2d7-5c31-a811-7e45dc7d7ab2",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-90190",
-   "size": "90x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3002
-  },
-  {
-   "id": "eb03c6f3-1196-5ce4-8115-81f1cbe153af",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-90200",
-   "size": "90x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3003
-  },
-  {
-   "id": "bda7a485-a5a9-5575-8307-5172afe7b6a9",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-120190",
-   "size": "120x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3004
-  },
-  {
-   "id": "ab852f29-6bde-529d-b346-b19500c71379",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-120200",
-   "size": "120x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3005
-  },
-  {
-   "id": "632c1af7-1497-501a-b06b-3f90a5536b99",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-140190",
-   "size": "140x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3006
-  },
-  {
-   "id": "12efe86f-00ca-581b-962f-442d075c5f92",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-140200",
-   "size": "140x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3007
-  },
-  {
-   "id": "b4e05f7d-f087-5903-92e8-36da3c2a0901",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-160190",
-   "size": "160x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3008
-  },
-  {
-   "id": "c3e43ec6-f691-5e9c-8e6a-05755a5f49e3",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-160200",
-   "size": "160x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3009
-  },
-  {
-   "id": "02071f19-67b9-5cd9-9b62-d26920a42878",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-165190",
-   "size": "165x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3010
-  },
-  {
-   "id": "922d59bf-3f78-5396-8c3c-254f4d6f1995",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-170200",
-   "size": "170x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3011
-  },
-  {
-   "id": "d18f949e-d37d-58ba-8d73-7c37f376d6af",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "sku": "VS-MA3D-H30-180200",
-   "size": "180x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3012
-  },
-  {
-   "id": "7b41e396-6976-52f7-b61d-fc7a1e9bb19e",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-80190",
-   "size": "80x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2500
-  },
-  {
-   "id": "bad112cd-f6ad-5346-8a0a-9186a593665d",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-80200",
-   "size": "80x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2501
-  },
-  {
-   "id": "7c424257-80b6-5c93-9078-ca8232ab8b4d",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-90190",
-   "size": "90x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2502
-  },
-  {
-   "id": "ecb9858c-f967-5357-93af-70bac7e2f3bf",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-90200",
-   "size": "90x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2503
-  },
-  {
-   "id": "009f55e6-5d06-52a7-a433-023ec12a43af",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-120190",
-   "size": "120x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2504
-  },
-  {
-   "id": "4340ee8d-6780-5f61-87e4-d8ae8a18f825",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-120200",
-   "size": "120x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2505
-  },
-  {
-   "id": "5e9350d5-5f69-5d9a-9b9c-5061ac3f3a32",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-140190",
-   "size": "140x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2506
-  },
-  {
-   "id": "ce6e7519-fdb7-5971-b884-dfeba926b2bd",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-140200",
-   "size": "140x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2507
-  },
-  {
-   "id": "2f5fc7ea-3b78-5b94-a498-dcd712f1841d",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-160190",
-   "size": "160x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2508
-  },
-  {
-   "id": "b4e262e0-003e-59e4-a449-9cc515ad8954",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-160200",
-   "size": "160x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2509
-  },
-  {
-   "id": "33227573-8729-5a01-a434-0e8a368d38d9",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-165190",
-   "size": "165x190",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2510
-  },
-  {
-   "id": "123de0d7-5bd9-5801-8874-e75f0f0ec0e6",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-170200",
-   "size": "170x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2511
-  },
-  {
-   "id": "20f33aea-e800-5c6f-ae7c-7f333d191099",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H25-180200",
-   "size": "180x200",
-   "height_cm": 25,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 2512
-  },
-  {
-   "id": "f69a0dfd-b530-5e27-af0e-72835edb649e",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-80190",
-   "size": "80x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3000
-  },
-  {
-   "id": "03b22514-db8b-5ffd-833d-a3ab560f7b76",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-80200",
-   "size": "80x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3001
-  },
-  {
-   "id": "d92fe97d-ba68-5e36-a88a-7ec6aa1d4ca7",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-90190",
-   "size": "90x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3002
-  },
-  {
-   "id": "dd33a136-c838-5a9c-8a61-6ffe2234f7b9",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-90200",
-   "size": "90x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3003
-  },
-  {
-   "id": "d5aa1b90-acdc-5f70-ac9d-36db0e4f755c",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-120190",
-   "size": "120x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3004
-  },
-  {
-   "id": "ed53e96f-9d7f-5d57-aa69-96aa219376c6",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-120200",
-   "size": "120x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3005
-  },
-  {
-   "id": "94e5b2d4-3eb8-5527-a8cf-55c3b2969fa8",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-140190",
-   "size": "140x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3006
-  },
-  {
-   "id": "19e5e851-2f94-5e64-bbc1-c1aad8b2bebf",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-140200",
-   "size": "140x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3007
-  },
-  {
-   "id": "3e94bb4d-43c5-5834-99c0-bd7a53df14e5",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-160190",
-   "size": "160x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3008
-  },
-  {
-   "id": "9b54e22e-640c-5fb3-a304-a9f51d32d891",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-160200",
-   "size": "160x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3009
-  },
-  {
-   "id": "daeb0a3a-1733-5e89-b5b5-136c39f2d492",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-165190",
-   "size": "165x190",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3010
-  },
-  {
-   "id": "a48101bc-e187-5e8e-b292-231aad5268fa",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-170200",
-   "size": "170x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3011
-  },
-  {
-   "id": "6ea861e5-7952-5310-96fc-265355da1cc9",
-   "product_id": "c27b80ff-9d0f-5bf0-9da5-a9417ad389a3",
-   "sku": "VS-BON-H30-180200",
-   "size": "180x200",
-   "height_cm": 30,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 3012
   },
   {
    "id": "f1bfae31-2ae0-5ee3-b676-d17b379279f8",
@@ -4285,50 +3197,6 @@ const SEED = {
    "availability": "made_to_order",
    "active": true,
    "sort": 512
-  },
-  {
-   "id": "be829365-9775-566e-93a2-0789c732b598",
-   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
-   "sku": "VS-GUA-PIUMA",
-   "size": null,
-   "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 0
-  },
-  {
-   "id": "c1cfd111-fb03-5b25-a8a3-db39a2a54688",
-   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
-   "sku": "VS-GUA-MFLAKES",
-   "size": null,
-   "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 0
-  },
-  {
-   "id": "ad021a28-454c-5012-a35a-760491eb7c16",
-   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
-   "sku": "VS-GUA-MCLASSIC",
-   "size": null,
-   "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 0
-  },
-  {
-   "id": "86475a77-f08f-5f9c-9027-bcb8829cff64",
-   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
-   "sku": "VS-GUA-MCERV",
-   "size": null,
-   "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
-   "active": true,
-   "sort": 0
   }
  ],
  "media": [
@@ -4504,112 +3372,6 @@ const SEED = {
    "focal_y": 50
   },
   {
-   "id": "5a315093-9295-5417-9948-b1e6b6141bd6",
-   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "slot": "extra",
-   "src": "img/pocket-2400-cutaway-1200.webp",
-   "srcset": "img/pocket-2400-cutaway-720.webp 720w, img/pocket-2400-cutaway-1200.webp 1200w",
-   "width": 1200,
-   "height": 800,
-   "alt": "Render precedente del Pocket Elite in sezione",
-   "caption": "",
-   "illustrative": true,
-   "is_cover": false,
-   "published": false,
-   "sort": 90,
-   "focal_x": 50,
-   "focal_y": 50
-  },
-  {
-   "id": "a16eb03a-d85c-5c0b-8643-dfba4c5f72d9",
-   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "slot": "extra",
-   "src": "img/pocket-2400-esploso-1200.webp",
-   "srcset": "img/pocket-2400-esploso-720.webp 720w, img/pocket-2400-esploso-1200.webp 1200w",
-   "width": 1200,
-   "height": 800,
-   "alt": "Vista esplosa precedente del Pocket Elite",
-   "caption": "",
-   "illustrative": true,
-   "is_cover": false,
-   "published": false,
-   "sort": 91,
-   "focal_x": 50,
-   "focal_y": 50
-  },
-  {
-   "id": "d5d97404-eec6-5ea0-9a23-fec5b4dc703c",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "slot": "hero",
-   "alt": "Vesuvio Memory Air 3D in prospettiva, con la fascia perimetrale 3D traspirante sul lato",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": true,
-   "published": true,
-   "sort": 10,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/memory-air-3d-34-1600.webp",
-   "srcset": "img/foto/memory-air-3d-34-900.webp 900w, img/foto/memory-air-3d-34-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "888cb0f9-0832-50b4-9ab8-4f10286d86fe",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "slot": "exploded",
-   "alt": "Vesuvio Memory Air 3D con un angolo aperto: Memory Foam sopra la base in poliuretano",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": false,
-   "published": true,
-   "sort": 11,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/memory-air-3d-sezione-1600.webp",
-   "srcset": "img/foto/memory-air-3d-sezione-900.webp 900w, img/foto/memory-air-3d-sezione-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "45af4665-59dd-55ac-bef3-36d418f4ec6b",
-   "product_id": "df39f46d-9932-5856-ab3a-43855690494c",
-   "slot": "fabric",
-   "alt": "Dettaglio della fascia 3D a rete traspirante",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": false,
-   "published": true,
-   "sort": 12,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/memory-air-3d-tessuto-1600.webp",
-   "srcset": "img/foto/memory-air-3d-tessuto-900.webp 900w, img/foto/memory-air-3d-tessuto-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "5326e85c-b441-5578-8d5f-af0cd91a5cfb",
-   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
-   "slot": "extra",
-   "alt": "Dettaglio precedente del rivestimento del Pocket Elite",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": false,
-   "published": false,
-   "sort": 13,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/pocket-2400-elite-tessuto-1600.webp",
-   "srcset": "img/foto/pocket-2400-elite-tessuto-900.webp 900w, img/foto/pocket-2400-elite-tessuto-1600.webp 1254w",
-   "width": 1254,
-   "height": 1254
-  },
-  {
    "id": "a0a75bd2-ab56-569f-a5c1-3f67039a9033",
    "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
    "slot": "hero",
@@ -4678,78 +3440,6 @@ const SEED = {
    "focal_y": 50,
    "src": "img/foto/rete-strong-dettaglio-1600.webp",
    "srcset": "img/foto/rete-strong-dettaglio-900.webp 900w, img/foto/rete-strong-dettaglio-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "fe586ae1-bdc8-5bb0-bad0-0e7224cd66d2",
-   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
-   "slot": "hero",
-   "alt": "Guanciale in piuma con fodera bianca",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": true,
-   "published": true,
-   "sort": 18,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/guanciale-piuma-1600.webp",
-   "srcset": "img/foto/guanciale-piuma-900.webp 900w, img/foto/guanciale-piuma-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "599584e8-0018-50de-ae44-121deef9a264",
-   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
-   "slot": "hero",
-   "alt": "Guanciale Memory Flakes con fodera trapuntata",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": true,
-   "published": true,
-   "sort": 19,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/guanciale-memory-flakes-1600.webp",
-   "srcset": "img/foto/guanciale-memory-flakes-900.webp 900w, img/foto/guanciale-memory-flakes-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "aa3b9e01-d012-5886-9fb0-9dd35a29dee4",
-   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
-   "slot": "hero",
-   "alt": "Guanciale Memory Classic rettangolare con fodera trapuntata",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": true,
-   "published": true,
-   "sort": 20,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/guanciale-memory-classic-1600.webp",
-   "srcset": "img/foto/guanciale-memory-classic-900.webp 900w, img/foto/guanciale-memory-classic-1600.webp 1536w",
-   "width": 1536,
-   "height": 1024
-  },
-  {
-   "id": "8fdbe388-b19b-572f-bb22-f4b5022e443e",
-   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
-   "slot": "hero",
-   "alt": "Guanciale cervicale in Memory con profilo a onda",
-   "caption": "",
-   "illustrative": true,
-   "fit": "cover",
-   "is_cover": true,
-   "published": true,
-   "sort": 21,
-   "focal_x": 50,
-   "focal_y": 50,
-   "src": "img/foto/guanciale-memory-cervical-1600.webp",
-   "srcset": "img/foto/guanciale-memory-cervical-900.webp 900w, img/foto/guanciale-memory-cervical-1600.webp 1536w",
    "width": 1536,
    "height": 1024
   }
@@ -7913,7 +6603,7 @@ function viewCategory(c) {
       return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length % 3 === 2 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length >= 4 && list.length % 3 !== 0 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];

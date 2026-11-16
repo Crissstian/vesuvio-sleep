@@ -16,22 +16,23 @@ insert into storage.objects (bucket_id, name) values ('product-media', 'seed/pro
 insert into public.media (product_id, slot, storage_path, alt, published)
   select id, 'extra', 'bozze/foto-non-pubblicata.webp', '', false from public.products where slug = 'memory-duo';
 
-select pg_temp.check((select count(*) from public.variants) = 225, 'seed: 225 varianti (listino completo, anche senza prezzo)');
-select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 130, 'listino 15/11/2026: 130 varianti con prezzo');
+select pg_temp.check((select count(*) from public.variants) = 238, 'seed: 238 varianti (listino completo, anche senza prezzo)');
+select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 130, 'listino: 130 varianti con prezzo (13 del Pocket 1600 ritirato restano a storico)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H25-160190') = 28000, 'Memory Duo H25 160x190 = 280 € (listino 15/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P2600-H30-160190') is null, 'Pocket H30 senza prezzo');
 select pg_temp.check((select count(*) from public.products where slug in ('pocket-2400-elite', 'pocket-2600-elite')) = 1, 'Pocket 2600 Elite: un solo prodotto, nessun duplicato del 2400');
 select pg_temp.check((select count(*) from public.variants where sku like 'VS-P2400-%') = 0, 'nessuno SKU 2400 residuo');
 select pg_temp.check((select count(*) from (select product_id from public.media where is_cover group by product_id having count(*) > 1) x) = 0, 'una sola copertina per prodotto');
 select pg_temp.check((select count(*) from public.media where storage_path ilike '%grafeno%') = 0, 'immagine Grafeno non caricata');
-select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 130, '130 varianti con prezzo, tutte su prodotti pubblicati');
+select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 117, '117 varianti acquistabili, tutte su prodotti pubblicati');
+select pg_temp.check((select status from public.products where slug = 'pocket-1600') = 'archived', 'Pocket 1600 ritirato: archiviato, non pubblico');
 select pg_temp.check((select count(*) from public.products where status = 'published' and not exists (select 1 from public.variants v where v.product_id = products.id and v.price_cents > 0)) = 0, 'nessun prodotto pubblicato senza prezzo');
 select pg_temp.check((select count(distinct storage_path) from public.media) = (select count(*) from public.media), 'percorsi delle foto univoci');
 
 -- ---------------- pubblico (anon)
 set role anon;
 set request.jwt.claim.sub = '';
-select pg_temp.check((select count(*) from public.products) = 8, 'anon vede solo gli 8 prodotti con prezzo');
+select pg_temp.check((select count(*) from public.products) = 7, 'anon vede solo i 7 prodotti in catalogo');
 select pg_temp.check(not exists (select 1 from public.products where slug in ('memory-air-3d','bonnell-classic','guanciale-piuma','castello-steel')), 'anon non vede i prodotti sospesi (senza prezzo)');
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
 select pg_temp.check((select count(*) from public.media) = 13, 'anon vede solo le foto pubblicate di prodotti pubblicati (13)');
@@ -70,13 +71,13 @@ select pg_temp.check((select count(*) from public.requests) = 0, 'utente normale
 select pg_temp.check((select count(*) from public.product_private) = 0, 'utente normale: 0 note interne');
 update public.variants set price_cents = 1;
 select pg_temp.check((select min(price_cents) from public.variants) > 1, 'utente normale: update prezzi senza effetto');
-select pg_temp.check((select count(*) from public.products) = 8, 'utente normale: vede solo i pubblicati');
+select pg_temp.check((select count(*) from public.products) = 7, 'utente normale: vede solo i pubblicati');
 
 -- ---------------- admin
 reset role;
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000a001';
-select pg_temp.check((select count(*) from public.products) = 15, 'admin vede anche le bozze');
+select pg_temp.check((select count(*) from public.products) = 16, 'admin vede anche bozze e archiviati');
 select pg_temp.check((select status::text from public.requests where ref = current_setting('test.ref')) = 'in_attesa_contatto', 'richiesta in attesa di contatto (mai "pagata")');
 select pg_temp.check((select count(*) from public.request_events) = 3, 'storico eventi richieste');
 update public.variants set price_cents = 23000 where sku = 'VS-MD-H25-160190';

@@ -37,13 +37,13 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const navText = await p.locator('#drawer-links').innerText();
   ok(!/Topper|castello/i.test(navText), 'menu: categorie senza articoli acquistabili nascoste');
 
-  // catalogo ufficiale 15/11/2026: 130 varianti acquistabili, prezzi dal listino
+  // catalogo al 16/11/2026: Pocket 1600 ritirato, 117 varianti acquistabili
   const st = await p.evaluate(() => window.__vs.stats());
-  ok(st.total === 130 && st.byKind.materasso === 91 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 130 varianti acquistabili (91 materassi, 26 reti, 13 topper)', JSON.stringify(st));
-  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400/.test(s)), 'listino: prodotti senza prezzo non pubblici', st.products.join(','));
+  ok(st.total === 117 && st.byKind.materasso === 78 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 117 varianti acquistabili (78 materassi, 26 reti, 13 topper)', JSON.stringify(st));
+  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400|pocket-1600|duo-classic/.test(s)), 'non pubblici: senza prezzo, ritirati o in attesa di listino', st.products.join(','));
   const prices = await p.evaluate(() => [
     ['essential-foam', 20, '160x190', 200], ['essential-foam', 25, '160x190', 250], ['essential-foam', 30, '160x190', 270],
-    ['memory-duo', 25, '160x190', 280], ['pocket-2600-elite', 25, '160x190', 550], ['pocket-1600', 25, '160x190', 450],
+    ['memory-duo', 25, '160x190', 280], ['pocket-2600-elite', 25, '160x190', 550],
     ['memory-foam-3-strati', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
     ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-2600-elite', 25, '180x200', 650], ['essential-foam', 20, '80x190', 90],
   ].map(([s, h, z, e]) => [s, h, z, e, window.__vs.price(s, h, z)]));
@@ -52,10 +52,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok(await p.evaluate(() => [null, 30].every((h) => window.__vs.price('memory-duo', 30, '160x190') === null && window.__vs.price('pocket-2600-elite', 30, '160x190') === null)), 'listino: H30 senza prezzo non acquistabile');
 
   await go(p, 'materassi');
-  ok((await p.locator('.card').count()) === 5, 'catalogo materassi: 5 modelli acquistabili');
-  ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400/), 'catalogo: modelli senza prezzo non pubblicati');
+  ok((await p.locator('.card').count()) === 4, 'catalogo materassi: 4 modelli acquistabili (Pocket 1600 ritirato)');
+  ok(!(await p.locator('#app').innerText()).match(/Bonnell|Air 3D|2400|Pocket 1600/), 'catalogo: modelli senza prezzo o ritirati non pubblicati');
   await p.locator('[data-act="filter"][data-v="molle"]').click(); await p.waitForTimeout(400);
-  ok((await p.locator('.card').count()) === 2, 'filtro Molle: Pocket 2600 Elite e Pocket 1600');
+  ok((await p.locator('.card').count()) === 1, 'filtro Molle: solo Pocket 2600 Elite');
   await p.locator('[data-act="filter"][data-v="30"]').click(); await p.waitForTimeout(400);
   ok((await p.locator('.empty').count()) === 1, 'filtri senza risultati: stato vuoto con azione');
   await p.locator('[data-act="reset-filters"]').click(); await p.waitForTimeout(400);
@@ -80,6 +80,9 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.locator('#zoom, [data-act="zoom"]').first().click(); await p.waitForTimeout(300);
   ok(await p.locator('dialog .zoom-stage img').isVisible(), 'zoom accessibile apre il dialog');
   await p.keyboard.press('Escape');
+
+  await go(p, 'materassi/pocket-1600', 600);
+  ok((await p.locator('#add-btn').count()) === 0 && /non c'è/i.test(await p.locator('#app').innerText()), 'Pocket 1600 ritirato: la sua pagina non esiste più');
 
   await go(p, 'prodotto-guanciale-memory-cervical');
   ok((await p.locator('.buy').count()) === 0 && (await p.locator('#add-btn').count()) === 0, 'guanciale senza prezzo: scheda non pubblica');
@@ -112,7 +115,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await cartCount(p)) === 1, 'il carrello non si svuota da solo');
 
   const PROV = /illustrativ|Foto in arrivo|Anteprima concept|da configurare|provvisori|segnaposto|non in scala|a breve|appena disponibili/i;
-  for (const h of ['', 'materassi', 'reti', 'topper', 'prodotto-essential-foam', 'prodotto-pocket-1600', 'prodotto-rete-strong', 'showroom', 'guida-misure', 'sleep-match', 'carrello', 'riepilogo']) {
+  for (const h of ['', 'materassi', 'reti', 'topper', 'prodotto-essential-foam', 'prodotto-memory-foam-3-strati', 'prodotto-rete-strong', 'showroom', 'guida-misure', 'sleep-match', 'carrello', 'riepilogo']) {
     await go(p, h, 400);
     const t = await p.locator('body').innerText();
     if (PROV.test(t)) ok(false, `nessuna scritta provvisoria su #${h}`, PROV.exec(t)[0]);
@@ -153,8 +156,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     ok(srcs.length === 3 && ['hero', 'exploded', 'detail'].every((r, i) => srcs[i].includes(`img/prodotti/${folder}/${r}`)), `galleria ${slug}: hero, esploso, dettaglio nell'ordine del manifest`, srcs.join(','));
     ok((await p.locator('.thumb--ph').count()) === 0, `galleria ${slug}: nessun segnaposto`);
   }
-  await go(p, 'prodotto-pocket-1600', 500);
-  ok((await p.locator('.thumb--ph, .ph').count()) === 0, 'Pocket 1600 senza foto: nessun segnaposto visibile');
+  await go(p, 'prodotto-memory-foam-3-strati', 500);
+  ok((await p.locator('.thumb--ph, .ph').count()) === 0, 'Memory Foam 3 strati senza foto: nessun segnaposto visibile');
   ok(await p.evaluate(() => [...document.images].every((i) => !/grafeno/i.test(i.src))), 'immagine Grafeno non usata');
   // db salvato con il seed precedente e una modifica admin: la modifica resta, le foto nuove arrivano
   await p.evaluate(() => {
@@ -279,7 +282,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   // foto: upload in bozza, non visibile, poi pubblicata
   await go(p, 'admin-catalogo', 300);
-  await p.locator('.adm-tr', { hasText: 'Memory Duo' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr').filter({ hasText: /\/memory-duo[^-]/ }).click(); await p.waitForTimeout(400);
   await p.setInputFiles('input[data-adm-file="new"]', here('./foto-piccola.jpg')); await p.waitForTimeout(800);
   ok(/troppo piccola/.test(await p.locator('#upload-state').innerText()), 'media: immagine troppo piccola rifiutata');
   await p.setInputFiles('input[data-adm-file="new"]', here('./foto-test.jpg')); await p.waitForTimeout(1500);
@@ -287,7 +290,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'prodotto-memory-duo', 500);
   ok((await p.locator('.thumb').count()) === 3, 'media: foto in bozza non visibile sul sito');
   await go(p, 'admin-catalogo', 300);
-  await p.locator('.adm-tr', { hasText: 'Memory Duo' }).click(); await p.waitForTimeout(400);
+  await p.locator('.adm-tr', { hasText: 'Vesuvio Memory Duo/' }).click(); await p.waitForTimeout(400);
   await p.locator('[data-adm="m-pub"]').last().click(); await p.waitForTimeout(300);
   ok(/testo alternativo/.test(await p.locator('#toast').innerText()), 'media: pubblicazione bloccata senza alt');
   await p.locator('[data-mf="alt"]').last().fill('Memory Duo visto di tre quarti'); await p.locator('[data-mf="alt"]').last().blur(); await p.waitForTimeout(400);
@@ -383,7 +386,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 {
   const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });
   await p.goto(BASE + '#/'); await p.waitForTimeout(900);
-  ok((await p.locator('.showcase__row').count()) === 5 && (await p.locator('.showcase__item.is-active').count()) === 1, 'home: vetrina con 5 materassi, uno in scena');
+  ok((await p.locator('.showcase__row').count()) === 4 && (await p.locator('.showcase__item.is-active').count()) === 1, 'home: vetrina con 4 materassi, uno in scena');
   await p.locator('.showcase__row').nth(2).scrollIntoViewIfNeeded(); await p.locator('.showcase__row').nth(2).hover(); await p.waitForTimeout(300);
   ok(await p.locator('.showcase__item').nth(2).evaluate((e) => e.classList.contains('is-active')), 'vetrina: il modello sotto il puntatore va in scena');
   await p.locator('.showcase__row').nth(2).click(); await p.waitForTimeout(700);
@@ -391,8 +394,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('.anatomy__list li').count()) === 5 && (await p.locator('.fabric__fig img').count()) === 1 && (await p.locator('.promise li').count()) === 3 && (await p.locator('.tiles li').count()) >= 3, 'scheda: strati, rivestimento, riquadri e promesse');
   await p.evaluate(() => document.querySelector('.fabric').scrollIntoView()); await p.waitForTimeout(1600);
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.fabric__fig img')).clipPath === 'inset(0px)'), 'scheda: la foto del rivestimento si scopre entrando nello schermo');
-  await p.goto(BASE + '#/materassi/pocket-1600/'); await p.waitForTimeout(600);
-  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Pocket 1600 (senza foto né composizione confermata): nessuno strato inventato');
+  await p.goto(BASE + '#/materassi/memory-foam-3-strati/'); await p.waitForTimeout(600);
+  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Memory Foam 3 strati (senza foto né composizione confermata): nessuno strato inventato');
   ok(errors.length === 0, 'nessun errore JavaScript (restyling)', errors.join(' | '));
   await ctx.close();
 }
@@ -402,7 +405,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const { ctx, p } = await newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   await p.goto(BASE + '#/'); await p.waitForTimeout(900);
   await p.evaluate(() => document.querySelector('.showcase').scrollIntoView({ block: 'center' })); await p.waitForTimeout(500);
-  ok((await p.locator('.car-dots i').count()) === 5 && (await p.locator('.car-dots i.on').count()) === 1, 'telefono: carosello della vetrina con puntini');
+  ok((await p.locator('.car-dots i').count()) === 4 && (await p.locator('.car-dots i.on').count()) === 1, 'telefono: carosello della vetrina con puntini');
   await p.evaluate(() => (document.querySelector('.showcase__list').scrollLeft = 330)); await p.waitForTimeout(500);
   ok(await p.evaluate(() => [...document.querySelectorAll('.car-dots i')].findIndex((d) => d.classList.contains('on')) === 1 && document.querySelectorAll('.showcase__item')[1].classList.contains('is-center')), 'telefono: scorrendo il carosello la scheda al centro va in primo piano');
   await p.goto(BASE + '#/materassi/memory-duo/'); await p.waitForTimeout(900);

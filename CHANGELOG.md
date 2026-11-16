@@ -1,5 +1,13 @@
 # Changelog
 
+## Catalogo: Pocket 1600 ritirato, Memory Duo Classic in arrivo (16/11/2026)
+- **Vesuvio Pocket 1600 fuori catalogo** su indicazione dell'azienda. È **archiviato**, non eliminato: sparisce da categorie, ricerca, Sleep Match, abbinamenti e confronto, la sua pagina non esiste più, ma prezzi e storico restano e si ripubblica da Admin con un clic. Se qualcuno ce l'ha nel carrello da prima, al riepilogo risulta non disponibile e non può essere inviato. Tolto anche dai testi del catalogo e dalla guida alle tecnologie.
+- **Vesuvio Memory Duo Classic**: stesso materasso del Memory Duo con il rivestimento fisso, non sfoderabile. Creato in **bozza**, visibile solo nell'admin, perché i prezzi non sono nel listino e non si inventano. Si pubblica appena l'azienda li fornisce.
+- Materassi in catalogo: da 5 a 4. Varianti acquistabili: da 130 a **117** (78 materassi, 26 reti, 13 topper).
+- Il catalogo generato per Supabase ora è un unico file aggiornato, `supabase/catalog/catalogo_corrente.sql`.
+- Applicato anche al database Supabase, con verifica da visitatore anonimo.
+- **Corretta una fuga di dati trovata durante il lavoro**: il JavaScript del sito pubblico conteneva anche prodotti in bozza, archiviati e le **note interne** (per esempio «portata massima non verificata: non pubblicare un valore»), leggibili da chiunque. Ora il sito pubblico usa un catalogo separato, `seed.public.js`, con i soli prodotti pubblicati e senza note. Due controlli automatici lo verificano a ogni build.
+
 ## Effetti per il telefono (16/11/2026)
 - Vetrina della home come carosello in profondità: la scheda al centro è in primo piano, le altre si allontanano; puntini a forma di cucitura.
 - Galleria della scheda sfogliabile col dito, con puntini; la foto segue il dito e la successiva entra dal lato giusto.

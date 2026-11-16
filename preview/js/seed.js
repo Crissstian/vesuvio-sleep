@@ -1,7 +1,7 @@
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 export const SEED = {
- "version": "seed-2026-11-15e",
- "catalog_version": "catalogo-2026-11-15",
+ "version": "seed-2026-11-16a",
+ "catalog_version": "catalogo-2026-11-16",
  "authoritative": true,
  "categories": [
   {
@@ -124,6 +124,37 @@ export const SEED = {
    "name": "Vesuvio Memory Duo"
   },
   {
+   "id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "slug": "memory-duo-classic",
+   "technical_name": "Memory Foam 2 strati",
+   "short": "Lo stesso Memory Duo, con il rivestimento fisso.",
+   "description": "Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.",
+   "composition": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
+   "highlights": [
+    "Memory Foam 2 strati",
+    "Rivestimento fisso"
+   ],
+   "claims": [],
+   "removable_cover": false,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MDC",
+   "status": "draft",
+   "sort": 3,
+   "lead_time": null,
+   "match": {
+    "tech": "memory",
+    "welcome": 2,
+    "ventilation": false,
+    "independent_springs": false
+   },
+   "internal_notes": "Aggiunto il 16/11/2026 su indicazione dell'azienda. Da confermare: prezzi, se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Memory Duo Classic"
+  },
+  {
    "id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slug": "pocket-2600-elite",
    "technical_name": "2600 molle insacchettate + Memory",
@@ -147,7 +178,7 @@ export const SEED = {
    "firmness_display": "Sostenuto / medio-rigido",
    "line_code": "P2600",
    "status": "published",
-   "sort": 3,
+   "sort": 4,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "molle",
@@ -177,8 +208,8 @@ export const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "P1600",
-   "status": "published",
-   "sort": 4,
+   "status": "archived",
+   "sort": 8,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "molle",
@@ -186,7 +217,7 @@ export const SEED = {
     "ventilation": false,
     "independent_springs": true
    },
-   "internal_notes": "Specifiche di dettaglio e foto non ancora fornite.",
+   "internal_notes": "Fuori catalogo dal 16/11/2026 per decisione dell'azienda: archiviato, non compare sul sito. I prezzi restano quelli del listino, si ripubblica da Admin se rientra in gamma.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 1600"
   },
@@ -1200,6 +1231,149 @@ export const SEED = {
    "availability": "unavailable",
    "active": true,
    "sort": 3012
+  },
+  {
+   "id": "d6530707-1d4f-5cb7-8dbd-d0446136e0ff",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "b08afda4-ac33-5362-83f8-0630cdf6ed61",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80200",
+   "size": "80x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "c13170ca-60e3-5b6b-bd6d-16a924e3885b",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90190",
+   "size": "90x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "9e238e4f-d889-5e6d-9bf5-56a8939da0fd",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "cf380a68-c459-5570-a1d2-be8a60d1959d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "e3780998-635d-58ca-b71d-82ab1e837282",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120200",
+   "size": "120x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "5bbfb28f-3678-5afd-ba9a-1eb94e7672f6",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "c6e5766e-0aac-5a83-858e-10ecc213d5ed",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140200",
+   "size": "140x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "8950dbb4-7f1e-5c3b-b091-3ba9b577a2eb",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2508
+  },
+  {
+   "id": "e0d86319-fe5f-54cb-ba8b-a08bec346668",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160200",
+   "size": "160x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2509
+  },
+  {
+   "id": "dcc35ffb-a7c2-5d9b-96af-8520cf48ea0d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2510
+  },
+  {
+   "id": "346212dd-5ff4-540f-915c-3277e56dfa3e",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2511
+  },
+  {
+   "id": "5f16949d-30ec-539e-9ce9-f19eaa52bcaa",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2512
   },
   {
    "id": "1635c6ff-6e59-55aa-9755-efdef865c4af",

@@ -950,7 +950,6 @@ const L = {
   essential: '/materassi/essential-foam/',
   duo: '/materassi/memory-duo/',
   pocket: '/materassi/pocket-2600-elite/',
-  p1600: '/materassi/pocket-1600/',
   mf3: '/materassi/memory-foam-3-strati/',
   flex: '/reti/rete-flex/',
   strong: '/reti/rete-strong/',
@@ -1029,7 +1028,7 @@ const CATEGORY_SEO = {
     description: (from) => `Materassi di fabbrica${from ? ` da ${from}` : ''}: Memory Foam, molle insacchettate e poliuretano in 13 misure, prodotti a Casoria (Napoli). Spedizione gratuita.`,
     html: () => `<h2>Come scegliere tra i nostri materassi</h2>
       <p>La gamma è piccola di proposito: ogni modello ha un carattere preciso. Il ${a(L.essential, 'Vesuvio Essential Foam')} in poliuretano espanso ad alta densità dà un sostegno uniforme e stabile ed è l'unico disponibile in tre altezze, H20, H25 e H30. Il ${a(L.duo, 'Vesuvio Memory Duo')} aggiunge uno strato di Memory Foam, più accogliente, ed è reversibile con un lato invernale e uno estivo. Il ${a(L.mf3, 'Memory Foam 3 strati')} è alto 27 cm.</p>
-      <p>Chi cerca un sostegno più deciso o dorme in due guarda ai modelli a molle: il ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')} unisce 2600 molle insacchettate e Memory Foam, il ${a(L.p1600, 'Vesuvio Pocket 1600')} è a molle insacchettate, alto 25 cm.</p>
+      <p>Chi cerca un sostegno più deciso, o dorme in due, guarda al ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}: 2600 molle insacchettate che lavorano una per una, con sopra uno strato di Memory Foam.</p>
       <p>Se non sai da dove partire, il ${a(P.sleepMatch, 'Sleep Match')} ti propone un modello in poche domande, e la guida ${a('/guide/materasso-memory-molle-o-poliuretano/', 'Memory, molle o poliuretano')} spiega le differenze. Tutti i prezzi sono IVA inclusa e la spedizione è gratuita in Italia. Per letti con misure non standard c'è il ${a(P.quote, 'materasso su misura')}.</p>`,
   },
   rete: {
@@ -1316,12 +1315,12 @@ const PAGES = {
       ${sec('memory', 'Memory Foam', `<p>Il Memory Foam reagisce al calore e al peso del corpo e ne segue la forma, distribuendo la pressione: per questo è <strong>accogliente</strong> e piace a chi dorme sul fianco. Tende a trattenere più calore delle molle. Nei materassi è di solito uno strato di comfort sopra una base portante più rigida.</p>
         <p>I nostri modelli: ${a(L.duo, 'Vesuvio Memory Duo')}, Memory su base in poliuretano, reversibile estate-inverno e sfoderabile; ${a(L.mf3, 'Memory Foam 3 strati')}, alto 27 cm.</p>`)}
       ${sec('molle', 'Molle insacchettate', `<p>Ogni molla è chiusa nel suo sacchetto e lavora in modo indipendente: il materasso si adatta per zone e trasmette poco il movimento a chi dorme accanto. Tra le molle circola aria, quindi resta più fresco. Spesso le molle si uniscono a uno strato di Memory: è quello che chiamiamo Hybrid.</p>
-        <p>I nostri modelli: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con Memory Foam; ${a(L.p1600, 'Vesuvio Pocket 1600')}, a molle insacchettate.</p>`)}
+        <p>Il nostro modello: ${a(L.pocket, 'Vesuvio Pocket 2600 Elite')}, 2600 molle insacchettate con uno strato di comfort in Memory Foam.</p>`)}
       ${sec('confronto', 'In sintesi', `<div class="table-scroll"><table class="size-table"><thead><tr><th></th><th>Poliuretano</th><th>Memory Foam</th><th>Molle insacchettate</th></tr></thead><tbody>
         <tr><th scope="row">Sensazione</th><td>Stabile, diretta</td><td>Accogliente, avvolgente</td><td>Elastica, per zone</td></tr>
         <tr><th scope="row">Calore</th><td>Neutro</td><td>Trattiene di più</td><td>Più fresco</td></tr>
         <tr><th scope="row">In due</th><td>Stabile</td><td>Stabile</td><td>Movimento poco trasmesso</td></tr>
-        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}, ${a(L.p1600, 'Pocket 1600')}</td></tr>
+        <tr><th scope="row">Da noi</th><td>${a(L.essential, 'Essential Foam')}</td><td>${a(L.duo, 'Memory Duo')}, ${a(L.mf3, 'Memory Foam 3 strati')}</td><td>${a(L.pocket, 'Pocket 2600 Elite')}</td></tr>
         </tbody></table></div>
         <p>Per affiancare i modelli caratteristica per caratteristica c'è il ${a(P.compare, 'confronto')}; per una proposta su misura, lo ${a(P.sleepMatch, 'Sleep Match')}.</p>`)}`,
   },
@@ -1369,8 +1368,8 @@ __exp.VIEW_SEO = VIEW_SEO;
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-15e",
- "catalog_version": "catalogo-2026-11-15",
+ "version": "seed-2026-11-16a",
+ "catalog_version": "catalogo-2026-11-16",
  "authoritative": true,
  "categories": [
   {
@@ -1493,6 +1492,37 @@ const SEED = {
    "name": "Vesuvio Memory Duo"
   },
   {
+   "id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "slug": "memory-duo-classic",
+   "technical_name": "Memory Foam 2 strati",
+   "short": "Lo stesso Memory Duo, con il rivestimento fisso.",
+   "description": "Stessa costruzione del Vesuvio Memory Duo: uno strato di comfort in Memory Foam su una base portante in poliuretano ad alta densità. Qui il rivestimento è fisso, non sfoderabile.",
+   "composition": "Memory Foam premium ad alta densità + base di supporto in poliuretano ad alta densità.",
+   "highlights": [
+    "Memory Foam 2 strati",
+    "Rivestimento fisso"
+   ],
+   "claims": [],
+   "removable_cover": false,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MDC",
+   "status": "draft",
+   "sort": 3,
+   "lead_time": null,
+   "match": {
+    "tech": "memory",
+    "welcome": 2,
+    "ventilation": false,
+    "independent_springs": false
+   },
+   "internal_notes": "Aggiunto il 16/11/2026 su indicazione dell'azienda. Da confermare: prezzi, se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per questo tessuto. Nessuna foto propria.",
+   "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
+   "name": "Vesuvio Memory Duo Classic"
+  },
+  {
    "id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
    "slug": "pocket-2600-elite",
    "technical_name": "2600 molle insacchettate + Memory",
@@ -1516,7 +1546,7 @@ const SEED = {
    "firmness_display": "Sostenuto / medio-rigido",
    "line_code": "P2600",
    "status": "published",
-   "sort": 3,
+   "sort": 4,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "molle",
@@ -1546,8 +1576,8 @@ const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "P1600",
-   "status": "published",
-   "sort": 4,
+   "status": "archived",
+   "sort": 8,
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": {
     "tech": "molle",
@@ -1555,7 +1585,7 @@ const SEED = {
     "ventilation": false,
     "independent_springs": true
    },
-   "internal_notes": "Specifiche di dettaglio e foto non ancora fornite.",
+   "internal_notes": "Fuori catalogo dal 16/11/2026 per decisione dell'azienda: archiviato, non compare sul sito. I prezzi restano quelli del listino, si ripubblica da Admin se rientra in gamma.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 1600"
   },
@@ -2569,6 +2599,149 @@ const SEED = {
    "availability": "unavailable",
    "active": true,
    "sort": 3012
+  },
+  {
+   "id": "d6530707-1d4f-5cb7-8dbd-d0446136e0ff",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80190",
+   "size": "80x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2500
+  },
+  {
+   "id": "b08afda4-ac33-5362-83f8-0630cdf6ed61",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-80200",
+   "size": "80x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2501
+  },
+  {
+   "id": "c13170ca-60e3-5b6b-bd6d-16a924e3885b",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90190",
+   "size": "90x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2502
+  },
+  {
+   "id": "9e238e4f-d889-5e6d-9bf5-56a8939da0fd",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-90200",
+   "size": "90x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2503
+  },
+  {
+   "id": "cf380a68-c459-5570-a1d2-be8a60d1959d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120190",
+   "size": "120x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2504
+  },
+  {
+   "id": "e3780998-635d-58ca-b71d-82ab1e837282",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-120200",
+   "size": "120x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2505
+  },
+  {
+   "id": "5bbfb28f-3678-5afd-ba9a-1eb94e7672f6",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140190",
+   "size": "140x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2506
+  },
+  {
+   "id": "c6e5766e-0aac-5a83-858e-10ecc213d5ed",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-140200",
+   "size": "140x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2507
+  },
+  {
+   "id": "8950dbb4-7f1e-5c3b-b091-3ba9b577a2eb",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160190",
+   "size": "160x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2508
+  },
+  {
+   "id": "e0d86319-fe5f-54cb-ba8b-a08bec346668",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-160200",
+   "size": "160x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2509
+  },
+  {
+   "id": "dcc35ffb-a7c2-5d9b-96af-8520cf48ea0d",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-165190",
+   "size": "165x190",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2510
+  },
+  {
+   "id": "346212dd-5ff4-540f-915c-3277e56dfa3e",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-170200",
+   "size": "170x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2511
+  },
+  {
+   "id": "5f16949d-30ec-539e-9ce9-f19eaa52bcaa",
+   "product_id": "27b81c88-21b7-5d06-b2c3-a250d43768a5",
+   "sku": "VS-MDC-H25-180200",
+   "size": "180x200",
+   "height_cm": 25,
+   "price_cents": null,
+   "availability": "unavailable",
+   "active": true,
+   "sort": 2512
   },
   {
    "id": "1635c6ff-6e59-55aa-9755-efdef865c4af",
@@ -7913,7 +8086,7 @@ function viewCategory(c) {
       return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length % 3 === 2 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length >= 4 && list.length % 3 !== 0 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];

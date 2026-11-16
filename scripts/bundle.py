@@ -12,6 +12,12 @@ import os, re, sys, json
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else 'preview/js'
 ENTRY = 'app.js'
+# --seed <file>: usa un altro catalogo al posto di seed.js (il sito pubblico usa
+# seed.public.js, senza bozze, archiviati e note interne).
+SEED_SRC = None
+if '--seed' in sys.argv:
+    SEED_SRC = sys.argv[sys.argv.index('--seed') + 1]
+OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else None
 mods, order = {}, []
 
 def norm(base, rel):
@@ -20,7 +26,8 @@ def norm(base, rel):
 def load(path):
     if path in mods:
         return
-    src = open(os.path.join(ROOT, path), encoding='utf-8').read()
+    file = SEED_SRC if (SEED_SRC and path == 'seed.js') else os.path.join(ROOT, path)
+    src = open(file, encoding='utf-8').read()
     mods[path] = None
     deps = re.findall(r"""from\s+['"](\.[^'"]+)['"]""", src) + re.findall(r"""import\(\s*['"](\.[^'"]+)['"]\s*\)""", src)
     for d in deps:
@@ -56,5 +63,5 @@ out = ["/* Generato da scripts/bundle.py: non modificare a mano. */", "(function
        "function __req(n) { if (!__cache[n]) { __cache[n] = {}; __defs[n](__cache[n]); } return __cache[n]; }"]
 out += [mods[p] for p in order]
 out += [f"__req({json.dumps(ENTRY)});", "})();"]
-open(os.path.join(ROOT, 'bundle.js'), 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+open(OUT or os.path.join(ROOT, 'bundle.js'), 'w', encoding='utf-8').write('\n'.join(out) + '\n')
 print('bundle:', ', '.join(order))
