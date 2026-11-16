@@ -39,7 +39,7 @@ for (const f of fs.readdirSync(path.join(OUT, 'img'))) if (f.startsWith('pocket-
 
 // versione nei link di CSS e JS: si possono mettere in cache a lungo
 const hash = (f) => crypto.createHash('sha256').update(fs.readFileSync(path.join(OUT, f))).digest('hex').slice(0, 10);
-const VERSIONED = ['css/app.css', 'css/home.css', 'css/pages.css', 'css/motion.css', 'css/admin.css', 'js/config.js', 'js/bundle.js'];
+const VERSIONED = ['css/app.css', 'css/home.css', 'css/pages.css', 'css/motion.css', 'css/fx.css', 'css/admin.css', 'js/config.js', 'js/bundle.js'];
 const ver = Object.fromEntries(VERSIONED.map((f) => [f, hash(f)]));
 
 let template = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8');

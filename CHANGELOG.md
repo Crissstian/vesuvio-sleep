@@ -1,5 +1,13 @@
 # Changelog
 
+## Restyling (16/11/2026)
+Punto di ripristino della versione precedente: tag e branch `checkpoint-pre-restyling-2026-11-16` (commit `1b599da`).
+- **Home**: vetrina interattiva al posto della griglia (elenco dei modelli a sinistra, prodotto in scena a destra che cambia al passaggio e segue il puntatore; carosello sul telefono), fascia cinetica a due righe che scorre con la pagina, numeri più grandi con cucitura che si disegna.
+- **Scheda prodotto**: galleria "in scena" che resta ferma mentre scorri, foto che segue il puntatore, titolo e prezzo più grandi, nome della misura scelta, sezione «Com'è fatto» con riquadri, fascia scura «Strato per strato» con la foto esplosa che si apre scorrendo, sezione sul rivestimento con la foto di dettaglio, abbinamenti più grandi, tre riquadri finali (consegna, pagamento, su misura). Strati e rivestimento compaiono solo dove foto e composizione sono confermate.
+- **Catalogo**: con 5 modelli il primo è in evidenza (nessuna card orfana), foto che si avvicina al passaggio.
+- **Entrata**: lettere del nome una per una, trama trapuntata sul sipario, intestazione che scende dopo l'apertura.
+- **Dettagli**: titoli di sezione più grandi, luce sui pulsanti che segue il puntatore, foto che si scoprono dall'alto.
+
 ## Database Supabase del nuovo sito (16/11/2026)
 - Creato il progetto Supabase **Vesuvio Sleep – nuovo sito** (Francoforte), separato da quello del sito attuale.
 - Applicate le 5 migrazioni esistenti più 2 nuove: permessi minimi per il pubblico e correzioni suggerite dai controlli di Supabase (search_path, is_admin, indici).

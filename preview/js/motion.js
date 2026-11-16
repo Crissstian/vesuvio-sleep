@@ -60,6 +60,18 @@ export function scrollUpdate() {
   const hero = document.querySelector('#app > .hero');
   if (hero) hero.style.setProperty('--hs', Math.min(1, Math.max(0, y / Math.max(1, hero.offsetHeight))).toFixed(3));
   const vh = window.innerHeight;
+  // fascia cinetica: le due righe scorrono in versi opposti con la pagina
+  const kin = document.querySelector('.kinetic');
+  if (kin) {
+    const r = kin.getBoundingClientRect();
+    if (r.bottom > -100 && r.top < vh + 100) kin.style.setProperty('--kx', `${((vh - r.top) * 0.22).toFixed(1)}px`);
+  }
+  // anatomia del materasso: la foto si apre mentre entra nello schermo
+  const an = document.querySelector('[data-anatomy]');
+  if (an) {
+    const r = an.getBoundingClientRect();
+    an.style.setProperty('--ap', Math.max(0, Math.min(1, (vh - r.top) / (vh * 0.75))).toFixed(3));
+  }
   document.querySelectorAll(PAR).forEach((img) => {
     const r = img.parentElement.getBoundingClientRect();
     if (r.bottom < -50 || r.top > vh + 50) return;
@@ -149,3 +161,56 @@ export function explode(el, target = 0.75, dur = 1100) {
   };
   requestAnimationFrame(step);
 }
+
+
+// ------------------------------------------------------------------ vetrina della home
+// Il modello sotto il puntatore (o col focus) va in scena. Sul telefono è un carosello a scorrimento.
+function showItem(row) {
+  const item = row.closest('.showcase__item');
+  if (!item || item.classList.contains('is-active')) return;
+  item.parentElement.querySelectorAll('.showcase__item').forEach((x) => x.classList.toggle('is-active', x === item));
+}
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType === 'touch') return;
+  const row = e.target.closest?.('.showcase__row');
+  if (row) showItem(row);
+});
+document.addEventListener('focusin', (e) => {
+  const row = e.target.closest?.('.showcase__row');
+  if (row) showItem(row);
+});
+
+// ------------------------------------------------------------------ il prodotto segue il puntatore
+// Scena della galleria e della vetrina: la foto si inclina di pochi gradi.
+document.addEventListener(
+  'pointermove',
+  (e) => {
+    if (e.pointerType === 'touch' || reduced()) return;
+    const el = e.target.closest?.('[data-tilt], .showcase');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--tx', ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
+    el.style.setProperty('--ty', ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
+  },
+  { passive: true },
+);
+document.addEventListener('pointerout', (e) => {
+  const el = e.target.closest?.('[data-tilt], .showcase');
+  if (el && !el.contains(e.relatedTarget)) {
+    el.style.setProperty('--tx', 0);
+    el.style.setProperty('--ty', 0);
+  }
+});
+
+// ------------------------------------------------------------------ pulsanti: una luce segue il puntatore
+document.addEventListener(
+  'pointermove',
+  (e) => {
+    const b = e.target.closest?.('.btn--primary, .btn--wa');
+    if (!b) return;
+    const r = b.getBoundingClientRect();
+    b.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    b.style.setProperty('--my', `${e.clientY - r.top}px`);
+  },
+  { passive: true },
+);

@@ -472,9 +472,14 @@ function viewHome() {
 
   ${statementHtml()}
 
+  <div class="kinetic" aria-hidden="true">
+    <div class="kinetic__row"><span>Memory Foam</span><i></i><span>Molle insacchettate</span><i></i><span>Poliuretano espanso</span><i></i><span>Memory Foam</span><i></i><span>Molle insacchettate</span><i></i><span>Poliuretano espanso</span><i></i></div>
+    <div class="kinetic__row kinetic__row--rev"><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i><span>Prezzo di fabbrica</span><i></i><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i></div>
+  </div>
+
   <section class="section" aria-labelledby="cat-title">
     <div class="wrap">
-      <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi IVA inclusa per la misura e l'altezza che scegli. Passa sopra un materasso per aprirne gli strati.</p></div>
+      <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi di fabbrica, IVA inclusa. Scorri i modelli e apri la scheda per scegliere misura e altezza.</p></div>
         <a class="btn btn--ghost btn--sm" href="${u(P.compare)}">Confronta i materassi</a></div>
       <div class="seg-tabs" role="tablist" aria-label="Categorie">${cats
         .map((c) => `<button class="tab" role="tab" id="tab-${c.kind}" aria-selected="${c.kind === state.homeKind}" aria-controls="home-grid" data-act="home-tab" data-kind="${c.kind}" tabindex="${c.kind === state.homeKind ? 0 : -1}">${esc(c.name)}<small>${idx.publicProducts(c.kind).length}</small></button>`)
@@ -554,10 +559,29 @@ function heroSlides() {
     return img ? { key, ...img, caption: HERO_CAPTIONS[key], illustrative: !img.uploaded } : null;
   }).filter(Boolean);
 }
+/** Vetrina della home: l'elenco dei modelli a sinistra, il prodotto in scena a destra. */
 function homeGrid(idx) {
   const items = idx.publicProducts(state.homeKind);
-  return `<div class="grid grid--stagger">${items.map((p, i) => productCard(idx, p, { compare: state.homeKind === 'materasso', d: i })).join('')}</div>
-    <p style="margin-top:22px"><a href="${u('/' + idx.snap.categories.find((c) => c.kind === state.homeKind)?.slug + '/')}">Vedi tutti: ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}</a></p>`;
+  const cat = idx.snap.categories.find((c) => c.kind === state.homeKind);
+  return `<div class="showcase" data-showcase>
+    <ol class="showcase__list">${items
+      .map((p, i) => {
+        const min = idx.minPrice(p);
+        const hs = state.homeKind === 'materasso' ? idx.purchasableHeights(p) : [];
+        return `<li class="showcase__item${i === 0 ? ' is-active' : ''}" style="--i:${i}">
+          <a class="showcase__row" href="${href.product(p)}" data-show="${i}">
+            <span class="showcase__name">${esc(p.name.replace(/^Vesuvio /, ''))}</span>
+            <span class="showcase__tech">${esc(p.technical_name)}${hs.length ? ' · ' + hs.map((h) => 'H' + h).join(' ') : ''}</span>
+            <span class="showcase__price">${min !== null ? `<small>da</small> ${formatCents(min)}` : ''}</span>
+            <span class="showcase__go" aria-hidden="true">${icon('arrow', 22)}</span>
+          </a>
+          <figure class="showcase__fig" aria-hidden="true">${coverHtml(idx, p, { sizes: '(max-width: 900px) 80vw, 46vw' })}${p.hybrid ? '<span class="card__flag">Hybrid</span>' : ''}</figure>
+        </li>`;
+      })
+      .join('')}</ol>
+    <div class="showcase__floor" aria-hidden="true"></div>
+  </div>
+  <p class="showcase__all"><a class="btn btn--ghost btn--sm" href="${u('/' + cat?.slug + '/')}">Tutti i ${esc(KIND_PLURAL[state.homeKind].toLowerCase())}, con filtri</a></p>`;
 }
 function moveThumb() {
   const th = $('.seg-tabs__thumb');
@@ -627,7 +651,7 @@ function viewCategory(c) {
       return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length % 3 === 2 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
@@ -723,23 +747,64 @@ function viewProduct(slug, catSlug) {
     p.lead_time ? ['Produzione', p.lead_time] : null,
   ].filter((r) => r && r[1]);
 
+  const layers = kind === 'materasso' || kind === 'topper' ? layersFor(p) : null;
+  const exploded = gallery.find((m) => m.slot === 'exploded');
+  const fabric = gallery.find((m) => m.slot === 'fabric');
+  const tiles = [
+    kind === 'materasso' && idx.purchasableHeights(p).length ? [idx.purchasableHeights(p).map((h) => h).join(' · '), 'cm di altezza'] : null,
+    idx.purchasableSizes(p).length ? [String(idx.purchasableSizes(p).length), 'misure standard'] : null,
+    p.firmness_display ? [p.firmness_display, 'rigidità indicativa'] : null,
+    p.removable_cover !== null && kind !== 'rete' ? [p.removable_cover ? 'Sfoderabile' : 'Fisso', 'rivestimento'] : null,
+    kind === 'rete' ? ['Inclusi', 'piedi'] : null,
+  ].filter(Boolean).slice(0, 4);
+
   app.innerHTML = `${crumbs(tr.ui)}
-  <div class="wrap" style="padding-top:22px">
+  <div class="wrap pdp-top">
     <div class="pdp">
       <div class="gallery" data-gallery>${galleryHtml(idx, p, gallery, 0)}</div>
       <div class="buy" id="buy"></div>
     </div>
-    <div class="two-col section--tight" style="padding-top:8px">
-      <div><h2 style="font-size:1.6rem">Com'è fatto</h2><p>${esc(p.description)}</p>
-        ${p.hybrid ? '<p class="small muted">Chiamiamo Hybrid i materassi che uniscono molle insacchettate e Memory Foam.</p>' : ''}</div>
-      <div><h2 class="sr-only">Caratteristiche</h2><dl class="facts-list">${factsRows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+  </div>
+
+  <section class="pdp-story"><div class="wrap pdp-story__in">
+    <div class="pdp-story__text">
+      <h2 class="pdp-h2 rv">Com'è fatto</h2>
+      ${p.description ? `<p class="pdp-story__lead rv" style="--d:1">${esc(p.description)}</p>` : ''}
+      ${p.hybrid ? '<p class="small muted rv" style="--d:2">Chiamiamo Hybrid i materassi che uniscono molle insacchettate e Memory Foam.</p>' : ''}
+      ${tiles.length ? `<ul class="tiles">${tiles.map(([v, k], i) => `<li class="rv" style="--d:${i + 1}"><strong>${esc(v)}</strong><span>${esc(k)}</span></li>`).join('')}</ul>` : ''}
     </div>
-    ${layersHtml(idx, p) ? `<section class="section--tight" aria-labelledby="layers-t"><h2 id="layers-t" style="font-size:1.6rem">Strato per strato</h2>${layersHtml(idx, p)}</section>` : ''}
+    <div class="pdp-story__facts rv" style="--d:1"><h2 class="sr-only">Caratteristiche</h2><dl class="facts-list">${factsRows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+  </div></section>
+
+  ${layers && exploded ? `<section class="anatomy" aria-labelledby="anat-t"><div class="wrap anatomy__in">
+      <figure class="anatomy__fig" data-anatomy>${imgTag(exploded, { sizes: '(max-width: 900px) 92vw, 52vw' })}</figure>
+      <div class="anatomy__text">
+        <h2 id="anat-t" class="rv">Strato per strato</h2>
+        <p class="anatomy__sub rv" style="--d:1">Dall'alto verso il basso, ecco cosa c'è dentro.</p>
+        <ol class="anatomy__list">${layers.map((l, i) => `<li class="rv" style="--d:${i + 1}"><span class="anatomy__sw" style="--c:${SW[l.k] ?? '#ccc'}"></span><div><strong>${esc(l.label)}</strong><span>${esc(l.note)}</span></div></li>`).join('')}</ol>
+      </div>
+  </div></section>` : ''}
+
+  ${fabric ? `<section class="fabric"><div class="wrap fabric__in">
+      <div class="fabric__text">
+        <h2 class="pdp-h2 rv">Il rivestimento, da vicino</h2>
+        <ul class="ticks rv" style="--d:1">
+          ${p.removable_cover === true ? '<li>Sfoderabile: si apre con la cerniera</li>' : p.removable_cover === false ? '<li>Rivestimento fisso, non sfoderabile</li>' : ''}
+          ${p.summer_winter ? '<li>Reversibile: un lato invernale e un lato estivo</li>' : ''}
+          ${showClaims ? `<li>Tessuto ${esc(p.claims.slice(0, 3).join(', '))}</li>` : ''}
+          <li>Trapuntato e cucito nella nostra fabbrica di Casoria</li>
+        </ul>
+      </div>
+      <figure class="fabric__fig kb">${imgTag(fabric, { sizes: '(max-width: 900px) 92vw, 46vw', cls: 'is-cover' })}</figure>
+  </div></section>` : ''}
+
+  <div class="wrap">
     <section class="section--tight" id="pairings" aria-labelledby="pair-t"></section>
-    <section class="section--tight"><div class="delivery">
-      <div><h3>${icon('truck')} Consegna</h3><ul><li>Spedizione ${esc(store.db.settings.shipping_note)}</li><li>A Napoli consegna al piano, ritiro dell'usato${kind === 'rete' ? ' e montaggio' : ''}</li></ul></div>
-      <div><h3>${icon('ruler')} Misura speciale</h3><p class="small">Realizziamo fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp, senza pagamenti anticipati.</p><a class="btn btn--ghost btn--sm" href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></div>
-    </div></section>
+    <section class="section--tight"><ul class="promise">
+      <li class="rv">${icon('truck', 26)}<h3>Consegna gratuita</h3><p>Spedizione ${esc(store.db.settings.shipping_note)}. A Napoli consegna al piano e ritiro dell'usato${kind === 'rete' ? ', con montaggio' : ''}.</p><a href="${u(P.shipping)}">Spedizioni e consegna</a></li>
+      <li class="rv" style="--d:1">${icon('check', 26)}<h3>Paghi alla consegna</h3><p>In contrassegno oppure con bonifico. Sul sito non si paga e non si inseriscono carte.</p><a href="${u(P.payments)}">Come si paga</a></li>
+      <li class="rv" style="--d:2">${icon('ruler', 26)}<h3>Anche su misura</h3><p>Fuori misura e altezze personalizzate: ti mandiamo un preventivo su WhatsApp.</p><a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Chiedi un preventivo</a></li>
+    </ul></section>
   </div>
   ${purchasable ? `<div class="sticky-buy" id="sticky-buy" aria-hidden="true"></div>` : ''}`;
   renderBuy(idx, p);
@@ -786,7 +851,7 @@ function galleryHtml(idx, p, gallery, i) {
   } else {
     const m = it.m;
     const tag = imgTag(m, { sizes: '(max-width: 860px) 94vw, 58vw', eager: true, cls: fitCls(m) });
-    main = `<div class="gallery__main">${tag || fallbackHtml(kind)}
+    main = `<div class="gallery__main${m.bg === 'white' ? ' gallery__main--stage' : ''}" data-tilt>${m.bg === 'white' ? '<span class="gallery__floor" aria-hidden="true"></span>' : ''}${tag || fallbackHtml(kind)}
       ${tag ? `<button class="icon-btn gallery__zoom" data-act="zoom" data-i="${gallery.indexOf(m)}" aria-label="Ingrandisci l'immagine">${icon('zoom')}</button>` : ''}
       ${m.caption ? `<span class="gallery__label">${esc(m.caption)}</span>` : ''}</div>`;
   }
@@ -819,7 +884,7 @@ function renderBuy(idx, p) {
     ${selectable ? `<fieldset class="opt"><legend>Altezza</legend><div class="seg seg--h">${heights
       .map((h) => `<input type="radio" name="h" id="h${h}" value="${h}" data-act="pick-h" ${sel.height === h ? 'checked' : ''} ${heightOk(h) ? '' : 'disabled'}><label for="h${h}">H${h}</label>`)
       .join('')}</div></fieldset>` : ''}
-    ${sizes.length ? `<fieldset class="opt"><legend>Misura <button type="button" class="link-btn" data-act="size-guide">Confronta due misure</button></legend><div class="seg">${sizes
+    ${sizes.length ? `<fieldset class="opt"><legend>Misura${SIZE_NAMES[sel.size] ? ` <span class="opt__hint">${esc(SIZE_NAMES[sel.size])}</span>` : ''} <button type="button" class="link-btn" data-act="size-guide">Confronta due misure</button></legend><div class="seg">${sizes
       .map((s) => `<input type="radio" name="s" id="s${s}" value="${s}" data-act="pick-s" ${sel.size === s ? 'checked' : ''} ${sizeOk(s) ? '' : 'disabled'}><label for="s${s}">${formatSize(s)}</label>`)
       .join('')}</div>${footprint(sel.size)}</fieldset>` : ''}
     ${v ? `<p class="sku">SKU <span>${esc(v.sku)}</span></p>` : ''}
@@ -834,6 +899,7 @@ function renderBuy(idx, p) {
       ${kind === 'materasso' ? `<a href="${u(P.compare)}" data-act="compare-with" data-id="${esc(p.id)}">Confronta con gli altri materassi</a>` : ''}
     </div>`;
   state.lastPrice = { ...(state.lastPrice ?? {}), [p.id]: ok ? v.price_cents : null };
+  setTimeout(() => $('#buy')?.classList.add('is-live'), 1300);
   const fp = $('.footprint__box span');
   if (fp && state.prevFoot) {
     const [w, h] = [fp.style.width, fp.style.height];
@@ -869,15 +935,15 @@ function renderPairings(idx, p, size) {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = `<h2 id="pair-t" style="font-size:1.6rem">${kind === 'materasso' ? 'Completa il letto' : kind === 'rete' ? 'Il materasso per questa rete' : 'Si abbina bene con'}</h2>
+  el.innerHTML = `<h2 id="pair-t" class="pdp-h2">${kind === 'materasso' ? 'Completa il letto' : kind === 'rete' ? 'Il materasso per questa rete' : 'Si abbina bene con'}</h2>
     ${size && kind !== 'guanciale' ? `<p class="muted small">Ti proponiamo solo articoli nella misura ${formatSize(size)}.</p>` : ''}
-    ${groups.map((g) => `<h3 style="font-size:1rem;margin:18px 0 10px">${esc(KIND_PLURAL[g.kind])}</h3><div class="pair-row">${g.items.map((it) => pairHtml(idx, it)).join('')}</div>`).join('')}`;
+    ${groups.map((g) => `<h3 class="pair-kind">${esc(KIND_PLURAL[g.kind])}</h3><div class="pair-row">${g.items.map((it) => pairHtml(idx, it)).join('')}</div>`).join('')}`;
 }
 function pairHtml(idx, it) {
   const p = it.product;
   const v = it.variant;
   const spec = v ? [v.size ? formatSize(v.size) : '', v.height_cm && idx.kind(p) === 'materasso' ? `H${v.height_cm}` : ''].filter(Boolean).join(' · ') : '';
-  return `<div class="pair"><div class="pair__img">${coverHtml(idx, p, { sizes: '80px' })}</div>
+  return `<div class="pair"><div class="pair__img">${coverHtml(idx, p, { sizes: '(max-width: 700px) 40vw, 220px' })}</div>
     <div><h4><a href="${href.product(p)}">${esc(p.name)}</a></h4><div class="meta">${esc(spec || p.technical_name)}</div>
       <div class="row"><strong>${v ? '' : '<small class="muted">da </small>'}${formatCents(it.fromPrice)}</strong>
       ${v ? `<button class="btn btn--ghost btn--sm" data-act="add-variant" data-id="${esc(v.id)}">Aggiungi</button>` : `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Scegli</a>`}</div></div></div>`;
@@ -1322,9 +1388,7 @@ document.addEventListener('click', async (e) => {
       moveThumb();
       const hg = $('#home-grid');
       hg.innerHTML = homeGrid(pub());
-      $$('.rv', hg).forEach((x) => x.classList.add('in'));
-      $('.grid', hg).classList.add('is-entering');
-      tiltCards(hg);
+      $('.showcase', hg).classList.add('is-entering');
       break;
     }
     case 'lab-model': {

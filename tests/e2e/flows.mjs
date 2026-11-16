@@ -188,7 +188,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.waitForTimeout(2500);
   const f = p.frames()[1];
   ok((await f.evaluate(() => document.querySelector('#app').innerHTML.length)) > 1000, 'frame isolato (origine opaca): la pagina si disegna comunque');
-  ok((await f.evaluate(() => document.querySelectorAll('.card').length)) >= 4, 'frame isolato: catalogo visibile senza localStorage');
+  ok((await f.evaluate(() => document.querySelectorAll('.showcase__row').length)) >= 4, 'frame isolato: catalogo visibile senza localStorage');
   await ctx.close();
 }
 
@@ -376,6 +376,24 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   });
   ok(res.length === 3 && res.every((r) => r.corner === 0), 'foto prodotto: angoli trasparenti, nessun riquadro bianco', JSON.stringify(res));
   ok(res.every((r) => Math.abs(r.cx - 0.5) < 0.04 && Math.abs(r.cy - 0.5) < 0.06), 'foto prodotto: materasso al centro della foto', JSON.stringify(res.map((r) => [r.cx.toFixed(2), r.cy.toFixed(2)])));
+  await ctx.close();
+}
+
+// ---------- restyling: vetrina della home e scheda prodotto
+{
+  const { ctx, p } = await newPage({ viewport: { width: 1280, height: 900 } });
+  await p.goto(BASE + '#/'); await p.waitForTimeout(900);
+  ok((await p.locator('.showcase__row').count()) === 5 && (await p.locator('.showcase__item.is-active').count()) === 1, 'home: vetrina con 5 materassi, uno in scena');
+  await p.locator('.showcase__row').nth(2).scrollIntoViewIfNeeded(); await p.locator('.showcase__row').nth(2).hover(); await p.waitForTimeout(300);
+  ok(await p.locator('.showcase__item').nth(2).evaluate((e) => e.classList.contains('is-active')), 'vetrina: il modello sotto il puntatore va in scena');
+  await p.locator('.showcase__row').nth(2).click(); await p.waitForTimeout(700);
+  ok(/pocket-2600-elite/.test(p.url()), 'vetrina: il clic apre la scheda');
+  ok((await p.locator('.anatomy__list li').count()) === 5 && (await p.locator('.fabric__fig img').count()) === 1 && (await p.locator('.promise li').count()) === 3 && (await p.locator('.tiles li').count()) >= 3, 'scheda: strati, rivestimento, riquadri e promesse');
+  await p.evaluate(() => document.querySelector('.fabric').scrollIntoView()); await p.waitForTimeout(1600);
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.fabric__fig img')).clipPath === 'inset(0px)'), 'scheda: la foto del rivestimento si scopre entrando nello schermo');
+  await p.goto(BASE + '#/materassi/pocket-1600/'); await p.waitForTimeout(600);
+  ok((await p.locator('.anatomy').count()) === 0 && (await p.locator('.fabric').count()) === 0, 'Pocket 1600 (senza foto né composizione confermata): nessuno strato inventato');
+  ok(errors.length === 0, 'nessun errore JavaScript (restyling)', errors.join(' | '));
   await ctx.close();
 }
 
