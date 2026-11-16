@@ -137,11 +137,16 @@ begin
 end $$;
 
 -- Esecuzione consentita al pubblico solo per queste funzioni.
-revoke all on function public.make_ref(text) from public;
+-- Su Supabase le nuove funzioni sono eseguibili da anon e authenticated per impostazione
+-- predefinita: per make_ref e per le funzioni dei trigger si revoca anche a loro.
+revoke all on function public.make_ref(text) from public, anon, authenticated;
 revoke all on function public.validate_cart(jsonb) from public;
 revoke all on function public.create_cart_request(jsonb) from public;
 revoke all on function public.mark_request_waiting(text) from public;
 revoke all on function public.create_quote_request(uuid, numeric, numeric, numeric, text, boolean) from public;
+revoke all on function public.touch_updated_at() from public, anon, authenticated;
+revoke all on function public.log_price_change() from public, anon, authenticated;
+revoke all on function public.guard_product_delete() from public, anon, authenticated;
 grant execute on function public.validate_cart(jsonb) to anon, authenticated;
 grant execute on function public.create_cart_request(jsonb) to anon, authenticated;
 grant execute on function public.mark_request_waiting(text) to anon, authenticated;

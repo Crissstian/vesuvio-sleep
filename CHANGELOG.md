@@ -1,5 +1,11 @@
 # Changelog
 
+## Database Supabase del nuovo sito (16/11/2026)
+- Creato il progetto Supabase **Vesuvio Sleep – nuovo sito** (Francoforte), separato da quello del sito attuale.
+- Applicate le 5 migrazioni esistenti più 2 nuove: permessi minimi per il pubblico e correzioni suggerite dai controlli di Supabase (search_path, is_admin, indici).
+- Caricato il catalogo ufficiale: 130 varianti con prezzo identiche al listino, foto, redirect, contatti e pagamenti.
+- Verificato come visitatore anonimo: legge solo il catalogo pubblicato, non scrive, il carrello si valida sul server. Dettagli in `docs/SUPABASE.md`.
+
 ## Entrata animata, foto centrate, più movimento (15/11/2026, notte)
 - **Entrata**: all'arrivo sul sito, su qualsiasi pagina, un sipario blu: la cucitura disegna il profilo del Vesuvio, compare il nome, una cucitura corre lungo il taglio e il sipario si apre in due. Poi la foto d'apertura si assesta e il titolo sale. Dura meno di 2 secondi, una volta per visita; un clic o un tasto la saltano; con "riduci movimento" non c'è. Sostituisce le vecchie bande dell'apertura, che sembravano un errore di caricamento.
 - **Foto prodotto centrate**: le foto su fondo bianco di Essential Foam, Memory Duo e Pocket 2600 Elite sono ricentrate sul materasso, su una tela 4:3 con margini uguali, e hanno lo sfondo trasparente: niente più riquadri bianchi sul fondo azzurro (comparivano durante le animazioni). Corretto anche un errore che ritagliava la foto principale nelle card invece di mostrarla intera.
