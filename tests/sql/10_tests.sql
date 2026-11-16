@@ -20,7 +20,7 @@ select pg_temp.check((select count(*) from public.variants) = 238, 'seed: 238 va
 select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 182, 'listino: 182 varianti con prezzo');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H25-160190') = 28000, 'Memory Duo H25 160x190 = 280 € (listino 15/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H30-160190') = 65000, 'Pocket 3000 H30 160x190 = 650 € (16/11/2026 sera)');
-select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H30-160190') = 32900, 'Memory Duo H30 160x190 = 329 € come indicato dall''azienda');
+select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H30-160190') = 33000, 'Memory Duo H30 160x190 = 330 €');
 select pg_temp.check((select count(*) from public.products where slug in ('pocket-2400-elite', 'pocket-2600-elite', 'pocket-3000-elite')) = 1, 'Pocket 3000 Elite: un solo prodotto, nessun duplicato dei nomi precedenti');
 select pg_temp.check((select count(*) from public.variants where sku like 'VS-P2400-%' or sku like 'VS-P2600-%') = 0, 'nessuno SKU dei nomi precedenti del Pocket');
 select pg_temp.check((select count(*) from (select product_id from public.media where is_cover group by product_id having count(*) > 1) x) = 0, 'una sola copertina per prodotto');
@@ -30,6 +30,7 @@ select pg_temp.check((select status from public.products where slug = 'pocket-16
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P1600-H25-160190') = 50000, 'Pocket 1600 H25 160x190 = 500 € (16/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H25-160190') = 62000, 'Pocket 3000 H25 160x190 = 620 € (16/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MDC-H25-160190') = 26000, 'Memory Duo Classic H25 160x190 = 260 € (Duo meno 20 €)');
+select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.category_id = (select id from public.categories where slug = 'materassi') and v.price_cents is not null and v.price_cents % 1000 <> 0) = 0, 'materassi: nessun prezzo che non sia un multiplo di 10 euro');
 select pg_temp.check((select count(*) from public.products where status = 'archived') = 2, 'fuori gamma dal 16/11/2026: Memory Air 3D e Bonnell Classic');
 select pg_temp.check((select count(*) from public.products where status = 'published' and not exists (select 1 from public.variants v where v.product_id = products.id and v.price_cents > 0)) = 0, 'nessun prodotto pubblicato senza prezzo');
 select pg_temp.check((select count(distinct storage_path) from public.media) = (select count(*) from public.media), 'percorsi delle foto univoci');

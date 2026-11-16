@@ -46,7 +46,7 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
     ['memory-duo', 25, '160x190', 280], ['memory-duo-classic', 25, '160x190', 260], ['memory-duo-classic', 25, '180x200', 330],
     ['pocket-3000-elite', 25, '160x190', 620], ['pocket-1600', 25, '160x190', 500], ['pocket-1600', 25, '80x190', 220],
     ['memory-trio', 27, '160x190', 400], ['rete-flex', null, '160x190', 180], ['rete-strong', null, '160x200', 219],
-    ['memory-duo', 30, '160x190', 329], ['pocket-1600', 30, '160x190', 540], ['pocket-3000-elite', 30, '180x200', 800],
+    ['memory-duo', 30, '160x190', 330], ['pocket-1600', 30, '160x190', 520], ['pocket-3000-elite', 30, '180x200', 800],
     ['topper-memory-cloud-5', 5, '120x200', 159], ['pocket-3000-elite', 25, '180x200', 730], ['eco', 20, '80x190', 90],
   ].map(([s, h, z, e]) => [s, h, z, e, window.__vs.price(s, h, z)]));
   const bad = prices.filter((r) => r[3] !== r[4]);

@@ -1370,8 +1370,8 @@ __exp.VIEW_SEO = VIEW_SEO;
 __def("seed.js", function (__exp) {
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 const SEED = {
- "version": "seed-2026-11-16c",
- "catalog_version": "catalogo-2026-11-16c",
+ "version": "seed-2026-11-16d",
+ "catalog_version": "catalogo-2026-11-16d",
  "authoritative": true,
  "categories": [
   {
@@ -1489,7 +1489,7 @@ const SEED = {
     "ventilation": false,
     "independent_springs": false
    },
-   "internal_notes": "H30 indicata dall'azienda la sera del 16/11/2026. DA RICONTROLLARE: il 160x190 in H30 costa 329 euro, l'unico prezzo dei materassi che non sia un multiplo di 10, tra un 290 e un 340.",
+   "internal_notes": "H30 indicata dall'azienda la sera del 16/11/2026. Un solo valore corretto su autorizzazione: il 160x190 in H30 era scritto 329 euro, unico prezzo dei materassi non multiplo di 10, tra un 290 e un 340: portato a 330. Da ricontrollare al prossimo listino.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Duo"
   },
@@ -1587,7 +1587,7 @@ const SEED = {
     "ventilation": false,
     "independent_springs": true
    },
-   "internal_notes": "Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro (fattore 1,1111) e CONFERMATI dall'azienda la sera del 16/11. H30 indicata la stessa sera. DA RICONTROLLARE: in H30 il 160x190 costa 540 euro mentre il 160x200 e il 165x190 ne costano 530, cioe il prezzo scende al crescere della misura. In H25 lo stesso passaggio sale (500, 510, 510). DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.",
+   "internal_notes": "Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro (fattore 1,1111) e CONFERMATI dall'azienda la sera del 16/11. H30 indicata la stessa sera. Un solo valore corretto su autorizzazione: in H30 il 160x190 era scritto 540 euro, piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce anche l'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 1600"
   },
@@ -2553,7 +2553,7 @@ const SEED = {
    "sku": "VS-MD-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": 32900,
+   "price_cents": 33000,
    "availability": "made_to_order",
    "active": true,
    "sort": 3008
@@ -3268,7 +3268,7 @@ const SEED = {
    "sku": "VS-P1600-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": 54000,
+   "price_cents": 52000,
    "availability": "made_to_order",
    "active": true,
    "sort": 3008

@@ -5,7 +5,8 @@ L'azienda ha rimandato indietro il listino. Le scale che avevo ricostruito sono 
 
 - **Memory Duo H30**, **Pocket 1600 H30** e **Pocket 3000 Elite H30** ora si comprano: 39 misure in più. Varianti acquistabili da 143 a **182** (143 materassi, 26 reti, 13 topper).
 - Sulle schede compare la scelta dell'altezza anche per Memory Duo e per i due Pocket.
-- **Due prezzi segnalati e non modificati**, pubblicati come sono stati scritti: Memory Duo H30 160×190 = 329 € (unico prezzo non multiplo di 10) e Pocket 1600 H30 160×190 = 540 € contro i 530 € del 160×200 e del 165×190, cioè il prezzo scende al crescere della misura.
+- **Due prezzi corretti su autorizzazione dell'azienda**, dopo averli segnalati: Memory Duo H30 160×190 da **329 a 330 €** (era l'unico prezzo dei materassi non multiplo di 10, tra un 290 e un 340) e Pocket 1600 H30 160×190 da **540 a 520 €** (costava più del 160×200 e del 165×190, che stanno a 530: il prezzo scendeva al crescere della misura). I 520 € sono l'H25 dello stesso modello, 500 €, più i 20 € di scarto che separano H25 e H30 in 9 misure su 13; rimettono l'ordine 520 < 530 = 530, come in H25 sale 500 < 510 = 510. Entrambe le correzioni restano annotate nelle note interne dei due prodotti, da ricontrollare al prossimo listino.
+- Un controllo SQL in più impedisce d'ora in poi che un materasso finisca a listino con un prezzo che non sia un multiplo di 10 €. Restano fuori, perché vengono dal listino confermato, i 219 € della Rete Strong 160×200 e i 159 € del Topper 120×200.
 - **Sleep Match**: quando propone un'altezza, il prezzo «da» è ora quello di quell'altezza. Prima mostrava il minimo del modello, che poteva appartenere a un'altra altezza: con le H30 a listino sarebbe stato un prezzo diverso da quello proposto.
 - Applicato al database Supabase (182 varianti acquistabili, nessun prezzo a zero, 78 variazioni a storico).
 

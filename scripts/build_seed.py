@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-16c'
+CATALOG_VERSION = 'catalogo-2026-11-16d'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -99,10 +99,11 @@ MATTRESSES = {
         match=dict(tech='foam', welcome=0, ventilation=False, independent_springs=False)),
     'Vesuvio Memory Duo': dict(
         key='memory-duo', slug='memory-duo', line='MD', sort=3,
-        notes='H30 indicata dall\'azienda la sera del 16/11/2026. DA RICONTROLLARE: il 160x190 in H30 costa '
-              '329 euro, l\'unico prezzo dei materassi che non sia un multiplo di 10, tra un 290 e un 340.',
+        notes='H30 indicata dall\'azienda la sera del 16/11/2026. Un solo valore corretto su autorizzazione: '
+              'il 160x190 in H30 era scritto 329 euro, unico prezzo dei materassi non multiplo di 10, tra un 290 '
+              'e un 340: portato a 330. Da ricontrollare al prossimo listino.',
         override={30: {'80x190': 150, '80x200': 160, '90x190': 180, '90x200': 190, '120x190': 250, '120x200': 260,
-                       '140x190': 280, '140x200': 290, '160x190': 329, '160x200': 340, '165x190': 340,
+                       '140x190': 280, '140x200': 290, '160x190': 330, '160x200': 340, '165x190': 340,
                        '170x200': 360, '180x200': 390}},
         short='Memory Foam su base in poliuretano ad alta densità. Sfoderabile e reversibile.',
         description="Uno strato di comfort in Memory Foam poggia su una base portante in poliuretano ad alta densità. "
@@ -159,7 +160,7 @@ MATTRESSES = {
                        '140x190': 420, '140x200': 440, '160x190': 500, '160x200': 510, '165x190': 510,
                        '170x200': 530, '180x200': 580},
                   30: {'80x190': 240, '80x200': 260, '90x190': 290, '90x200': 310, '120x190': 420, '120x200': 420,
-                       '140x190': 440, '140x200': 450, '160x190': 540, '160x200': 530, '165x190': 530,
+                       '140x190': 440, '140x200': 450, '160x190': 520, '160x200': 530, '165x190': 530,
                        '170x200': 550, '180x200': 600}},
         short='1600 molle insacchettate, alto 25 cm: l\'ingresso nella gamma a molle.',
         description='Materasso a molle indipendenti insacchettate alto 25 cm, prodotto nella nostra fabbrica di Casoria. '
@@ -170,8 +171,10 @@ MATTRESSES = {
         notes='Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). '
               'Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro '
               '(fattore 1,1111) e CONFERMATI dall\'azienda la sera del 16/11. H30 indicata la stessa sera. '
-              'DA RICONTROLLARE: in H30 il 160x190 costa 540 euro mentre il 160x200 e il 165x190 ne costano 530, '
-              'cioe il prezzo scende al crescere della misura. In H25 lo stesso passaggio sale (500, 510, 510). DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato '
+              'Un solo valore corretto su autorizzazione: in H30 il 160x190 era scritto 540 euro, '
+              'piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, '
+              'cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce '
+              'anche l\'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato '
               'e la composizione di dettaglio. Nessuna foto propria: la scheda mostra i segnaposto.',
         match=dict(tech='molle', welcome=1, ventilation=False, independent_springs=True)),
     'Memory Foam 3 strati': dict(
@@ -404,7 +407,7 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 
-seed = dict(version='seed-2026-11-16c', catalog_version=CATALOG_VERSION, authoritative=True,
+seed = dict(version='seed-2026-11-16d', catalog_version=CATALOG_VERSION, authoritative=True,
             categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
 # Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
 # Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.

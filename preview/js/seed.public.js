@@ -1,8 +1,8 @@
 // Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,
 // senza bozze, archiviati e note interne. Non modificare a mano.
 export const SEED = {
- "version": "seed-2026-11-16c",
- "catalog_version": "catalogo-2026-11-16c",
+ "version": "seed-2026-11-16d",
+ "catalog_version": "catalogo-2026-11-16d",
  "authoritative": true,
  "categories": [
   {
@@ -983,7 +983,7 @@ export const SEED = {
    "sku": "VS-MD-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": 32900,
+   "price_cents": 33000,
    "availability": "made_to_order",
    "active": true,
    "sort": 3008
@@ -1698,7 +1698,7 @@ export const SEED = {
    "sku": "VS-P1600-H30-160190",
    "size": "160x190",
    "height_cm": 30,
-   "price_cents": 54000,
+   "price_cents": 52000,
    "availability": "made_to_order",
    "active": true,
    "sort": 3008
