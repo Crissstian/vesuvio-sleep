@@ -328,6 +328,7 @@ export const SEED = {
    "description": "Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.",
    "composition": "Acciaio e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -343,7 +344,7 @@ export const SEED = {
    "sort": 10,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "internal_notes": "Portata \"alta\" indicata dal titolare il 17/11/2026; il valore in kg non e' verificato: non pubblicarlo.",
    "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Flex"
@@ -356,6 +357,7 @@ export const SEED = {
    "description": "Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.",
    "composition": "Acciaio rinforzato e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -371,7 +373,7 @@ export const SEED = {
    "sort": 11,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "internal_notes": "Portata \"alta\" indicata dal titolare il 17/11/2026; il valore in kg non e' verificato: non pubblicarlo.",
    "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Strong"
@@ -406,11 +408,12 @@ export const SEED = {
   {
    "id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
    "slug": "guanciale-piuma",
-   "technical_name": "Guanciale piuma",
-   "short": "Guanciale in piuma.",
-   "description": "Guanciale in piuma.",
+   "technical_name": "Guanciale in piuma",
+   "short": "Guanciale imbottito in piuma, morbido e leggero.",
+   "description": "Il guanciale tradizionale: imbottitura in piuma, soffice e leggero. Alto 12 cm.",
    "composition": "Piuma.",
    "highlights": [
+    "Alto 12 cm",
     "Piuma"
    ],
    "claims": [],
@@ -420,11 +423,11 @@ export const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "PIUMA",
-   "status": "draft",
+   "status": "published",
    "sort": 30,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Piuma"
@@ -432,12 +435,13 @@ export const SEED = {
   {
    "id": "f18a729c-0e68-54f0-b748-72904165b275",
    "slug": "guanciale-memory-flakes",
-   "technical_name": "Guanciale fiocchi di memory",
-   "short": "Guanciale in fiocchi di memory.",
-   "description": "Guanciale in fiocchi di memory.",
-   "composition": "Fiocchi di Memory.",
+   "technical_name": "Guanciale in fiocchi di memory foam",
+   "short": "Fiocchi di Memory Foam che si modellano sotto la testa.",
+   "description": "Imbottito con fiocchi di Memory Foam: si lascia modellare e si adatta alla posizione della testa. Alto 12 cm.",
+   "composition": "Fiocchi di Memory Foam.",
    "highlights": [
-    "Fiocchi di Memory"
+    "Alto 12 cm",
+    "Fiocchi di Memory Foam"
    ],
    "claims": [],
    "removable_cover": null,
@@ -446,11 +450,11 @@ export const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MFLAKES",
-   "status": "draft",
+   "status": "published",
    "sort": 31,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Flakes"
@@ -458,12 +462,13 @@ export const SEED = {
   {
    "id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
    "slug": "guanciale-memory-classic",
-   "technical_name": "Guanciale memory",
-   "short": "Guanciale in memory.",
-   "description": "Guanciale in memory.",
-   "composition": "Memory.",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam a forma rettangolare, sostegno uniforme.",
+   "description": "Guanciale in Memory Foam a forma rettangolare: accoglie la testa e la sostiene in modo uniforme. Alto 12 cm.",
+   "composition": "Memory Foam.",
    "highlights": [
-    "Memory"
+    "Alto 12 cm",
+    "Memory Foam"
    ],
    "claims": [],
    "removable_cover": null,
@@ -472,11 +477,11 @@ export const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MCLASSIC",
-   "status": "draft",
+   "status": "published",
    "sort": 32,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Classic"
@@ -484,11 +489,12 @@ export const SEED = {
   {
    "id": "97116d49-df22-5e8e-8419-28d3b7acee61",
    "slug": "guanciale-memory-cervical",
-   "technical_name": "Guanciale memory foam",
-   "short": "Guanciale in memory foam.",
-   "description": "Guanciale in memory foam.",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam con profilo a onda per il collo.",
+   "description": "Guanciale in Memory Foam con profilo a onda, che segue la curva del collo. Alto 12 cm.",
    "composition": "Memory Foam.",
    "highlights": [
+    "Alto 12 cm",
     "Memory Foam"
    ],
    "claims": [],
@@ -498,11 +504,11 @@ export const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MCERV",
-   "status": "draft",
+   "status": "published",
    "sort": 33,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Cervical"
@@ -3113,8 +3119,8 @@ export const SEED = {
    "sku": "VS-GUA-PIUMA",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 4500,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -3124,8 +3130,8 @@ export const SEED = {
    "sku": "VS-GUA-MFLAKES",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3300,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -3135,8 +3141,8 @@ export const SEED = {
    "sku": "VS-GUA-MCLASSIC",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3700,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -3146,8 +3152,8 @@ export const SEED = {
    "sku": "VS-GUA-MCERV",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3400,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   }

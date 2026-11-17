@@ -37,10 +37,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   const navText = await p.locator('#drawer-links').innerText();
   ok(!/Topper|castello/i.test(navText), 'menu: categorie senza articoli acquistabili nascoste');
 
-  // catalogo al 16/11/2026 (sera): gamma di 6 materassi, H30 a listino, 182 varianti acquistabili
+  // catalogo al 17/11/2026: gamma di 6 materassi, H30 a listino, 4 guanciali a prezzo provvisorio: 186 varianti acquistabili
   const st = await p.evaluate(() => window.__vs.stats());
-  ok(st.total === 182 && st.byKind.materasso === 143 && st.byKind.rete === 26 && st.byKind.topper === 13, 'listino: 182 varianti acquistabili (143 materassi, 26 reti, 13 topper)', JSON.stringify(st));
-  ok(!st.products.some((s) => /air-3d|bonnell|guanciale|castello|2400|pocket-2600|essential-foam|memory-foam-3/.test(s)), 'non pubblici: fuori gamma, senza prezzo o con indirizzo superato', st.products.join(','));
+  ok(st.total === 186 && st.byKind.materasso === 143 && st.byKind.rete === 26 && st.byKind.topper === 13 && st.byKind.guanciale === 4, 'listino: 186 varianti acquistabili (143 materassi, 26 reti, 13 topper, 4 guanciali)', JSON.stringify(st));
+  ok(!st.products.some((s) => /air-3d|bonnell|castello|2400|pocket-2600|essential-foam|memory-foam-3/.test(s)), 'non pubblici: fuori gamma, castello senza prezzo, indirizzi superati', st.products.join(','));
   const prices = await p.evaluate(() => [
     ['eco', 20, '160x190', 200], ['eco', 25, '160x190', 250], ['eco', 30, '160x190', 270],
     ['memory-duo', 25, '160x190', 280], ['memory-duo-classic', 25, '160x190', 260], ['memory-duo-classic', 25, '180x200', 330],
@@ -73,7 +73,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('.buy__price').innerText()).includes('730,00'), 'scheda: prezzo 180×200 H25 = 730 €');
   const pairText = await p.locator('#pairings').innerText();
   ok(/Reti/.test(pairText) && /Topper/.test(pairText), 'abbinamenti materasso: reti e topper della stessa misura');
-  ok(!/Memory Duo|Memory Trio|Memory Air|Guanciali|Pocket 1600|Vesuvio Eco/.test(pairText), 'abbinamenti: nessun altro materasso, nessun guanciale senza prezzo');
+  ok(!/Memory Duo|Memory Trio|Memory Air|Pocket 1600|Vesuvio Eco/.test(pairText), 'abbinamenti: nessun altro materasso');
+  ok(/Guanciali/.test(pairText), 'abbinamenti: i guanciali, ora in vendita');
   const pairNames = await p.locator('#pairings h4').allInnerTexts();
   ok(new Set(pairNames).size === pairNames.length, 'abbinamenti senza duplicati');
   ok((await p.locator('#pairings .meta').allInnerTexts()).filter((t) => t.includes('×')).every((t) => t.includes('180×200')), 'abbinamenti: reti solo nella misura scelta');
@@ -87,8 +88,11 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   ok((await p.locator('#add-btn').count()) === 1 && /500,00/.test(await p.locator('#app').innerText()), 'Pocket 1600 in catalogo: scheda acquistabile, 160×190 a 500 €');
   ok((await p.locator('.thumb').count()) === 3 && (await p.locator('.thumb--ph').count()) === 0, 'Pocket 1600: le sue tre foto, nessun segnaposto');
 
-  await go(p, 'prodotto-guanciale-memory-cervical');
-  ok((await p.locator('.buy').count()) === 0 && (await p.locator('#add-btn').count()) === 0, 'guanciale senza prezzo: scheda non pubblica');
+  await go(p, 'prodotto-guanciale-memory-cervical', 500);
+  const gTxt = await p.locator('#app').innerText();
+  ok((await p.locator('#add-btn').count()) === 1 && /34,00/.test(gTxt) && /12 cm/.test(gTxt), 'guanciale Memory Cervical: acquistabile, 34 €, alto 12 cm');
+  await go(p, 'reti/rete-flex', 400);
+  ok(/Alta\s+portata/i.test(await p.locator('.tiles').innerText()) && /Portata\s+Alta/.test(await p.locator('.facts-list').innerText()), 'reti: portata alta nella scheda (riquadro e caratteristiche)');
   await go(p, 'prodotto-memory-air-3d');
   ok((await p.locator('#add-btn').count()) === 0, 'Memory Air 3D fuori gamma: scheda non pubblica');
   await go(p, 'prodotto-topper-memory-cloud-5', 500);
@@ -280,8 +284,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
 
   // variazione di prezzo dopo l'aggiunta
   await p.evaluate(() => localStorage.setItem('vs-cart-v1', '[]'));
-  await p.reload(); await p.waitForTimeout(500);
-  await go(p, 'materassi/eco', 500);
+  await p.reload(); await p.waitForTimeout(1200);
+  await go(p, 'materassi/eco', 900);
   await p.locator('#add-btn').click();
   await go(p, 'admin-catalogo', 400);
   await p.locator('.adm-tr', { hasText: 'Vesuvio Eco' }).click(); await p.waitForTimeout(400);

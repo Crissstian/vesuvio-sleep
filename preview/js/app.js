@@ -551,11 +551,11 @@ function viewHome() {
   const slides = heroSlides();
   const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
   app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
-
+  <div class="home-flow">
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
     <div class="num rv" style="--d:1"><b data-count="1986" data-from="1950">1986</b><span>l'anno in cui abbiamo iniziato</span></div>
-    <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
+    <div class="num num--extra rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
     <div class="num rv" style="--d:3"><b data-count="13" data-from="0">13</b><span>misure standard, più il su misura</span></div>
   </div></section>
 
@@ -566,7 +566,7 @@ function viewHome() {
     <div class="kinetic__row kinetic__row--rev"><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i><span>Prezzo di fabbrica</span><i></i><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i></div>
   </div>
 
-  <section class="section" aria-labelledby="cat-title">
+  <section class="section hf-cat" aria-labelledby="cat-title">
     <div class="wrap">
       <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi di fabbrica, IVA inclusa. Scorri i modelli e apri la scheda per scegliere misura e altezza.</p></div>
         <a class="btn btn--ghost btn--sm" href="${u(P.compare)}">Confronta i materassi</a></div>
@@ -577,7 +577,7 @@ function viewHome() {
     </div>
   </section>
 
-  ${bundlesSectionHtml(idx, { title: 'Letto completo, a prezzo di fabbrica', lead: 'Materasso e rete della stessa misura, fatti nella stessa fabbrica: insieme costano meno che separati.', id: 'home-bundles-t', limit: 1 })}
+  <div class="hf-bundles">${bundlesSectionHtml(idx, { title: 'Letto completo, a prezzo di fabbrica', lead: 'Materasso e due guanciali, o materasso e rete: insieme costano meno che separati.', id: 'home-bundles-t', limit: 1 })}</div>
 
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
@@ -636,7 +636,8 @@ function viewHome() {
     </div>
   </div></section>
 
-  <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
+  <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>
+  </div>`;
   if (staticHero) app.prepend(staticHero);
   else $('#app > .hero')?.classList.remove('is-intro');
   initHero($('#app > .hero'));
@@ -831,11 +832,15 @@ function viewProduct(slug, catSlug) {
   ], { image: urlImgs[0], type: 'product' });
   const purchasable = idx.isProductPurchasable(p);
   const showClaims = store.db.settings.show_claims && p.claims?.length;
+  // portata delle reti: solo il livello indicato dall'azienda («Portata alta»), mai un valore in kg non verificato
+  const portata = kind === 'rete' ? (p.highlights || []).find((h) => /^Portata /i.test(h))?.replace(/^Portata /i, '') : null;
+  const pillowH = kind === 'guanciale' ? idx.variantsOf(p)[0]?.height_cm : null;
   const factsRows = [
     ['Tecnologia', p.technical_name],
     ['Composizione', p.composition],
     kind === 'materasso' ? ['Altezze', idx.heightsOf(p).map((h) => `H${h}`).join(', ')] : null,
-    kind === 'guanciale' ? ['Altezza', idx.variantsOf(p)[0]?.height_cm ? idx.variantsOf(p)[0].height_cm + ' cm' : null] : null,
+    kind === 'guanciale' ? ['Altezza', pillowH ? pillowH + ' cm' : null] : null,
+    portata ? ['Portata', portata[0].toUpperCase() + portata.slice(1)] : null,
     p.removable_cover !== null && kind !== 'rete' ? ['Rivestimento', p.removable_cover ? 'Sfoderabile, lavaggio secondo le indicazioni in etichetta' : 'Non sfoderabile'] : null,
     p.summer_winter ? ['Lati', 'Reversibile: lato invernale e lato estivo'] : null,
     p.firmness_display ? ['Rigidità indicativa', p.firmness_display] : null,
@@ -851,6 +856,8 @@ function viewProduct(slug, catSlug) {
     idx.purchasableSizes(p).length ? [String(idx.purchasableSizes(p).length), 'misure standard'] : null,
     p.firmness_display ? [p.firmness_display, 'rigidità indicativa'] : null,
     p.removable_cover !== null && kind !== 'rete' ? [p.removable_cover ? 'Sfoderabile' : 'Fisso', 'rivestimento'] : null,
+    portata ? [portata[0].toUpperCase() + portata.slice(1), 'portata'] : null,
+    pillowH ? [String(pillowH), 'cm di altezza'] : null,
     kind === 'rete' ? ['Inclusi', 'piedi'] : null,
   ].filter(Boolean).slice(0, 4);
 

@@ -119,8 +119,13 @@ language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.bundles b
      where b.id = bid and b.status = 'published'
+       -- ogni pezzo obbligatorio è pubblicato e ha almeno una variante in vendita (come publicBundles nel sito)
        and not exists (select 1 from public.bundle_items i join public.products p on p.id = i.product_id
-                        where i.bundle_id = b.id and not i.optional and p.status <> 'published'))
+                        where i.bundle_id = b.id and not i.optional
+                          and (p.status <> 'published'
+                               or not exists (select 1 from public.variants v
+                                               where v.product_id = p.id and v.active and v.price_cents is not null
+                                                 and v.availability <> 'unavailable'))))
 $$;
 revoke all on function public.bundle_visible(uuid) from public;
 grant execute on function public.bundle_visible(uuid) to anon, authenticated;

@@ -72,20 +72,21 @@ test('ripartizione e recesso parziale (G3)', () => {
 test('suggerimenti "Aggiungi": rete della misura e topper, con il risparmio ricalcolato', () => {
   const lines = [{ variant_id: V('pocket-3000-elite', '160x190', 25), qty: 1 }];
   const h = core.offerHints(idx, lines, cfg);
-  assert.equal(h[0].type, 'add_rete');
-  assert.equal(h[0].size, '160x190');
-  assert.equal(h[0].product.slug, 'rete-flex', 'la rete più economica della misura');
-  assert.equal(eur(h[0].save_cents), 65);
-  const full = [...lines, { variant_id: h[0].variant.id, qty: 1 }];
+  assert.equal(h[0].type, 'add_guanciali', 'dal 17/11/2026 i guanciali vengono prima della rete');
+  const rete = h.find((x) => x.type === 'add_rete');
+  assert.equal(rete.size, '160x190');
+  assert.equal(rete.product.slug, 'rete-flex', 'la rete più economica della misura');
+  assert.equal(eur(rete.save_cents), 65);
+  const full = [...lines, { variant_id: rete.variant.id, qty: 1 }];
   const h2 = core.offerHints(idx, full, cfg);
-  assert.equal(h2[0]?.type, 'add_topper');
-  assert.equal(eur(h2[0].save_cents), 20);
+  const top = h2.find((x) => x.type === 'add_topper');
+  assert.equal(eur(top.save_cents), 20);
   assert.deepEqual(core.offerHints(idx, full, null), [], 'offerte spente: nessun suggerimento');
 });
 
 test('vetrine: pubblicate, acquistabili, prezzo "da" coerente con il calcolo', () => {
   const pub = core.publicBundles(idx).map((b) => b.slug);
-  assert.deepEqual(pub, ['letto-elite', 'letto-pocket', 'letto-trio', 'letto-memory', 'singolo-completo']);
+  assert.deepEqual(pub, ['notte-memory', 'notte-flakes', 'letto-elite', 'letto-pocket', 'letto-trio', 'letto-memory', 'singolo-completo']);
   const singolo = SEED.bundles.find((b) => b.slug === 'singolo-completo');
   assert.deepEqual(core.bundleSizes(idx, singolo), ['80x190', '80x200', '90x190', '90x200']);
   const from = core.bundleFrom(idx, singolo);
@@ -189,11 +190,23 @@ test('suggerimenti: i guanciali consigliati vengono prima della rete, in coppia'
   ]);
 });
 test('vetrine Notte: nascoste senza guanciali in vendita, visibili quando ci sono', () => {
-  assert.ok(!core.publicBundles(idx).some((b) => b.slug.startsWith('notte-')), 'catalogo reale: guanciali senza prezzo → niente vetrine Notte');
+  const noPrice = new core.CatalogIndex({ ...SEED, variants: SEED.variants.map((v) => (v.sku.startsWith('VS-GUA-') ? { ...v, price_cents: null } : v)) });
+  assert.ok(!core.publicBundles(noPrice).some((b) => b.slug.startsWith('notte-')), 'guanciali senza prezzo → niente vetrine Notte');
+  assert.deepEqual(core.publicBundles(idx).map((b) => b.slug).slice(0, 2), ['notte-memory', 'notte-flakes'], 'catalogo reale (17/11/2026): guanciali in vendita');
   const pub = core.publicBundles(idxP).map((b) => b.slug);
   assert.deepEqual(pub.slice(0, 2), ['notte-memory', 'notte-flakes'], 'con i guanciali in vendita le vetrine Notte sono le prime');
   const nm = snapP.bundles.find((b) => b.slug === 'notte-memory');
   const q = core.quoteBundle(idxP, nm, '160x190');
   assert.equal(eur(q.price.subtotal_cents), 280 + 80);
   assert.equal(eur(q.price.discount_cents), 12);
+});
+
+test('guanciali in catalogo (17/11/2026): prezzi provvisori, H12, Notte Memory 354 → 342 €', () => {
+  const price = (slug) => SEED.variants.find((v) => v.product_id === prod(slug).id).price_cents;
+  assert.deepEqual(['guanciale-piuma', 'guanciale-memory-flakes', 'guanciale-memory-classic', 'guanciale-memory-cervical'].map((s) => [eur(price(s)), prod(s).status]),
+    [[45, 'published'], [33, 'published'], [37, 'published'], [34, 'published']]);
+  assert.ok(SEED.variants.filter((v) => v.sku.startsWith('VS-GUA-')).every((v) => v.height_cm === 12));
+  const q = core.quoteBundle(idx, SEED.bundles.find((b) => b.slug === 'notte-memory'), '160x190');
+  assert.equal(eur(q.price.subtotal_cents), 354);
+  assert.equal(eur(q.price.total_cents), 342);
 });

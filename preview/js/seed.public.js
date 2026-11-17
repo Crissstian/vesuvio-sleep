@@ -252,6 +252,7 @@ export const SEED = {
    "description": "Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.",
    "composition": "Acciaio e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -279,6 +280,7 @@ export const SEED = {
    "description": "Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.",
    "composition": "Acciaio rinforzato e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -323,6 +325,110 @@ export const SEED = {
    "bundle_family": null,
    "category_id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d",
    "name": "Vesuvio Topper Memory Cloud 5"
+  },
+  {
+   "id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "slug": "guanciale-piuma",
+   "technical_name": "Guanciale in piuma",
+   "short": "Guanciale imbottito in piuma, morbido e leggero.",
+   "description": "Il guanciale tradizionale: imbottitura in piuma, soffice e leggero. Alto 12 cm.",
+   "composition": "Piuma.",
+   "highlights": [
+    "Alto 12 cm",
+    "Piuma"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "PIUMA",
+   "status": "published",
+   "sort": 30,
+   "lead_time": null,
+   "match": null,
+   "bundle_family": null,
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Piuma"
+  },
+  {
+   "id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "slug": "guanciale-memory-flakes",
+   "technical_name": "Guanciale in fiocchi di memory foam",
+   "short": "Fiocchi di Memory Foam che si modellano sotto la testa.",
+   "description": "Imbottito con fiocchi di Memory Foam: si lascia modellare e si adatta alla posizione della testa. Alto 12 cm.",
+   "composition": "Fiocchi di Memory Foam.",
+   "highlights": [
+    "Alto 12 cm",
+    "Fiocchi di Memory Foam"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MFLAKES",
+   "status": "published",
+   "sort": 31,
+   "lead_time": null,
+   "match": null,
+   "bundle_family": null,
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Flakes"
+  },
+  {
+   "id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "slug": "guanciale-memory-classic",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam a forma rettangolare, sostegno uniforme.",
+   "description": "Guanciale in Memory Foam a forma rettangolare: accoglie la testa e la sostiene in modo uniforme. Alto 12 cm.",
+   "composition": "Memory Foam.",
+   "highlights": [
+    "Alto 12 cm",
+    "Memory Foam"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MCLASSIC",
+   "status": "published",
+   "sort": 32,
+   "lead_time": null,
+   "match": null,
+   "bundle_family": null,
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Classic"
+  },
+  {
+   "id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "slug": "guanciale-memory-cervical",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam con profilo a onda per il collo.",
+   "description": "Guanciale in Memory Foam con profilo a onda, che segue la curva del collo. Alto 12 cm.",
+   "composition": "Memory Foam.",
+   "highlights": [
+    "Alto 12 cm",
+    "Memory Foam"
+   ],
+   "claims": [],
+   "removable_cover": null,
+   "reversible": null,
+   "summer_winter": null,
+   "hybrid": false,
+   "firmness_display": null,
+   "line_code": "MCERV",
+   "status": "published",
+   "sort": 33,
+   "lead_time": null,
+   "match": null,
+   "bundle_family": null,
+   "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
+   "name": "Vesuvio Memory Cervical"
   }
  ],
  "variants": [
@@ -2327,6 +2433,50 @@ export const SEED = {
    "availability": "made_to_order",
    "active": true,
    "sort": 512
+  },
+  {
+   "id": "be829365-9775-566e-93a2-0789c732b598",
+   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "sku": "VS-GUA-PIUMA",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 4500,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "c1cfd111-fb03-5b25-a8a3-db39a2a54688",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "sku": "VS-GUA-MFLAKES",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 3300,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "ad021a28-454c-5012-a35a-760491eb7c16",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "sku": "VS-GUA-MCLASSIC",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 3700,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
+  },
+  {
+   "id": "86475a77-f08f-5f9c-9027-bcb8829cff64",
+   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "sku": "VS-GUA-MCERV",
+   "size": null,
+   "height_cm": 12,
+   "price_cents": 3400,
+   "availability": "made_to_order",
+   "active": true,
+   "sort": 0
   }
  ],
  "media": [
@@ -2781,6 +2931,78 @@ export const SEED = {
    "srcset": "img/foto/rete-strong-dettaglio-900.webp 900w, img/foto/rete-strong-dettaglio-1600.webp 1536w",
    "width": 1536,
    "height": 1024
+  },
+  {
+   "id": "fe586ae1-bdc8-5bb0-bad0-0e7224cd66d2",
+   "product_id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
+   "slot": "hero",
+   "alt": "Guanciale in piuma con fodera bianca",
+   "caption": "",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 18,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-piuma-1600.webp",
+   "srcset": "img/foto/guanciale-piuma-900.webp 900w, img/foto/guanciale-piuma-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "599584e8-0018-50de-ae44-121deef9a264",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "slot": "hero",
+   "alt": "Guanciale Memory Flakes con fodera trapuntata",
+   "caption": "",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 19,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-flakes-1600.webp",
+   "srcset": "img/foto/guanciale-memory-flakes-900.webp 900w, img/foto/guanciale-memory-flakes-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "aa3b9e01-d012-5886-9fb0-9dd35a29dee4",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "slot": "hero",
+   "alt": "Guanciale Memory Classic rettangolare con fodera trapuntata",
+   "caption": "",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 20,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-classic-1600.webp",
+   "srcset": "img/foto/guanciale-memory-classic-900.webp 900w, img/foto/guanciale-memory-classic-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
+  },
+  {
+   "id": "8fdbe388-b19b-572f-bb22-f4b5022e443e",
+   "product_id": "97116d49-df22-5e8e-8419-28d3b7acee61",
+   "slot": "hero",
+   "alt": "Guanciale cervicale in Memory con profilo a onda",
+   "caption": "",
+   "illustrative": true,
+   "fit": "cover",
+   "is_cover": true,
+   "published": true,
+   "sort": 21,
+   "focal_x": 50,
+   "focal_y": 50,
+   "src": "img/foto/guanciale-memory-cervical-1600.webp",
+   "srcset": "img/foto/guanciale-memory-cervical-900.webp 900w, img/foto/guanciale-memory-cervical-1600.webp 1536w",
+   "width": 1536,
+   "height": 1024
   }
  ],
  "redirects": [
@@ -2928,6 +3150,32 @@ export const SEED = {
  ],
  "bundles": [
   {
+   "id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "slug": "notte-memory",
+   "name": "Notte Memory",
+   "tagline": "Il Memory Duo con due guanciali Memory Classic: tutto quello che serve per dormire, insieme.",
+   "description": "Il Memory Duo con due guanciali Memory Classic. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.",
+   "badge": "Materasso e due guanciali",
+   "theme": "elite",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 1
+  },
+  {
+   "id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "slug": "notte-flakes",
+   "name": "Notte Flakes",
+   "tagline": "Il Memory Trio con due guanciali Memory Flakes, che si modellano sotto la testa.",
+   "description": "Il Memory Trio con due guanciali Memory Flakes. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.",
+   "badge": "Materasso e due guanciali",
+   "theme": "classic",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 2
+  },
+  {
    "id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
    "slug": "letto-elite",
    "name": "Letto Elite",
@@ -2999,6 +3247,60 @@ export const SEED = {
   }
  ],
  "bundle_items": [
+  {
+   "id": "4605b9a7-ef6e-5c74-b22a-5ddfd6631581",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "height_cm": 25,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "8ff55f36-8c37-5438-8a2c-350d463a270a",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "height_cm": null,
+   "qty": 2,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "59a018a3-47b2-50cf-befd-5096726b65bc",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "ca41e322-3527-59f4-a46f-d0c86f6c84e9",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
+   "height_cm": 27,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "e8f054f4-dce8-5b82-b94f-441cf49d1a5a",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "height_cm": null,
+   "qty": 2,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "f69b33a8-b3fa-5bc6-847f-cba58fcdc24c",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
   {
    "id": "b33523bc-2ffe-5f38-b05b-d05543d6d4b1",
    "bundle_id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",

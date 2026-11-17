@@ -286,8 +286,8 @@ for r in BASES_X:
         continue
     p = add_product(spec['key'], category_id=cat['rete'], name=r['name'], technical_name=r['tipologia'],
                     short=spec['short'], description=spec['description'], composition=spec['short'],
-                    highlights=['Piedi inclusi', 'Telaio in acciaio', 'Doghe in legno'], line_code=spec['line'], sort=spec['sort'],
-                    internal_notes='Portata massima non verificata: non pubblicare un valore.')
+                    highlights=['Portata alta', 'Piedi inclusi', 'Telaio in acciaio', 'Doghe in legno'], line_code=spec['line'], sort=spec['sort'],
+                    internal_notes='Portata "alta" indicata dal titolare il 17/11/2026; il valore in kg non e\' verificato: non pubblicarlo.')
     add_variants(p, spec['key'], spec['line'], [r], 'rete')
 
 for r in TOPPER_X:
@@ -302,17 +302,32 @@ for r in TOPPER_X:
                                    'la seconda mostra la cerniera sul bordo ed e\' usata nello spazio "dettaglio". DA CONFERMARE il tessuto.')
     add_variants(p, 'topper', 'MC5', [r], 'topper')
 
-# Guanciali e letti a castello: nessun prezzo nel listino -> bozza, varianti senza prezzo
-PILLOWS = [('piuma', 'Vesuvio Piuma', 'PIUMA', 'Piuma'), ('memory-flakes', 'Vesuvio Memory Flakes', 'MFLAKES', 'Fiocchi di Memory'),
-           ('memory-classic', 'Vesuvio Memory Classic', 'MCLASSIC', 'Memory'), ('memory-cervical', 'Vesuvio Memory Cervical', 'MCERV', 'Memory Foam')]
-for i, (k, name, line, mat) in enumerate(PILLOWS):
+# Guanciali (17/11/2026): pubblicati con un prezzo PROVVISORIO, scelto dal titolare come
+# "prezzo medio dei concorrenti meno 10 %", arrotondato all'euro. Riferimenti consultati il
+# 17/11/2026 (prezzi al pezzo): Baldiflex saponetta memory 34,70; Muun memory 40x70 34,99;
+# Diotti MemoDream 47 e ErgoMemo cervicale 48; Marcapiuma memory firm 51,99; Memocervical
+# 29,98; Muun cervicale Luna 25,99; Falconieri piuma d'oca 50x80 49,99; Magniflex piumino 60.
+# Per i fiocchi di memory si trovano solo prodotti da grande distribuzione (11-20 EUR), non
+# confrontabili: prezzo messo poco sotto il Memory Classic. Altezza 12 cm confermata dal titolare.
+PILLOWS = [
+    ('piuma', 'Vesuvio Piuma', 'PIUMA', 'Piuma', 4500,
+     'Guanciale imbottito in piuma, morbido e leggero.', 'Il guanciale tradizionale: imbottitura in piuma, soffice e leggero. Alto 12 cm.'),
+    ('memory-flakes', 'Vesuvio Memory Flakes', 'MFLAKES', 'Fiocchi di Memory Foam', 3300,
+     'Fiocchi di Memory Foam che si modellano sotto la testa.', 'Imbottito con fiocchi di Memory Foam: si lascia modellare e si adatta alla posizione della testa. Alto 12 cm.'),
+    ('memory-classic', 'Vesuvio Memory Classic', 'MCLASSIC', 'Memory Foam', 3700,
+     'Memory Foam a forma rettangolare, sostegno uniforme.', 'Guanciale in Memory Foam a forma rettangolare: accoglie la testa e la sostiene in modo uniforme. Alto 12 cm.'),
+    ('memory-cervical', 'Vesuvio Memory Cervical', 'MCERV', 'Memory Foam', 3400,
+     'Memory Foam con profilo a onda per il collo.', 'Guanciale in Memory Foam con profilo a onda, che segue la curva del collo. Alto 12 cm.'),
+]
+for i, (k, name, line, mat, cents, short, desc) in enumerate(PILLOWS):
     slug = 'guanciale-' + k
-    p = add_product(slug, category_id=cat['guanciale'], name=name, technical_name=f'Guanciale {mat.lower()}',
-                    short=f'Guanciale in {mat.lower()}.', description=f'Guanciale in {mat.lower()}.', composition=mat + '.',
-                    highlights=[mat], line_code=line, sort=30 + i, status='draft',
-                    internal_notes='Sospeso: nessun prezzo nel listino del 15/11/2026.')
+    p = add_product(slug, category_id=cat['guanciale'], name=name, technical_name=f'Guanciale in {mat.lower()}',
+                    short=short, description=desc, composition=mat + '.',
+                    highlights=['Alto 12 cm', mat], line_code=line, sort=30 + i, status='published',
+                    internal_notes='Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o '
+                                   'correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.')
     variants.append(dict(id=uid('var', slug), product_id=p['id'], sku=f'VS-GUA-{line}', size=None, height_cm=12,
-                         price_cents=None, availability='unavailable', active=True, sort=0))
+                         price_cents=cents, availability='made_to_order', active=True, sort=0))
 add_product('castello-steel', category_id=cat['letto'], name='Vesuvio Castello Steel', technical_name='Letto a castello in acciaio',
             line_code='CAST', status='draft', sort=50, internal_notes='Sospeso: misure e prezzi non presenti nel listino.')
 

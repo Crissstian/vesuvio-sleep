@@ -1,5 +1,13 @@
 # Changelog
 
+## 17/11/2026 sera — guanciali in vendita, home da telefono più corta
+
+- Guanciali pubblicati (Piuma 45 €, Memory Flakes 33 €, Memory Classic 37 €, Memory Cervical 34 €), H12, foto generate; prezzi provvisori = media concorrenti −10 %. Vetrine Notte Memory e Notte Flakes visibili.
+- Reti: «Portata alta» nella scheda (riquadro e caratteristiche), senza valori in kg.
+- Home da telefono: catalogo e letto completo subito dopo l'apertura (da 2.343 a 1.041 px); tolti testo scorrevole e «40 anni». Computer invariato.
+- SQL: `bundle_visible` richiede una variante in vendita per ogni pezzo obbligatorio.
+- Test aggiornati: unitari 40, flussi 147, offerte 100, sito 26, SQL 91 + parità su 600 carrelli.
+
 ## Guanciali al centro, mappa, recensioni, carrello condivisibile (17/11/2026, notte)
 - **Guanciali**: −15 % su due guanciali con qualunque materasso, anche senza rete; −10 % sulla coppia da sola. Proposti per primi (Memory Flakes, Memory Classic) nella scheda materasso, nel carrello, nel riepilogo e in «Componi il tuo letto»; nella scheda guanciale c'è «Prendine due». Nuove vetrine **Notte Memory** e **Notte Flakes** in testa. Tutto si accende da solo quando i guanciali avranno un prezzo: oggi resta nascosto. Database e sito calcolano allo stesso modo (600 carrelli confrontati, 150 con i guanciali).
 - Una vetrina si mostra solo se tutti i pezzi obbligatori sono in vendita (regola nel database e nel sito).

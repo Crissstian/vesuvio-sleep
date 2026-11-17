@@ -978,3 +978,26 @@
   align-items: center;
   gap: 6px;
 }
+
+/* ---- Home da telefono (17/11/2026): il catalogo e il letto completo salgono subito dopo
+   l'apertura; via il testo scorrevole (solo decorazione) e il «40 anni», che ripete il 1986.
+   Il computer resta com'è. */
+@media (max-width: 760px) {
+  .home-flow {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-flow > .hf-cat {
+    order: -2;
+  }
+  .home-flow > .hf-bundles {
+    order: -1;
+  }
+  .home-flow > .kinetic,
+  .home-flow .num--extra {
+    display: none;
+  }
+  .home-flow .numbers .num:last-child {
+    grid-column: auto;
+  }
+}

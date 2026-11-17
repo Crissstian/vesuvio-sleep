@@ -17,7 +17,7 @@ insert into public.media (product_id, slot, storage_path, alt, published)
   select id, 'extra', 'bozze/foto-non-pubblicata.webp', '', false from public.products where slug = 'memory-duo';
 
 select pg_temp.check((select count(*) from public.variants) = 238, 'seed: 238 varianti (listino completo, anche senza prezzo)');
-select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 182, 'listino: 182 varianti con prezzo');
+select pg_temp.check((select count(*) from public.variants where price_cents is not null) = 186, 'listino: 186 varianti con prezzo (con i 4 guanciali)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H25-160190') = 28000, 'Memory Duo H25 160x190 = 280 € (listino 15/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H30-160190') = 65000, 'Pocket 3000 H30 160x190 = 650 € (16/11/2026 sera)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-MD-H30-160190') = 33000, 'Memory Duo H30 160x190 = 330 €');
@@ -25,7 +25,7 @@ select pg_temp.check((select count(*) from public.products where slug in ('pocke
 select pg_temp.check((select count(*) from public.variants where sku like 'VS-P2400-%' or sku like 'VS-P2600-%') = 0, 'nessuno SKU dei nomi precedenti del Pocket');
 select pg_temp.check((select count(*) from (select product_id from public.media where is_cover group by product_id having count(*) > 1) x) = 0, 'una sola copertina per prodotto');
 select pg_temp.check((select count(*) from public.media where storage_path ilike '%grafeno%') = 0, 'immagine Grafeno non caricata');
-select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 182, '182 varianti acquistabili, tutte su prodotti pubblicati');
+select pg_temp.check((select count(*) from public.variants v join public.products p on p.id = v.product_id where p.status = 'published' and v.price_cents is not null) = 186, '186 varianti acquistabili, tutte su prodotti pubblicati');
 select pg_temp.check((select status from public.products where slug = 'pocket-1600') = 'published', 'Pocket 1600 rientrato in catalogo');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P1600-H25-160190') = 50000, 'Pocket 1600 H25 160x190 = 500 € (16/11/2026)');
 select pg_temp.check((select price_cents from public.variants where sku = 'VS-P3000-H25-160190') = 62000, 'Pocket 3000 H25 160x190 = 620 € (16/11/2026)');
@@ -38,10 +38,11 @@ select pg_temp.check((select count(distinct storage_path) from public.media) = (
 -- ---------------- pubblico (anon)
 set role anon;
 set request.jwt.claim.sub = '';
-select pg_temp.check((select count(*) from public.products) = 9, 'anon vede solo i 9 prodotti in catalogo');
-select pg_temp.check(not exists (select 1 from public.products where slug in ('memory-air-3d','bonnell-classic','guanciale-piuma','castello-steel')), 'anon non vede i prodotti sospesi (senza prezzo)');
+select pg_temp.check((select count(*) from public.products) = 13, 'anon vede solo i 13 prodotti in catalogo (con i 4 guanciali)');
+select pg_temp.check(not exists (select 1 from public.products where slug in ('memory-air-3d','bonnell-classic','castello-steel')), 'anon non vede i prodotti fuori gamma o senza prezzo');
+select pg_temp.check((select count(*) from public.products where slug like 'guanciale-%') = 4, 'anon vede i 4 guanciali in vendita');
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
-select pg_temp.check((select count(*) from public.media) = 24, 'anon vede solo le foto pubblicate di prodotti pubblicati (24)');
+select pg_temp.check((select count(*) from public.media) = 28, 'anon vede solo le foto pubblicate di prodotti pubblicati (28, con i guanciali)');
 select pg_temp.check((select count(*) from storage.objects) = 1, 'anon scarica solo file di foto pubblicate (non la vecchia foto 2400)');
 select pg_temp.check((select count(*) from public.settings) = 7, 'anon legge solo le impostazioni pubbliche (contatti, pagamenti, spedizione, claim, interruttore offerte)');
 select pg_temp.check((select value #>> '{}' from public.settings where key = 'whatsapp_number') = '+39 366 121 8346', 'numero WhatsApp aziendale pubblico');
@@ -81,7 +82,7 @@ select pg_temp.check((select count(*) from public.requests) = 0, 'utente normale
 select pg_temp.check((select count(*) from public.product_private) = 0, 'utente normale: 0 note interne');
 update public.variants set price_cents = 1;
 select pg_temp.check((select min(price_cents) from public.variants) > 1, 'utente normale: update prezzi senza effetto');
-select pg_temp.check((select count(*) from public.products) = 9, 'utente normale: vede solo i pubblicati');
+select pg_temp.check((select count(*) from public.products) = 13, 'utente normale: vede solo i pubblicati');
 
 -- ---------------- admin
 reset role;
@@ -131,10 +132,19 @@ select pg_temp.check((select count(*) from public.rate_limits where client <> '*
 -- ---------------- offerte abbinate (17/11/2026)
 set role anon;
 set request.jwt.claim.sub = '';
-select pg_temp.check((select count(*) from public.bundles) = 5, 'anon vede le 5 vetrine pubblicate');
-select pg_temp.check((select count(*) from public.bundle_items) = 14, 'anon vede i 14 pezzi delle vetrine');
+select pg_temp.check((select count(*) from public.bundles) = 7, 'anon vede le 7 vetrine pubblicate');
+select pg_temp.check((select count(*) from public.bundle_items) = 20, 'anon vede i 20 pezzi delle vetrine');
 select pg_temp.check((select count(*) from public.offers) = 6, 'anon legge le regole attive (le percentuali non sono segrete)');
-select pg_temp.check(not exists (select 1 from public.bundles where slug like 'notte-%'), 'vetrine con i guanciali nascoste finché i guanciali non sono in vendita');
+select pg_temp.check((select count(*) from public.bundles where slug like 'notte-%') = 2, 'vetrine con i guanciali visibili: guanciali in vendita');
+reset role;
+update public.variants set price_cents = null where sku = 'VS-GUA-MCLASSIC';
+set role anon;
+set request.jwt.claim.sub = '';
+select pg_temp.check(not exists (select 1 from public.bundles where slug = 'notte-memory'), 'guanciale senza prezzo: la sua vetrina si nasconde da sola');
+reset role;
+update public.variants set price_cents = 3700 where sku = 'VS-GUA-MCLASSIC';
+set role anon;
+set request.jwt.claim.sub = '';
 select pg_temp.check((select value from public.settings where key = 'offers_enabled') = 'true'::jsonb, 'interruttore offerte leggibile dal pubblico');
 select pg_temp.expect_error($q$insert into public.offers (code, label) values ('tetto', 'x')$q$, 'anon non crea regole');
 select pg_temp.expect_error($q$update public.offers set params = '{"pct":{"foam":30,"pocket":30}}' where code = 'letto-completo'$q$, 'anon non cambia le percentuali');
@@ -194,7 +204,7 @@ update public.offers set params = '{"pct":{"foam":5,"pocket":8},"round_eur":5}' 
 update public.bundles set status = 'draft' where slug = 'letto-trio';
 reset role;
 set role anon;
-select pg_temp.check((select count(*) from public.bundles) = 4, 'vetrina in bozza non più visibile al pubblico');
+select pg_temp.check((select count(*) from public.bundles) = 6, 'vetrina in bozza non più visibile al pubblico');
 reset role;
 update public.bundles set status = 'published' where slug = 'letto-trio';
 -- guanciali in vendita (prezzi di prova, solo per il test): la vetrina Notte Memory appare,

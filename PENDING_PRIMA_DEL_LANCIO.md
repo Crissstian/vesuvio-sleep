@@ -1,6 +1,16 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 17/11/2026 (offerte abbinate in `docs/OFFERTE.md`; audit in `AUDIT_2026-11-16.md` e `ANALISI_2026-11-17.md`) (gamma di 6 materassi; listino rimandato indietro dall'azienda con i prezzi H30 e la conferma delle scale ricostruite). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 17/11/2026 sera (guanciali in vendita a prezzo provvisorio, home da telefono accorciata; offerte abbinate in `docs/OFFERTE.md`; audit in `AUDIT_2026-11-16.md` e `ANALISI_2026-11-17.md`) (gamma di 6 materassi; listino rimandato indietro dall'azienda con i prezzi H30 e la conferma delle scale ricostruite). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+
+## Promemoria chiesti dal titolare (17/11/2026 sera)
+
+- **Rendere privato il repository GitHub** `Crissstian/vesuvio-sleep` (contiene listino e documenti): rimandato, da non dimenticare.
+- **Capitale sociale e PEC** per il piede di pagina (obbligo per la S.R.L.S.).
+- **Email sul dominio** (es. info@vesuviosleep.it).
+- Rimandati di proposito: dominio/hosting/DNS, recensioni Google, percentuali delle offerte, listino incoerente, pagamenti online.
+- Lasciati come sono per decisione del titolare: testi legali, clausola del recesso parziale, Made in Italy, tessuti; niente sito in inglese per ora; foto IA di fabbrica e showroom restano.
+- **Migrazioni 000008 e 000009 ancora da applicare**: terza conferma di Supabase scaduta senza risposta il 17/11 sera. `bundle_visible` ora richiede anche un prezzo per ogni pezzo obbligatorio (come il sito).
+- **L'anteprima originale è pubblica** e da qui non si aggiorna: la versione aggiornata è un nuovo artifact privato «Vesuvio Sleep — anteprima aggiornata».
 
 ## Bloccanti
 
@@ -31,7 +41,7 @@ Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta** n
 | Percentuali (5 % schiuma, 8 % Pocket, 10/12 % più letti, 10 % accessori, tetto 15 %) | **Da confermare con i costi** | Si cambiano da Admin › Offerte senza toccare il codice. |
 | Strutture oltre 10 letti solo su preventivo | **Da confermare** | |
 | Offerte già attive sul sito attuale | **Da chiedere** | Devono convivere? |
-| **Prezzi dei guanciali** | **Mancanti, ora prioritari** | Dal 17/11/2026 i guanciali sono l'offerta principale: −15 % su due guanciali con qualunque materasso (anche senza rete), −10 % sulla coppia da sola; consigliati per primi Memory Flakes e Memory Classic; vetrine «Notte Memory» e «Notte Flakes» in testa. **Tutto pronto e nascosto** finché i guanciali non hanno un prezzo: file `input-vesuvio/listini/2026-11-17_guanciali_da_compilare.xlsx` (prezzi, misure, altezza da confermare, domande). |
+| **Prezzi dei guanciali** | **Provvisori, pubblicati il 17/11/2026 sera** | Su indicazione del titolare: media dei concorrenti −10 %, all'euro: Piuma 45 €, Memory Flakes 33 €, Memory Classic 37 €, Memory Cervical 34 €; H12 confermata. Fonti in `scripts/build_seed.py`. Per i Flakes non esistono riferimenti di produttori confrontabili: prezzo messo sotto il Classic. Si correggono da Admin. Restano da dare le misure (larghezza × lunghezza). Testo precedente: | Dal 17/11/2026 i guanciali sono l'offerta principale: −15 % su due guanciali con qualunque materasso (anche senza rete), −10 % sulla coppia da sola; consigliati per primi Memory Flakes e Memory Classic; vetrine «Notte Memory» e «Notte Flakes» in testa. **Tutto pronto e nascosto** finché i guanciali non hanno un prezzo: file `input-vesuvio/listini/2026-11-17_guanciali_da_compilare.xlsx` (prezzi, misure, altezza da confermare, domande). |
 | Clausola sul recesso parziale e presentazione «separati / insieme» | **Da far rivedere all'avvocato** | Bozza nel progetto, §4.3. Direttiva Omnibus sulle riduzioni di prezzo. |
 | Interruttore sul sito pubblico | **Da decidere al lancio** | Oggi `offers_enabled` è acceso nel database perché il sito non è ancora pubblico e la preview deve mostrare le offerte. |
 
@@ -59,8 +69,8 @@ Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta** n
 | Render dell'ombra del Vesuvio | Usata `hero-alternativa` (alternativa hero prevista dalla mappa asset), etichettata «Ambientazione illustrativa». Il materasso nella foto non è associato a nessun modello. Confermare i diritti d'uso. |
 | Illustrazioni schematiche a strati | Generate dalla composizione pubblica del dataset, etichettate «non in scala». Da sostituire con le foto approvate dall'admin. |
 | Letto a castello Castello Steel | Misure e prezzi **mancanti**: in bozza, categoria in bozza. |
-| Misure dei guanciali | **Mancanti**: non mostrate. |
-| Portata delle reti | **Mancante**: non mostrata. |
+| Misure dei guanciali | **Mancanti**: non mostrate (altezza 12 cm confermata e mostrata). |
+| Portata delle reti | **«Alta»** (titolare, 17/11/2026): mostrata come livello, nessun valore in kg. |
 | Rigidità indicativa | Valori del dataset marcati come ricerca provvisoria: mostrati come «indicativa», da verificare sul prodotto. Il punteggio interno non è mai pubblico. |
 | Stato di disponibilità | Tutte le varianti con prezzo partono da «Realizzato su ordinazione». Confermare per reti e guanciali. |
 | Spessori dei singoli strati | Non pubblicati (VERIFY). |

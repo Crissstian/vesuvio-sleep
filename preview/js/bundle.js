@@ -2159,6 +2159,7 @@ const SEED = {
    "description": "Telaio in acciaio ad alta resistenza e doghe in legno, pensato per distribuire il carico in modo uniforme. Piedi inclusi.",
    "composition": "Acciaio e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -2174,7 +2175,7 @@ const SEED = {
    "sort": 10,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "internal_notes": "Portata \"alta\" indicata dal titolare il 17/11/2026; il valore in kg non e' verificato: non pubblicarlo.",
    "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Flex"
@@ -2187,6 +2188,7 @@ const SEED = {
    "description": "Struttura rinforzata in acciaio e piano a doghe in legno ad alta stabilità, per chi cerca un supporto più robusto. Piedi inclusi.",
    "composition": "Acciaio rinforzato e doghe in legno, piedi inclusi.",
    "highlights": [
+    "Portata alta",
     "Piedi inclusi",
     "Telaio in acciaio",
     "Doghe in legno"
@@ -2202,7 +2204,7 @@ const SEED = {
    "sort": 11,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "internal_notes": "Portata \"alta\" indicata dal titolare il 17/11/2026; il valore in kg non e' verificato: non pubblicarlo.",
    "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Strong"
@@ -2237,11 +2239,12 @@ const SEED = {
   {
    "id": "f9a95603-b52f-5fc2-ab32-a49cc2918f34",
    "slug": "guanciale-piuma",
-   "technical_name": "Guanciale piuma",
-   "short": "Guanciale in piuma.",
-   "description": "Guanciale in piuma.",
+   "technical_name": "Guanciale in piuma",
+   "short": "Guanciale imbottito in piuma, morbido e leggero.",
+   "description": "Il guanciale tradizionale: imbottitura in piuma, soffice e leggero. Alto 12 cm.",
    "composition": "Piuma.",
    "highlights": [
+    "Alto 12 cm",
     "Piuma"
    ],
    "claims": [],
@@ -2251,11 +2254,11 @@ const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "PIUMA",
-   "status": "draft",
+   "status": "published",
    "sort": 30,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Piuma"
@@ -2263,12 +2266,13 @@ const SEED = {
   {
    "id": "f18a729c-0e68-54f0-b748-72904165b275",
    "slug": "guanciale-memory-flakes",
-   "technical_name": "Guanciale fiocchi di memory",
-   "short": "Guanciale in fiocchi di memory.",
-   "description": "Guanciale in fiocchi di memory.",
-   "composition": "Fiocchi di Memory.",
+   "technical_name": "Guanciale in fiocchi di memory foam",
+   "short": "Fiocchi di Memory Foam che si modellano sotto la testa.",
+   "description": "Imbottito con fiocchi di Memory Foam: si lascia modellare e si adatta alla posizione della testa. Alto 12 cm.",
+   "composition": "Fiocchi di Memory Foam.",
    "highlights": [
-    "Fiocchi di Memory"
+    "Alto 12 cm",
+    "Fiocchi di Memory Foam"
    ],
    "claims": [],
    "removable_cover": null,
@@ -2277,11 +2281,11 @@ const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MFLAKES",
-   "status": "draft",
+   "status": "published",
    "sort": 31,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Flakes"
@@ -2289,12 +2293,13 @@ const SEED = {
   {
    "id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
    "slug": "guanciale-memory-classic",
-   "technical_name": "Guanciale memory",
-   "short": "Guanciale in memory.",
-   "description": "Guanciale in memory.",
-   "composition": "Memory.",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam a forma rettangolare, sostegno uniforme.",
+   "description": "Guanciale in Memory Foam a forma rettangolare: accoglie la testa e la sostiene in modo uniforme. Alto 12 cm.",
+   "composition": "Memory Foam.",
    "highlights": [
-    "Memory"
+    "Alto 12 cm",
+    "Memory Foam"
    ],
    "claims": [],
    "removable_cover": null,
@@ -2303,11 +2308,11 @@ const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MCLASSIC",
-   "status": "draft",
+   "status": "published",
    "sort": 32,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Classic"
@@ -2315,11 +2320,12 @@ const SEED = {
   {
    "id": "97116d49-df22-5e8e-8419-28d3b7acee61",
    "slug": "guanciale-memory-cervical",
-   "technical_name": "Guanciale memory foam",
-   "short": "Guanciale in memory foam.",
-   "description": "Guanciale in memory foam.",
+   "technical_name": "Guanciale in memory foam",
+   "short": "Memory Foam con profilo a onda per il collo.",
+   "description": "Guanciale in Memory Foam con profilo a onda, che segue la curva del collo. Alto 12 cm.",
    "composition": "Memory Foam.",
    "highlights": [
+    "Alto 12 cm",
     "Memory Foam"
    ],
    "claims": [],
@@ -2329,11 +2335,11 @@ const SEED = {
    "hybrid": false,
    "firmness_display": null,
    "line_code": "MCERV",
-   "status": "draft",
+   "status": "published",
    "sort": 33,
    "lead_time": null,
    "match": null,
-   "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "internal_notes": "Prezzo PROVVISORIO dal 17/11/2026: media dei concorrenti meno 10 %, da confermare o correggere da Admin. Misure (larghezza x lunghezza) da confermare. Foto generata con AI.",
    "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Cervical"
@@ -4944,8 +4950,8 @@ const SEED = {
    "sku": "VS-GUA-PIUMA",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 4500,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -4955,8 +4961,8 @@ const SEED = {
    "sku": "VS-GUA-MFLAKES",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3300,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -4966,8 +4972,8 @@ const SEED = {
    "sku": "VS-GUA-MCLASSIC",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3700,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   },
@@ -4977,8 +4983,8 @@ const SEED = {
    "sku": "VS-GUA-MCERV",
    "size": null,
    "height_cm": 12,
-   "price_cents": null,
-   "availability": "unavailable",
+   "price_cents": 3400,
+   "availability": "made_to_order",
    "active": true,
    "sort": 0
   }
@@ -9864,11 +9870,11 @@ function viewHome() {
   const slides = heroSlides();
   const staticHero = state.lastRoute === undefined && slides.every((x) => !x.uploaded) ? $('#app > .hero') : null;
   app.innerHTML = `${staticHero ? '' : heroHtml(slides)}
-
+  <div class="home-flow">
   <section class="quilt" aria-labelledby="num-title"><div class="wrap numbers">
     <h2 id="num-title" class="rv">Una fabbrica vera, con numeri veri.</h2>
     <div class="num rv" style="--d:1"><b data-count="1986" data-from="1950">1986</b><span>l'anno in cui abbiamo iniziato</span></div>
-    <div class="num rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
+    <div class="num num--extra rv" style="--d:2"><b data-count="40" data-from="0">40</b><span>anni di produzione a Casoria</span></div>
     <div class="num rv" style="--d:3"><b data-count="13" data-from="0">13</b><span>misure standard, più il su misura</span></div>
   </div></section>
 
@@ -9879,7 +9885,7 @@ function viewHome() {
     <div class="kinetic__row kinetic__row--rev"><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i><span>Prezzo di fabbrica</span><i></i><span>Cuciti a Casoria</span><i></i><span>Dal 1986</span><i></i><span>Su misura</span><i></i></div>
   </div>
 
-  <section class="section" aria-labelledby="cat-title">
+  <section class="section hf-cat" aria-labelledby="cat-title">
     <div class="wrap">
       <div class="sec-head rv"><div><h2 id="cat-title">Il catalogo, direttamente dalla fabbrica</h2><p>Prezzi di fabbrica, IVA inclusa. Scorri i modelli e apri la scheda per scegliere misura e altezza.</p></div>
         <a class="btn btn--ghost btn--sm" href="${u(P.compare)}">Confronta i materassi</a></div>
@@ -9890,7 +9896,7 @@ function viewHome() {
     </div>
   </section>
 
-  ${bundlesSectionHtml(idx, { title: 'Letto completo, a prezzo di fabbrica', lead: 'Materasso e rete della stessa misura, fatti nella stessa fabbrica: insieme costano meno che separati.', id: 'home-bundles-t', limit: 1 })}
+  <div class="hf-bundles">${bundlesSectionHtml(idx, { title: 'Letto completo, a prezzo di fabbrica', lead: 'Materasso e due guanciali, o materasso e rete: insieme costano meno che separati.', id: 'home-bundles-t', limit: 1 })}</div>
 
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
@@ -9949,7 +9955,8 @@ function viewHome() {
     </div>
   </div></section>
 
-  <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>`;
+  <section class="section factory" aria-labelledby="show-title"><div class="wrap"><h2 id="show-title" class="sr-only">Showroom</h2>${showroomHtml(true)}</div></section>
+  </div>`;
   if (staticHero) app.prepend(staticHero);
   else $('#app > .hero')?.classList.remove('is-intro');
   initHero($('#app > .hero'));
@@ -10144,11 +10151,15 @@ function viewProduct(slug, catSlug) {
   ], { image: urlImgs[0], type: 'product' });
   const purchasable = idx.isProductPurchasable(p);
   const showClaims = store.db.settings.show_claims && p.claims?.length;
+  // portata delle reti: solo il livello indicato dall'azienda («Portata alta»), mai un valore in kg non verificato
+  const portata = kind === 'rete' ? (p.highlights || []).find((h) => /^Portata /i.test(h))?.replace(/^Portata /i, '') : null;
+  const pillowH = kind === 'guanciale' ? idx.variantsOf(p)[0]?.height_cm : null;
   const factsRows = [
     ['Tecnologia', p.technical_name],
     ['Composizione', p.composition],
     kind === 'materasso' ? ['Altezze', idx.heightsOf(p).map((h) => `H${h}`).join(', ')] : null,
-    kind === 'guanciale' ? ['Altezza', idx.variantsOf(p)[0]?.height_cm ? idx.variantsOf(p)[0].height_cm + ' cm' : null] : null,
+    kind === 'guanciale' ? ['Altezza', pillowH ? pillowH + ' cm' : null] : null,
+    portata ? ['Portata', portata[0].toUpperCase() + portata.slice(1)] : null,
     p.removable_cover !== null && kind !== 'rete' ? ['Rivestimento', p.removable_cover ? 'Sfoderabile, lavaggio secondo le indicazioni in etichetta' : 'Non sfoderabile'] : null,
     p.summer_winter ? ['Lati', 'Reversibile: lato invernale e lato estivo'] : null,
     p.firmness_display ? ['Rigidità indicativa', p.firmness_display] : null,
@@ -10164,6 +10175,8 @@ function viewProduct(slug, catSlug) {
     idx.purchasableSizes(p).length ? [String(idx.purchasableSizes(p).length), 'misure standard'] : null,
     p.firmness_display ? [p.firmness_display, 'rigidità indicativa'] : null,
     p.removable_cover !== null && kind !== 'rete' ? [p.removable_cover ? 'Sfoderabile' : 'Fisso', 'rivestimento'] : null,
+    portata ? [portata[0].toUpperCase() + portata.slice(1), 'portata'] : null,
+    pillowH ? [String(pillowH), 'cm di altezza'] : null,
     kind === 'rete' ? ['Inclusi', 'piedi'] : null,
   ].filter(Boolean).slice(0, 4);
 

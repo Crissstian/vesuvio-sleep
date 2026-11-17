@@ -63,8 +63,9 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   const { ctx, p } = await newPage();
   await go(p, '/offerte/');
   ok((await p.locator('h1').innerText()) === 'Letti completi', 'offerte: titolo');
-  ok((await p.locator('.bcard').count()) === 5, 'offerte: 5 vetrine');
-  const elite = await text(p, '.bcard--elite');
+  ok((await p.locator('.bcard').count()) === 7, 'offerte: 7 vetrine (due con i guanciali in testa)');
+  ok((await p.locator('.bcard').first().getAttribute('data-bundle')) === 'notte-memory', 'offerte: Notte Memory per prima');
+  const elite = await text(p, '[data-bundle="letto-elite"]');
   ok(/Separati 820,00/.test(elite) && /755,00/.test(elite) && /65,00/.test(elite), 'scheda Elite: separati 820 €, insieme 755 €, risparmi 65 €', elite);
   ok(!/<s>|line-through/.test(await p.locator('.bcard').first().innerHTML()), 'nessun prezzo barrato: il confronto è con la somma dei pezzi');
   const singolo = await text(p, '[data-bundle="singolo-completo"]');
@@ -126,7 +127,8 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   ok(/Subtotale[\s\S]*460,00/.test(summ) && /Vantaggio letto completo/.test(summ) && /435,00/.test(summ), 'carrello: subtotale, vantaggio, totale', summ);
   ok(/−[\d,]+\s€ di vantaggio/.test(await text(p, '.line')), 'carrello: quota di vantaggio sulla riga');
   ok(/Aggiungi il Topper/.test(await text(p, '.hints')), 'carrello: suggerimento topper sul letto completo');
-  await p.click('.hints [data-act="add-variant"]'); await p.waitForTimeout(900);
+  ok(/Aggiungi 2 guanciali/.test(await text(p, '.hints .hint')), 'carrello: i guanciali proposti per primi');
+  await p.locator('.hints .hint', { hasText: 'Topper' }).locator('[data-act="add-variant"]').click(); await p.waitForTimeout(900);
   ok(/615,00/.test(await text(p, '.summary')), 'carrello: con il topper 660 − 45 = 615 €', await text(p, '.summary'));
   ok(/Sali al/.test(await text(p, '.hints')), 'carrello: proposta di salire di gamma con la differenza netta');
 
@@ -138,7 +140,7 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   });
   await p.click(`[data-act="cart-remove"][data-id="${reteId}"]`); await p.waitForTimeout(900);
   ok(!/Vantaggio letto completo/.test(await text(p, '.summary')) && /Aggiungi la Rete Flex 160×190/.test(await text(p, '.hints')), 'carrello: senza rete niente vantaggio, torna il suggerimento');
-  await p.click('.hints [data-act="add-variant"]'); await p.waitForTimeout(900);
+  await p.locator('.hints .hint', { hasText: 'Rete Flex' }).locator('[data-act="add-variant"]').click(); await p.waitForTimeout(900);
 
   await go(p, '/carrello/riepilogo/', 1000);
   const msg = await text(p, '.msg-preview');
@@ -205,8 +207,8 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   ok(saved.offers.find((o) => o.code === 'letto-completo').params.pct.pocket === 10, 'admin: percentuale Pocket salvata');
   ok(saved.audit.some((a) => a.action === 'offerte'), 'admin: modifica registrata nello storico');
   await go(p, '/offerte/');
-  ok((await p.locator('.bcard').count()) === 4, 'vetrina messa in bozza: non più visibile');
-  ok(/820,00[\s\S]*740,00/.test(await text(p, '.bcard--elite')), 'nuova percentuale applicata subito: Elite 820 → 740 €', await text(p, '.bcard--elite'));
+  ok((await p.locator('.bcard').count()) === 6, 'vetrina messa in bozza: non più visibile');
+  ok(/820,00[\s\S]*740,00/.test(await text(p, '[data-bundle="letto-elite"]')), 'nuova percentuale applicata subito: Elite 820 → 740 €', await text(p, '[data-bundle="letto-elite"]'));
 
   // recesso parziale su una richiesta con letto completo
   await p.evaluate(() => {
