@@ -100,5 +100,27 @@ reset role;
 set role anon;
 set request.jwt.claim.sub = '';
 select pg_temp.check((select count(*) from storage.objects) = 2, 'foto pubblicata dall''admin ora visibile al pubblico');
+
+-- ---------------- limite anti-abuso sulle funzioni pubbliche
+-- Ultimo blocco di proposito: crea richieste di prova, quindi va dopo i conteggi.
+do $$
+declare
+  i int;
+  riuscite int := 0;
+begin
+  for i in 1..12 loop
+    begin
+      perform public.create_quote_request(null, 160, 195, 20, 'prova del limite');
+      riuscite := riuscite + 1;
+    exception when sqlstate 'PT429' then
+      raise notice 'OK  limite anti-abuso: respinto al tentativo % (preventivi riusciti: %)', i, riuscite;
+      return;
+    end;
+  end loop;
+  raise exception 'FAIL limite anti-abuso: 12 preventivi di fila sono stati accettati';
+end $$;
 reset role;
+select pg_temp.check((select hits from public.rate_limits where bucket = 'create_quote_request' and client = '*') = 5,
+                     'contatore fermo sul limite: le chiamate respinte non lo gonfiano');
+select pg_temp.check((select count(*) from public.rate_limits where client <> '*') > 0, 'contatore anche per singolo chiamante');
 \echo TUTTI I TEST SQL SUPERATI
