@@ -12,6 +12,10 @@ Stato al 17/11/2026 sera (guanciali in vendita a prezzo provvisorio, home da tel
 - **Migrazioni 000008 e 000009 ancora da applicare**: terza conferma di Supabase scaduta senza risposta il 17/11 sera. `bundle_visible` ora richiede anche un prezzo per ogni pezzo obbligatorio (come il sito).
 - **L'anteprima originale è pubblica** e da qui non si aggiorna: la versione aggiornata è un nuovo artifact privato «Vesuvio Sleep — anteprima aggiornata».
 
+- **Link «Non ho una password»**: il sito manda l'email di Supabase, ma non ha ancora la pagina che riceve il link e fa scegliere la password; senza dominio il link non saprebbe dove portare. Fino al lancio la password si imposta dall'SQL Editor di Supabase (procedura nella risposta del 17/11 sera). Al lancio: pagina di ricezione + «Site URL» in Supabase › Authentication › URL Configuration.
+- **Foto caricate da Admin**: oggi restano nel browser di chi le carica; vanno collegate al bucket `product-media` di Supabase prima del lancio. Le foto attuali sono nei file del sito e non ne hanno bisogno.
+- **Attenzione all'ordine**: finché le migrazioni e `catalogo_corrente.sql` non sono applicati, un'anteprima che legge dal database mostra il catalogo vecchio (senza guanciali né offerte).
+
 ## Bloccanti
 
 | Voce | Stato | Cosa serve |
