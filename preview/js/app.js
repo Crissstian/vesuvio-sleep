@@ -32,7 +32,7 @@ import { PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_
 import { store, catalog, cart, api, media, mediaFor, coverFor, whatsappStatus, siteImage, applyRemoteCatalog } from './store.js';
 import { configured as sbConfigured, loadCatalog as sbLoadCatalog } from './supabase.js';
 import { esc, $, $$, swap, toast, copyText, openDialog, icon, reducedMotion } from './ui.js';
-import { productIllustration, layersFor } from './illustrations.js';
+import { productIllustration, layersFor, swatchFor } from './illustrations.js';
 import { heroHtml } from './hero.js';
 import { SITE_SLOTS, PRODUCT_SLOTS, HERO_SLIDES, HERO_CAPTIONS } from './slots.js';
 import { initHero, tiltCards } from './heroctl.js';
@@ -433,7 +433,7 @@ function labHtml(idx) {
         .map((p) => `<button class="chip" data-act="lab-model" data-id="${esc(p.id)}" aria-pressed="${p.id === cur.id}">${esc(p.name.replace('Vesuvio ', ''))}</button>`)
         .join('')}</div>
       <ol class="lab__legend">${ls
-        .map((l, i) => `<li><button data-act="lab-layer" data-i="${ls.length - 1 - i}" aria-pressed="false"><span class="sw" style="background:${SW[l.k]}" aria-hidden="true"></span><span><strong>${esc(l.label)}</strong><span class="d">${esc(l.note)}</span></span></button></li>`)
+        .map((l, i) => `<li><button data-act="lab-layer" data-i="${ls.length - 1 - i}" aria-pressed="false"><span class="sw" style="background:${swatchFor(cur, l)}" aria-hidden="true"></span><span><strong>${esc(l.label)}</strong><span class="d">${esc(l.note)}</span></span></button></li>`)
         .join('')}</ol>
       <div class="btn-row"><a class="btn btn--primary" href="${href.product(cur)}" data-act="to-product">Scopri ${esc(cur.name.replace('Vesuvio ', ''))}</a><span class="price" style="align-self:center">${priceFrom(idx, cur)}</span></div>
     </div>
@@ -514,7 +514,7 @@ function viewHome() {
     </div>
   </section>
 
-  ${bundlesSectionHtml(idx, { title: 'Letti completi, a prezzo di fabbrica', lead: 'Materasso e rete della stessa misura, fatti nella stessa fabbrica: insieme costano meno che separati.', id: 'home-bundles-t' })}
+  ${bundlesSectionHtml(idx, { title: 'Letto completo, a prezzo di fabbrica', lead: 'Materasso e rete della stessa misura, fatti nella stessa fabbrica: insieme costano meno che separati.', id: 'home-bundles-t', limit: 1 })}
 
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
@@ -813,7 +813,7 @@ function viewProduct(slug, catSlug) {
       <div class="anatomy__text">
         <h2 id="anat-t" class="rv">Strato per strato</h2>
         <p class="anatomy__sub rv" style="--d:1">Dall'alto verso il basso, ecco cosa c'è dentro.</p>
-        <ol class="anatomy__list">${layers.map((l, i) => `<li class="rv" style="--d:${i + 1}"><span class="anatomy__sw" style="--c:${SW[l.k] ?? '#ccc'}"></span><div><strong>${esc(l.label)}</strong><span>${esc(l.note)}</span></div></li>`).join('')}</ol>
+        <ol class="anatomy__list">${layers.map((l, i) => `<li class="rv" style="--d:${i + 1}"><span class="anatomy__sw" style="--c:${swatchFor(p, l)}"></span><div><strong>${esc(l.label)}</strong><span>${esc(l.note)}</span></div></li>`).join('')}</ol>
       </div>
   </div></section>` : ''}
 
@@ -1333,7 +1333,7 @@ function bundlesSectionHtml(idx, { title = 'Letti completi', lead = '', id = 'bu
   if (limit) list = list.slice(0, limit);
   return `<section class="section bundles" aria-labelledby="${id}"><div class="wrap">
     <div class="sec-head rv"><div><h2 id="${id}">${esc(title)}</h2>${lead ? `<p>${esc(lead)}</p>` : ''}</div>
-      <a class="btn btn--ghost btn--sm" href="${u(P.offers)}">Tutte le offerte e Componi il tuo letto</a></div>
+      <a class="btn btn--ghost btn--sm" href="${u(P.offers)}">Tutti i letti completi</a></div>
     <div class="bgrid">${list.map((b, i) => bundleCard(idx, b, { wide: i === 0, d: i })).join('')}</div>
   </div></section>`;
 }

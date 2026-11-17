@@ -28,17 +28,61 @@ const LAYERS = {
     { k: 'memory', label: 'Memory Foam premium', note: 'Lo strato di comfort' },
     { k: 'foam', h: 10, label: 'Base portante', note: 'Poliuretano ad alta densità' },
   ],
+  // 17/11/2026: strati ricavati dalle foto «esploso» consegnate dall'azienda, coerenti con la
+  // composizione pubblicata (tre strati di Memory Foam). DA CONFERMARE i materiali di dettaglio.
+  'memory-trio': [
+    { k: 'cover', h: 8, label: 'Rivestimento', note: 'Trapuntato, con fascia laterale chiara' },
+    { k: 'memory', label: 'Memory Foam', note: 'Primo dei tre strati, quello su cui ti sdrai' },
+    { k: 'memory', c: 'cream', label: 'Memory Foam', note: 'Secondo strato' },
+    { k: 'memory', c: 'sand', label: 'Memory Foam', note: 'Terzo strato: 27 cm in tutto' },
+  ],
+  // 17/11/2026: dalla foto «esploso» del Pocket 1600. DA CONFERMARE i materiali di dettaglio.
+  'pocket-1600': [
+    { k: 'cover', h: 8, label: 'Rivestimento', note: 'Trapuntato, con fascia laterale imbottita' },
+    { k: 'memory', c: 'cream', label: 'Memory Foam', note: 'Lo strato di comfort' },
+    { k: 'foam', c: 'white', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
+    { k: 'springs', label: 'Molle insacchettate', note: '1600 molle indipendenti' },
+    { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
+  ],
   'pocket-3000-elite': [
-    { k: 'cover', zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
+    { k: 'cover', h: 8, zip: true, label: 'Rivestimento sfoderabile', note: 'Si apre con la cerniera' },
     { k: 'memory', label: 'Memory Foam', note: 'Lo strato di comfort' },
     { k: 'foam', h: 6, label: 'Poliuretano ad alta densità', note: 'Supporto e stabilizzazione' },
     { k: 'springs', label: 'Molle insacchettate', note: '3000 molle indipendenti' },
     { k: 'base', label: 'Base di stabilizzazione', note: 'Contiene il molleggio' },
   ],
 };
-/** Solo modelli con composizione confermata: per gli altri nessuna stratigrafia (non si inventa). */
+// Rivestimento di ogni modello, preso dalle sue foto: colore del piano, fascia laterale,
+// bordino, disegno della trapuntatura. Serve a riconoscere il modello anche nello schema.
+const COVERS = {
+  eco: { top: '#fbfbf8', side: '#efefea', sideR: '#e5e5df', piping: '#dcdcd5', stitch: '#bdb9ae', quilt: 'wave', band: 'plain' },
+  'memory-duo-classic': { top: '#faf8f3', side: '#70402d', sideR: '#5c3324', piping: '#f3ede3', stitch: '#b8a48c', quilt: 'wave', band: 'diamond', handle: true },
+  'memory-duo': { top: '#f8f8f6', side: '#454a51', sideR: '#383c42', piping: '#f2f2ef', stitch: '#a8acb2', quilt: 'ornate', band: 'diamond' },
+  'memory-trio': { top: '#f1f2f3', side: '#e6e9eb', sideR: '#d9dde0', piping: '#ffffff', stitch: '#8b9298', quilt: 'hex', band: 'dots' },
+  'pocket-1600': { top: '#f9f7f3', side: '#4d2c22', sideR: '#3f241b', piping: '#f2ece2', stitch: '#5f4136', quilt: 'puzzle', band: 'diamond', handle: true },
+  'pocket-3000-elite': { top: '#fcfbf8', side: '#ab8464', sideR: '#957152', piping: '#c9ced2', stitch: '#b3ab9f', quilt: 'tuft', band: 'vertical', handle: true },
+  'memory-air-3d': { top: '#fbf9f4', side: '#eef4f7', sideR: '#e2ebf0', piping: '#206786', stitch: '#c8785b', quilt: 'grid', band: 'plain' },
+};
+const DEFAULT_COVER = { top: '#fbf9f4', side: '#efe9dd', sideR: '#e4dccc', piping: '#206786', stitch: '#c8785b', quilt: 'grid', band: 'plain' };
+export const coverFor = (slug) => COVERS[slug] ?? DEFAULT_COVER;
+
+// Toni alternativi degli strati, per gli strati che nelle foto hanno colori diversi
+const TONES = {
+  cream: { top: '#f3ead7', l: '#e7dbc1', r: '#dacdae', dot: '#c9b48a' },
+  sand: { top: '#e9d8c3', l: '#dbc6aa', r: '#ccb595', dot: '#b49674' },
+  white: { top: '#f7f8f9', l: '#e9ecef', r: '#dde1e5', dot: '#c5ccd3' },
+};
+/** Colore di un riquadro della legenda: quello dello strato disegnato. */
+export function swatchFor(p, l) {
+  if (l.k === 'cover') return coverFor(p.slug).side === coverFor(p.slug).top ? coverFor(p.slug).top : `linear-gradient(180deg, ${coverFor(p.slug).top} 55%, ${coverFor(p.slug).side} 55%)`;
+  return (l.c && TONES[l.c]?.top) || STYLE[l.k]?.top || '#ccc';
+}
+
+/** Strati dei modelli con composizione nota; il rivestimento porta il disegno del modello. */
 export function layersFor(p) {
-  return LAYERS[p.slug] ?? null;
+  const ls = LAYERS[p.slug];
+  // fascia un po' più alta del minimo, così si legge il colore laterale del modello
+  return ls ? ls.map((l) => (l.k === 'cover' ? { ...l, h: l.h ?? 8, cs: coverFor(p.slug) } : l)) : null;
 }
 
 const STYLE = {
@@ -65,41 +109,137 @@ function slab(o, z0, h, st, extra = '') {
     <polyline points="${pts([P(0, d, z1, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="none" stroke="rgba(14,52,68,.18)" stroke-width=".8"/>`;
 }
 
-function coverDetails(o, z0, h, ly, id) {
-  const { w, d } = o;
-  const z1 = z0 + h;
+/** Una linea sul piano del materasso: punti (u, v) in [0,1] → coordinate proiettate. */
+const onTop = (o, z, list) => pts(list.map(([u, v]) => P(o.w * u, o.d * v, z, o)));
+
+function quiltTop(o, z1, cs) {
+  const st = `stroke="${cs.stitch}" stroke-width=".9" fill="none"`;
   let s = '';
-  // trapuntatura: punti cuciti sul piano
-  for (let i = 1; i < 7; i++) {
-    s += `<polyline points="${pts([P((w * i) / 7, 0, z1, o), P((w * i) / 7, d, z1, o)])}" stroke="#c8785b" stroke-width=".9" stroke-dasharray="2.4 2.6" fill="none" opacity=".55"/>`;
-  }
-  for (let j = 1; j < 5; j++) {
-    s += `<polyline points="${pts([P(0, (d * j) / 5, z1, o), P(w, (d * j) / 5, z1, o)])}" stroke="#c8785b" stroke-width=".9" stroke-dasharray="2.4 2.6" fill="none" opacity=".45"/>`;
-  }
-  // bordino blu
-  s += `<polyline points="${pts([P(0, d, z1, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="none" stroke="#206786" stroke-width="2.2" stroke-linejoin="round"/>`;
-  s += `<polyline points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, 0, z0, o)])}" fill="none" stroke="#206786" stroke-width="1.6" stroke-linejoin="round"/>`;
-  if (ly.mesh) {
-    s += `<polygon points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(0, d, z1, o)])}" fill="url(#mesh${id})"/>`;
-    s += `<polygon points="${pts([P(w, 0, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="url(#mesh${id})" opacity=".8"/>`;
-  } else {
-    for (let i = 1; i < 26; i++) {
-      const x = (w * i) / 26;
-      s += `<polyline points="${pts([P(x, d, z0 + 1, o), P(x, d, z1 - 1, o)])}" stroke="rgba(14,52,68,.09)" stroke-width=".7"/>`;
+  const wave = (v, amp, n = 4, opacity = 0.6) => {
+    const ps = [];
+    for (let k = 0; k <= 48; k++) {
+      const u = 0.04 + (0.92 * k) / 48;
+      ps.push([u, v + amp * Math.sin(u * Math.PI * 2 * n)]);
     }
+    return `<polyline points="${onTop(o, z1, ps)}" ${st} stroke-dasharray="2.2 2" opacity="${opacity}"/>`;
+  };
+  if (cs.quilt === 'wave') for (let j = 1; j < 7; j++) s += wave(j / 7, 0.035);
+  else if (cs.quilt === 'ornate') {
+    for (let j = 1; j < 6; j++) s += wave(j / 6, 0.04, 3, 0.5);
+    for (let i = 0; i < 10; i++) {
+      const [x, y] = P(o.w * (0.1 + ((i * 37) % 80) / 100), o.d * (0.12 + ((i * 53) % 76) / 100), z1, o);
+      s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="4" ry="2.2" ${st} opacity=".45"/>`;
+    }
+  } else if (cs.quilt === 'hex') {
+    // catene di esagoni, come sul tessuto delle foto
+    for (const [v0, v1] of [[0.2, 0.75], [0.55, 1.1]]) {
+      for (let k = 0; k < 9; k++) {
+        const u = 0.08 + k * 0.105;
+        const v = v0 + (v1 - v0) * (k / 9) - 0.12;
+        const r = 0.035;
+        const hex = Array.from({ length: 7 }, (_, a) => [u + r * Math.cos((a * Math.PI) / 3), v + r * 1.3 * Math.sin((a * Math.PI) / 3)]);
+        if (v > 0.03 && v < 0.97) s += `<polyline points="${onTop(o, z1, hex)}" ${st} opacity=".6"/>`;
+      }
+    }
+    for (let j = 1; j < 5; j++) s += wave(j / 5, 0.03, 2, 0.35);
+  } else if (cs.quilt === 'puzzle') {
+    // trapuntatura a incastro: onde in entrambe le direzioni
+    for (let j = 1; j < 6; j++) s += wave(j / 6, 0.03, 5, 0.6);
+    for (let i = 1; i < 8; i++) {
+      const ps = [];
+      for (let k = 0; k <= 36; k++) {
+        const v = 0.04 + (0.92 * k) / 36;
+        ps.push([i / 8 + 0.025 * Math.sin(v * Math.PI * 8), v]);
+      }
+      s += `<polyline points="${onTop(o, z1, ps)}" ${st} opacity=".55"/>`;
+    }
+  } else if (cs.quilt === 'tuft') {
+    // capitonné: bottoni con le pieghe che partono a raggiera
+    for (let i = 0; i < 6; i++)
+      for (let j = 0; j < 5; j++) {
+        const u = (i + 0.5 + (j % 2) * 0.5) / 6.5;
+        const v = (j + 0.5) / 5;
+        const [x, y] = P(o.w * u, o.d * v, z1, o);
+        s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="1.7" ry="1" fill="${cs.stitch}" opacity=".9"/>`;
+        for (const [du, dv] of [[0.045, 0], [-0.045, 0], [0, 0.06], [0, -0.06]]) s += `<polyline points="${onTop(o, z1, [[u, v], [u + du, v + dv]])}" ${st} stroke-width=".6" opacity=".5"/>`;
+      }
+  } else {
+    for (let i = 1; i < 7; i++) s += `<polyline points="${onTop(o, z1, [[i / 7, 0], [i / 7, 1]])}" ${st} stroke-dasharray="2.4 2.6" opacity=".55"/>`;
+    for (let j = 1; j < 5; j++) s += `<polyline points="${onTop(o, z1, [[0, j / 5], [1, j / 5]])}" ${st} stroke-dasharray="2.4 2.6" opacity=".45"/>`;
   }
-  if (ly.zip) s += `<polyline points="${pts([P(w * 0.08, d, z0 + h * 0.35, o), P(w * 0.92, d, z0 + h * 0.35, o)])}" stroke="#8a97a0" stroke-width=".9" stroke-dasharray="1.2 1.2" fill="none"/>`;
   return s;
 }
 
-function memoryDots(o, z0, h) {
+/** Fascia laterale del rivestimento: colore e disegno del modello. */
+function band(o, z0, h, cs, id) {
+  const { w, d } = o;
+  const z1 = z0 + h;
+  const left = pts([P(0, d, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(0, d, z1, o)]);
+  const right = pts([P(w, 0, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(w, 0, z1, o)]);
+  let s = `<polygon points="${left}" fill="${cs.side}"/><polygon points="${right}" fill="${cs.sideR}"/>`;
+  const line = (a, b, extra = '') => `<polyline points="${pts([a, b])}" stroke="${cs.stitch}" stroke-width=".7" fill="none" ${extra}/>`;
+  if (cs.band === 'diamond') {
+    const n = 22;
+    for (let i = -2; i < n + 2; i++) {
+      const x0 = (w * i) / n;
+      const x1 = (w * (i + 2)) / n;
+      if (x0 >= 0 && x1 <= w) {
+        s += line(P(x0, d, z0 + 1, o), P(x1, d, z1 - 1, o), 'opacity=".55"');
+        s += line(P(x1, d, z0 + 1, o), P(x0, d, z1 - 1, o), 'opacity=".55"');
+      }
+    }
+    for (let j = 0; j < 14; j += 2) {
+      const y0 = (d * j) / 16;
+      const y1 = (d * (j + 2)) / 16;
+      s += line(P(w, y0, z0 + 1, o), P(w, y1, z1 - 1, o), 'opacity=".45"');
+      s += line(P(w, y1, z0 + 1, o), P(w, y0, z1 - 1, o), 'opacity=".45"');
+    }
+  } else if (cs.band === 'vertical') {
+    for (let i = 1; i < 40; i++) s += line(P((w * i) / 40, d, z0 + 1, o), P((w * i) / 40, d, z1 - 1, o), 'opacity=".55"');
+    for (let j = 1; j < 26; j++) s += line(P(w, (d * j) / 26, z0 + 1, o), P(w, (d * j) / 26, z1 - 1, o), 'opacity=".45"');
+  } else if (cs.band === 'dots') {
+    for (let i = 1; i < 30; i++) {
+      const [x, y] = P((w * i) / 30, d, z0 + h * (i % 2 ? 0.35 : 0.65), o);
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r=".9" fill="${cs.stitch}" opacity=".5"/>`;
+    }
+  } else {
+    for (let i = 1; i < 26; i++) s += line(P((w * i) / 26, d, z0 + 1, o), P((w * i) / 26, d, z1 - 1, o), 'stroke-opacity=".25"');
+  }
+  if (cs.handle) {
+    const a = P(w * 0.8, d, z0 + h * 0.3, o);
+    const b = P(w * 0.9, d, z0 + h * 0.3, o);
+    const c = P(w * 0.9, d, z0 + h * 0.72, o);
+    const e = P(w * 0.8, d, z0 + h * 0.72, o);
+    s += `<polygon points="${pts([a, b, c, e])}" fill="none" stroke="${cs.piping}" stroke-width=".9" opacity=".8"/>`;
+  }
+  return s;
+}
+
+function coverDetails(o, z0, h, ly, id) {
+  const { w, d } = o;
+  const z1 = z0 + h;
+  const cs = ly.cs ?? DEFAULT_COVER;
+  let s = '';
+  if (ly.mesh) {
+    s += `<polygon points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(0, d, z1, o)])}" fill="url(#mesh${id})"/>`;
+    s += `<polygon points="${pts([P(w, 0, z0, o), P(w, d, z0, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="url(#mesh${id})" opacity=".8"/>`;
+  } else s += band(o, z0, h, cs, id);
+  s += quiltTop(o, z1, cs);
+  // bordino: sul piano e alla base della fascia
+  s += `<polyline points="${pts([P(0, d, z1, o), P(w, d, z1, o), P(w, 0, z1, o)])}" fill="none" stroke="${cs.piping}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  s += `<polyline points="${pts([P(0, d, z0, o), P(w, d, z0, o), P(w, 0, z0, o)])}" fill="none" stroke="${cs.piping}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  if (ly.zip) s += `<polyline points="${pts([P(w * 0.08, d, z0 + h * 0.18, o), P(w * 0.92, d, z0 + h * 0.18, o)])}" stroke="#8a97a0" stroke-width=".9" stroke-dasharray="1.2 1.2" fill="none"/>`;
+  return s;
+}
+
+function memoryDots(o, z0, h, color = '#6ea6cf') {
   let s = '';
   const z1 = z0 + h;
   for (let i = 0; i < 26; i++) {
     const x = ((i * 37) % 97) / 97;
     const y = ((i * 53) % 89) / 89;
     const [px, py] = P(o.w * (0.05 + 0.9 * x), o.d * (0.05 + 0.9 * y), z1, o);
-    s += `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="1.1" ry=".6" fill="#6ea6cf" opacity=".55"/>`;
+    s += `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="1.1" ry=".6" fill="${color}" opacity=".55"/>`;
   }
   return s;
 }
@@ -155,10 +295,11 @@ export function mattressSvg(layers, { title = '', gap = 30, compact = false } = 
   const groups = [];
   // dal basso verso l'alto: l'ultimo disegnato copre quelli sotto
   [...list].reverse().forEach((ly, i) => {
-    const st = STYLE[ly.k];
+    const tone = ly.c && TONES[ly.c];
+    const st = ly.k === 'cover' && ly.cs ? { top: ly.cs.top, l: ly.cs.side, r: ly.cs.sideR } : tone ? { ...STYLE[ly.k], ...tone } : STYLE[ly.k];
     let inner = slab(o, z, ly.h, st);
     if (ly.k === 'cover') inner += coverDetails(o, z, ly.h, ly, id);
-    if (ly.k === 'memory') inner += memoryDots(o, z, ly.h);
+    if (ly.k === 'memory') inner += memoryDots(o, z, ly.h, tone?.dot);
     if (ly.k === 'springs') inner += springs(o, z, ly.h);
     groups.push(`<g class="ly" style="--i:${i}">${inner}</g>`);
     z += ly.h;
@@ -224,6 +365,6 @@ export function productIllustration(p, kind, opts = {}) {
   if (kind === 'topper') return mattressSvg([{ k: 'cover', zip: true, h: 4, label: '' }, { k: 'topper', label: '' }], { title: p.name, ...opts });
   const ls = layersFor(p);
   // composizione non confermata: materasso chiuso, senza strati
-  if (!ls) return mattressSvg([{ k: 'cover', h: 20, label: '' }], { title: p.name, ...opts, gap: 0 });
+  if (!ls) return mattressSvg([{ k: 'cover', h: 20, label: '', cs: coverFor(p.slug) }], { title: p.name, ...opts, gap: 0 });
   return mattressSvg(ls, { title: p.name, ...opts });
 }

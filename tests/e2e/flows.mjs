@@ -420,7 +420,10 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await p.evaluate(() => document.querySelector('.fabric').scrollIntoView()); await p.waitForTimeout(1600);
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.fabric__fig img')).clipPath === 'inset(0px)'), 'scheda: la foto del rivestimento si scopre entrando nello schermo');
   await p.goto(BASE + '#/materassi/memory-trio/'); await p.waitForTimeout(600);
-  ok((await p.locator('.anatomy').count()) === 0, 'Memory Trio (composizione di dettaglio non confermata): nessuno strato inventato');
+  // dal 17/11/2026 gli strati vengono dalla foto «esploso» dell'azienda: solo quelli della composizione
+  // pubblicata (tre strati di Memory Foam), nessuna caratteristica in più
+  const trio = await p.locator('.anatomy__list').innerText();
+  ok((await p.locator('.anatomy__list li').count()) === 4 && (trio.match(/Memory Foam/g) || []).length === 3 && !/grafen|densit|kg/i.test(trio), 'Memory Trio: rivestimento e tre strati di Memory Foam, nessun dato non pubblicato', trio);
   ok((await p.locator('.fabric__fig img').count()) === 1 && !/grafene|grafeno/i.test(await p.locator('#app').innerText()), 'Memory Trio: la foto del tessuto c\'è, la scritta sul tessuto non diventa una caratteristica dichiarata');
   ok(errors.length === 0, 'nessun errore JavaScript (restyling)', errors.join(' | '));
   await ctx.close();

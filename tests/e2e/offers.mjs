@@ -36,8 +36,23 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   ok(g11.discount === 0, 'G11 in pagina: misure diverse, nessun vantaggio');
 
   // home: sezione letti completi con le schede speciali
-  ok((await p.locator('.bundles .bcard').count()) === 5, 'home: 5 schede "letto completo"');
-  ok((await p.locator('.bcard--elite.bcard--wide').count()) === 1, 'home: la prima scheda è larga e in evidenza (Elite)');
+  ok((await p.locator('.bundles .bcard').count()) === 1, 'home: una sola scheda "letto completo", in evidenza');
+  ok((await p.locator('.bcard--elite.bcard--wide').count()) === 1, 'home: la scheda in evidenza è il Letto Elite');
+  ok((await p.locator('.bundles a', { hasText: 'Tutti i letti completi' }).count()) === 1, 'home: collegamento a tutti i letti completi');
+
+  // vista esplosa: tutti i materassi in catalogo, ciascuno con il suo rivestimento
+  const models = await p.$$eval('[data-act="lab-model"]', (bs) => bs.map((x) => x.textContent.trim()));
+  ok(['Eco', 'Memory Duo Classic', 'Memory Duo', 'Memory Trio', 'Pocket 1600', 'Pocket 3000 Elite'].every((m) => models.includes(m)), 'vista esplosa: tutti e sei i materassi, Trio e Pocket 1600 compresi', models.join(', '));
+  const covers = [];
+  for (const m of models) {
+    await p.locator('[data-act="lab-model"]', { hasText: new RegExp('^' + m + '$') }).click(); await p.waitForTimeout(250);
+    covers.push(await p.$eval('#lab-stage svg .ly:last-of-type polygon', (el) => el.getAttribute('fill')));
+  }
+  ok(new Set(covers).size === models.length, 'vista esplosa: rivestimento diverso per ogni modello', covers.join(' '));
+  await p.locator('[data-act="lab-model"]', { hasText: 'Memory Trio' }).click(); await p.waitForTimeout(250);
+  ok((await p.locator('.lab__legend li').count()) === 4 && (await p.locator('#lab-stage svg .ly').count()) === 4, 'Memory Trio: rivestimento e tre strati di Memory Foam');
+  await p.locator('[data-act="lab-model"]', { hasText: 'Pocket 1600' }).click(); await p.waitForTimeout(250);
+  ok(/1600 molle indipendenti/.test(await text(p, '.lab__legend')), 'Pocket 1600: strati con le molle');
   ok(/Letti completi/.test(await text(p, '#nav')), 'menu: voce Letti completi');
   ok((await overflow(p)) <= 0, 'home: nessuno scroll orizzontale a 390px con le schede offerta');
   await ctx.close();

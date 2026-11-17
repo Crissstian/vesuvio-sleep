@@ -1,5 +1,10 @@
 # Changelog
 
+## Vista esplosa completa, rivestimenti per modello, home più leggera (17/11/2026)
+- La vista esplosa («Apri il materasso, strato per strato») ora ha **tutti e sei i materassi**: aggiunti **Memory Trio** (tre strati di Memory Foam) e **Pocket 1600** (Memory Foam, poliuretano, molle, base), con gli strati ricavati dalle foto «esploso» dell'azienda. Le stesse schede prodotto ora mostrano anche «Strato per strato».
+- **Il rivestimento cambia con il modello**, preso dalle foto: Eco tutto bianco con trapuntatura a onde; Duo Classic fascia marrone a rombi con maniglia; Duo fascia grigio antracite; Trio grigio chiaro con catene di esagoni; Pocket 1600 fascia testa di moro e trapuntatura a incastro; Pocket 3000 fascia cammello a righe verticali e capitonné. Anche i riquadri della legenda usano quei colori.
+- In home resta **una sola scheda** dei letti completi (Letto Elite), con il collegamento a tutti gli altri.
+
 ## Offerte abbinate: letti completi (17/11/2026)
 - **Letto completo**: materasso e rete della stessa misura costano meno insieme. −5 % sui materassi in schiuma, −8 % sui Pocket, arrotondato ai 5 €. In più: 3–4 letti −10 %, da 5 −12 %; topper −10 % con un letto completo; due materassi uguali −5/−8 %; tetto 15 % sul carrello. Percentuali prudenti, scelte senza conoscere i margini, modificabili da **Admin › Offerte**.
 - **Cinque vetrine nel database**: Letto Elite (Pocket 3000 + Rete Strong), Letto Pocket, Letto Trio, Letto Memory, Singolo completo (Eco H20 + Rete Flex, da 160 €). Ognuna ha la sua pagina con misura, altezza e topper facoltativo.
