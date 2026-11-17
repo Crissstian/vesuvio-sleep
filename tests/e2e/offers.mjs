@@ -215,8 +215,55 @@ const text = (p, sel = '#app') => p.locator(sel).first().innerText();
   await ctx.close();
 }
 
+// ---------- percorso verso il database, con risposte simulate (la sandbox non raggiunge Supabase)
+for (const mode of ['vecchio', 'cambiato', 'nuovo']) {
+  const { ctx, p } = await newPage();
+  const calls = [];
+  const ids = {};
+  await p.route('**/rest/v1/**', async (route) => {
+    const url = route.request().url();
+    const body = route.request().postDataJSON?.() ?? null;
+    const json = (o) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
+    const line = (id, unit, disc) => ({ variant_id: id, qty: 1, status: 'ok', unit_cents: unit, discount_cents: disc });
+    if (url.includes('/rpc/validate_cart')) {
+      calls.push('validate');
+      const lines = [line(ids.duo, 28000, 1522), line(ids.flex, 18000, 978)];
+      if (mode === 'vecchio') return json({ lines: lines.map(({ discount_cents, ...l }) => l), total_cents: 46000, issues: 0, can_submit: true });
+      return json({ lines, subtotal_cents: 46000, discount_cents: 2500, total_cents: 43500, offers: [{ code: 'letto-completo', label: 'Vantaggio letto completo', pct: 5, size: '160x190', amount_cents: 2500, count: 1 }], issues: 0, can_submit: true });
+    }
+    if (url.includes('/rpc/create_cart_request')) {
+      calls.push('create:' + JSON.stringify(body));
+      if (mode === 'cambiato')
+        return json({ ok: false, reason: 'offer_changed', validation: { lines: [line(ids.duo, 28000, 1217), line(ids.flex, 18000, 783)], subtotal_cents: 46000, discount_cents: 2000, total_cents: 44000, offers: [], issues: 0, can_submit: true } });
+      return json({ ok: true, ref: 'VS-R-20261117-DBOK', validation: {} });
+    }
+    return route.abort();
+  });
+  await go(p, '/');
+  Object.assign(ids, await p.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('vs-preview-db-v1'));
+    const v = (slug, h) => { const pr = db.products.find((x) => x.slug === slug); return db.variants.find((x) => x.product_id === pr.id && x.size === '160x190' && (h == null || x.height_cm === h)); };
+    const duo = v('memory-duo', 25), flex = v('rete-flex');
+    localStorage.setItem('vs-cart-v1', JSON.stringify([duo, flex].map((x) => ({ variant_id: x.id, qty: 1, seen_price_cents: x.price_cents }))));
+    return { duo: duo.id, flex: flex.id };
+  }));
+  await p.reload(); await p.waitForTimeout(500);
+  await go(p, '/carrello/riepilogo/', 1500);
+  const app = await text(p);
+  if (mode === 'vecchio') {
+    ok(/435,00/.test(app) && !calls.some((c) => c.startsWith('create')), 'database senza migrazione offerte: sconto calcolato in pagina, richiesta con sconto non salvata nel database', calls.join(' '));
+  } else if (mode === 'cambiato') {
+    ok(/Il totale è cambiato/.test(app) && /440,00/.test(app), 'database: offerta cambiata → avviso con il nuovo totale, nessuna richiesta', app.slice(0, 300));
+    ok(calls.some((c) => c.includes('"seen_total_cents":43500')), 'database: si manda il totale visto dal cliente');
+  } else {
+    ok(/VS-R-20261117-DBOK/.test(app) && /435,00/.test(app), 'database aggiornato: riferimento del database e totale scontato', app.slice(0, 200));
+    ok(/Vantaggio letto completo/.test(await text(p, '.msg-preview')), 'database aggiornato: vantaggio nel messaggio WhatsApp');
+  }
+  await ctx.close();
+}
+
 await b.close();
-const errs = [...new Set(errors)];
+const errs = [...new Set(errors)].filter((e) => !/net::ERR_FAILED|Failed to fetch|supabase/i.test(e));
 ok(!errs.length, 'nessun errore JavaScript o risorsa mancante', errs.join(' | '));
 console.log(`\n${pass} superati, ${fail} falliti`);
 process.exit(fail ? 1 : 0);

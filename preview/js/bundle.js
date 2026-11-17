@@ -6461,6 +6461,11 @@ const catalogSource = () => (db.catalog_source === 'supabase' ? 'supabase' : 'bu
 // massimo, e dopo un errore si smette di provarci per mezzo minuto invece di rallentare
 // ogni singola azione. Nel frattempo il controllo lo fa il catalogo che abbiamo in pagina.
 let remoteDownUntil = 0;
+// Il database ha già la migrazione delle offerte (000009)? Lo dice validate_cart: senza
+// discount_cents nella risposta è la versione precedente. In quel caso lo sconto si calcola
+// in pagina sui prezzi letti dal database, e una richiesta con sconto non si salva nel
+// database (vi finirebbe con il totale di listino, diverso da quello visto dal cliente).
+let remoteOffers = null;
 const remoteUsable = () => sbConfigured() && Date.now() > remoteDownUntil;
 async function remote(fn, args, ms = 2500) {
   try {
@@ -6482,7 +6487,8 @@ const api = {
     if (remoteUsable()) {
       const r = await remote('validate_cart', { items: items.map((i) => ({ variant_id: i.variant_id, qty: i.qty, seen_price_cents: i.seen_price_cents ?? null })) });
       if (r && Array.isArray(r.lines)) {
-        const mapped = remoteValidation(r, items);
+        remoteOffers = 'discount_cents' in r;
+        const mapped = remoteOffers ? remoteValidation(r, items) : null;
         if (mapped) return mapped;
       }
     }
@@ -6498,10 +6504,9 @@ const api = {
   async createCartRequest(validation) {
     if (remoteUsable()) {
       const okLines = validation.lines.filter((l) => l.status === 'ok');
-      const r = await remote('create_cart_request', {
-        items: okLines.map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents })),
-        seen_total_cents: validation.total_cents,
-      });
+      const items = okLines.map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents }));
+      if (remoteOffers === false && (validation.discount_cents ?? 0) > 0) return localCartRequest(validation, makeRef('R', new Date()), false);
+      const r = await remote('create_cart_request', remoteOffers === false ? { items } : { items, seen_total_cents: validation.total_cents });
       if (r?.ok && r.ref) return localCartRequest(validation, r.ref, true);
       if (r && r.ok === false && r.reason === 'offer_changed' && r.validation) {
         const mapped = remoteValidation(r.validation, okLines.map((l) => l.item));

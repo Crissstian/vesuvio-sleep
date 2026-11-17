@@ -1,6 +1,6 @@
 # Pending prima del lancio — Vesuvio Sleep (concept)
 
-Stato al 16/11/2026, sera (secondo audit in `AUDIT_2026-11-16.md`) (gamma di 6 materassi; listino rimandato indietro dall'azienda con i prezzi H30 e la conferma delle scale ricostruite). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
+Stato al 17/11/2026 (offerte abbinate in `docs/OFFERTE.md`; audit in `AUDIT_2026-11-16.md` e `ANALISI_2026-11-17.md`) (gamma di 6 materassi; listino rimandato indietro dall'azienda con i prezzi H30 e la conferma delle scale ricostruite). Ogni voce indica se è **verificato**, solo **predisposto** oppure **mancante**.
 
 ## Bloccanti
 
@@ -19,7 +19,7 @@ Stato al 16/11/2026, sera (secondo audit in `AUDIT_2026-11-16.md`) (gamma di 6 m
 
 ## Offerte abbinate (bundle) — da chiudere prima di accenderle sul sito pubblico
 
-Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta**. Le percentuali sono una scelta prudente fatta senza conoscere i margini. Prima del lancio pubblico vanno chiuse queste voci, che restano aperte di proposito:
+Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta** nel sito e nell'anteprima. **Nel database Supabase non ci sono ancora**: le migrazioni `000008` (anti-abuso) e `000009` (offerte) sono scritte e superano tutti i test in locale, ma l'applicazione si è fermata due volte sulla conferma richiesta dal server, rimasta senza risposta. Si riprovano quando sei collegato per confermare; poi va eseguito `supabase/catalog/catalogo_corrente.sql`. Le percentuali sono una scelta prudente fatta senza conoscere i margini. Prima del lancio pubblico vanno chiuse queste voci, che restano aperte di proposito:
 
 | Voce | Stato | Cosa serve |
 | --- | --- | --- |

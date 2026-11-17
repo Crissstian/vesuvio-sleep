@@ -1,5 +1,15 @@
 # Changelog
 
+## Offerte abbinate: letti completi (17/11/2026)
+- **Letto completo**: materasso e rete della stessa misura costano meno insieme. −5 % sui materassi in schiuma, −8 % sui Pocket, arrotondato ai 5 €. In più: 3–4 letti −10 %, da 5 −12 %; topper −10 % con un letto completo; due materassi uguali −5/−8 %; tetto 15 % sul carrello. Percentuali prudenti, scelte senza conoscere i margini, modificabili da **Admin › Offerte**.
+- **Cinque vetrine nel database**: Letto Elite (Pocket 3000 + Rete Strong), Letto Pocket, Letto Trio, Letto Memory, Singolo completo (Eco H20 + Rete Flex, da 160 €). Ognuna ha la sua pagina con misura, altezza e topper facoltativo.
+- **Schede speciali**, riconoscibili dalle schede prodotto: bordo cucito ed etichetta cucita del risparmio, come quella sul fianco del materasso. In home, tra i prodotti di materassi e reti, e nella pagina **Letti completi** con **Componi il tuo letto** (misura una volta sola, poi materasso, rete, topper, numero di letti).
+- **Quasi al checkout**: nel carrello e nel riepilogo compaiono subtotale, vantaggi e totale, la quota di vantaggio su ogni riga e i pulsanti **Aggiungi** (rete della misura, topper sul letto completo) con il risparmio ricalcolato; nel carrello anche **Sali al…** con la differenza netta. Il messaggio WhatsApp porta subtotale, vantaggi e totale.
+- La scheda materasso ha il pannello **Completa il letto**; lo Sleep Match si chiude con **Il tuo letto completo**.
+- **Database**: tabelle `offers`, `bundles`, `bundle_items`, famiglia commerciale dei materassi, interruttore `offers_enabled`, sconto salvato con la richiesta; `price_cart` in SQL identica al calcolo del sito (verificato su 450 carrelli). La richiesta non si crea se il totale visto dal cliente non è più quello giusto (`offer_changed`).
+- **Recesso su una parte**: si rimborsa quanto pagato per i pezzi restituiti, il vantaggio sui pezzi tenuti resta. Calcolo in Admin › Richieste.
+- Migrazioni scritte e verificate in locale, **non ancora applicate a Supabase** (manca la conferma richiesta dal server). Il sito regge anche il database non aggiornato.
+
 ## Foto dei due modelli nuovi, primo admin, decisioni dell'azienda (16/11/2026, sera)
 - **Memory Trio** e **Memory Duo Classic** hanno le loro tre foto (prospettiva, esploso, dettaglio), consegnate dall'azienda. Lavorate con la stessa pipeline delle foto ufficiali: bianco ritagliato, prodotto centrato su tela 4:3, fondo reso trasparente, WebP a due larghezze. Restano con i segnaposto solo Pocket 1600 e Topper.
 - Le foto del Memory Trio portano la scritta **«Grafeno»** sul tessuto e quelle del Memory Duo Classic la scritta **«Bamboo»**. L'immagine Grafeno era marcata «non associare ad alcun prodotto» nel manifest del 15/11, con riserva «fino a istruzioni successive»: l'azienda l'ha assegnata a questo modello. **Le schede non riprendono né l'una né l'altra scritta**, nemmeno nel testo alternativo delle immagini, perché né il grafene né il bambù sono caratteristiche verificate. Un controllo automatico lo impedisce.
