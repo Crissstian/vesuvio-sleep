@@ -71,6 +71,33 @@ const aggressive = SEED.offers.map((o) => ({ ...o, params:
 out.push(...aggressive.map((o) => `update public.offers set params = ${lit(o.params)} where code = '${o.code}';`));
 block('tetto', core.offerConfig(aggressive, true), 150);
 out.push(...SEED.offers.map((o) => `update public.offers set params = ${lit(o.params)} where code = '${o.code}';`));
-out.push(`\\echo PARITÀ core/offers.ts = price_cart su ${N + 150} carrelli (150 con il tetto sotto pressione)`);
+// terza serie: guanciali in vendita (prezzi di prova uguali nel database e qui)
+const PILLOW = { 'guanciale-memory-classic': 4000, 'guanciale-memory-flakes': 3500, 'guanciale-piuma': 3000, 'guanciale-memory-cervical': 5500 };
+const pillowIds = new Set(SEED.products.filter((p) => PILLOW[p.slug]).map((p) => p.id));
+const snap2 = {
+  ...SEED,
+  offers_enabled: true,
+  categories: SEED.categories.map((c) => (c.kind === 'guanciale' ? { ...c, status: 'published' } : c)),
+  products: SEED.products.map((p) => (PILLOW[p.slug] ? { ...p, status: 'published' } : p)),
+  variants: SEED.variants.map((v) => (pillowIds.has(v.product_id) ? { ...v, price_cents: PILLOW[SEED.products.find((p) => p.id === v.product_id).slug], availability: 'made_to_order' } : v)),
+};
+out.push(...Object.entries(PILLOW).map(([slug, c]) => `update public.variants set price_cents = ${c}, availability = 'made_to_order' where product_id = (select id from public.products where slug = '${slug}');`));
+out.push(`update public.products set status = 'published' where slug like 'guanciale-%';`, `update public.categories set status = 'published' where slug = 'guanciali';`);
+const idx2 = new core.CatalogIndex(snap2);
+const pillowVs = snap2.variants.filter((v) => pillowIds.has(v.product_id));
+const mats2 = snap2.variants.filter((v) => v.price_cents && idx2.kind(idx2.products.get(v.product_id)) === 'materasso' && idx2.products.get(v.product_id).status === 'published');
+const reti2 = snap2.variants.filter((v) => v.price_cents && idx2.kind(idx2.products.get(v.product_id)) === 'rete');
+for (let k = 0; k < 150; k++) {
+  const lines = [];
+  const add = (v, qty) => { if (v && !lines.some((l) => l.variant_id === v.id)) lines.push({ variant_id: v.id, qty }); };
+  const m = mats2[rnd(mats2.length)];
+  if (rnd(4)) add(m, 1 + (rnd(4) === 0 ? rnd(3) : 0));
+  if (rnd(3) === 0) add(reti2.find((r) => r.size === m.size), 1);
+  for (let j = 0, n = 1 + rnd(3); j < n; j++) add(pillowVs[rnd(pillowVs.length)], 1 + rnd(5));
+  const r = core.priceCart(idx2, lines, core.catalogOfferConfig(idx2));
+  const want = { subtotal_cents: r.subtotal_cents, discount_cents: r.discount_cents, line_discounts: r.line_discounts, offers: r.offers };
+  out.push(`select pg_temp.same(public.price_cart(${lit(lines)}, public.offer_config()), ${lit(want)}, 'guanciali ${k + 1}');`);
+}
+out.push(`\\echo PARITÀ core/offers.ts = price_cart su ${N + 300} carrelli (150 con il tetto sotto pressione, 150 con i guanciali)`);
 writeFileSync(new URL('./20_parity.sql', import.meta.url), out.join('\n') + '\n');
 console.log(`20_parity.sql: ${N} carrelli`);

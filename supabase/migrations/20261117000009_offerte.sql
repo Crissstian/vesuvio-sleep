@@ -51,7 +51,7 @@ end $$;
 
 create table if not exists public.offers (
   id uuid primary key default gen_random_uuid(),
-  code text not null unique check (code in ('letto-completo', 'letti-multipli', 'accessori', 'per-due', 'tetto')),
+  code text not null unique check (code in ('letto-completo', 'letti-multipli', 'accessori', 'per-due', 'coppia-guanciali', 'tetto')),
   label text not null check (length(label) between 1 and 80),
   description text not null default '' check (length(description) <= 300),
   params jsonb not null default '{}'::jsonb,
@@ -110,11 +110,26 @@ alter table public.bundle_items enable row level security;
 -- le percentuali non sono segrete: le pagine le spiegano. Le bozze sì.
 drop policy if exists offers_public_read on public.offers;
 create policy offers_public_read on public.offers for select to anon, authenticated using (status <> 'draft');
+-- Una vetrina pubblicata si vede solo se tutti i suoi pezzi obbligatori sono in vendita:
+-- altrimenti (per esempio un guanciale ancora senza prezzo) resterebbe a metà. Il controllo
+-- sta in una funzione SECURITY DEFINER perché le policy di bundles e bundle_items, citandosi
+-- a vicenda, andrebbero in ricorsione.
+create or replace function public.bundle_visible(bid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.bundles b
+     where b.id = bid and b.status = 'published'
+       and not exists (select 1 from public.bundle_items i join public.products p on p.id = i.product_id
+                        where i.bundle_id = b.id and not i.optional and p.status <> 'published'))
+$$;
+revoke all on function public.bundle_visible(uuid) from public;
+grant execute on function public.bundle_visible(uuid) to anon, authenticated;
+
 drop policy if exists bundles_public_read on public.bundles;
-create policy bundles_public_read on public.bundles for select to anon, authenticated using (status = 'published');
+create policy bundles_public_read on public.bundles for select to anon, authenticated using (public.bundle_visible(id));
 drop policy if exists bundle_items_public_read on public.bundle_items;
 create policy bundle_items_public_read on public.bundle_items for select to anon, authenticated
-  using (exists (select 1 from public.bundles b where b.id = bundle_id and b.status = 'published')
+  using (public.bundle_visible(bundle_id)
          and exists (select 1 from public.products p where p.id = product_id and p.status = 'published'));
 
 drop policy if exists admin_all_offers on public.offers;
@@ -234,8 +249,8 @@ begin
       o_u1 := o_u1 || m; o_u2 := o_u2 || r;
     end loop;
 
-    -- 2. accessori
-    if cfg ? 'accessori' and nsets > 0 then
+    -- 2. accessori: topper per letto completo della stessa misura; guanciali fino a N per materasso
+    if cfg ? 'accessori' then
       pct := public._jpct(cfg -> 'accessori' -> 'pct' -> 'topper');
       step := greatest(1, public._jint(cfg -> 'accessori' -> 'round_eur', 1));
       for i in select x from generate_series(1, nu) x where u_kind[x] = 'topper' order by u_price[x] desc, x loop
@@ -248,7 +263,8 @@ begin
         o_amount := o_amount || public._round_pct(u_price[i], pct, step); o_u1 := o_u1 || i; o_u2 := o_u2 || null::int;
       end loop;
       pct := public._jpct(cfg -> 'accessori' -> 'pct' -> 'guanciale');
-      pillows := nsets * greatest(0, public._jint(cfg -> 'accessori' -> 'guanciali_per_letto', 2));
+      select count(*) * greatest(0, public._jint(cfg -> 'accessori' -> 'guanciali_per_materasso', 2)) into pillows
+        from generate_series(1, nu) x where u_kind[x] = 'materasso' and u_fam[x] is not null;
       for i in select x from generate_series(1, nu) x where u_kind[x] = 'guanciale' order by u_price[x] desc, x loop
         if pillows <= 0 or pct <= 0 then exit; end if;
         pillows := pillows - 1;
@@ -280,7 +296,26 @@ begin
       end loop;
     end if;
 
-    -- 4. tetto
+    -- 4. coppia di guanciali: guanciali uguali rimasti liberi, a coppie, nell'ordine del carrello
+    if cfg ? 'coppia-guanciali' and public._jpct(cfg -> 'coppia-guanciali' -> 'pct') > 0 then
+      pct := public._jpct(cfg -> 'coppia-guanciali' -> 'pct');
+      step := greatest(1, public._jint(cfg -> 'coppia-guanciali' -> 'round_eur', 1));
+      for vv in select u_var[x] from generate_series(1, nu) x
+                 where u_kind[x] = 'guanciale' and not u_used[x]
+                 group by u_var[x] order by min(x) loop
+        g := array(select x from generate_series(1, nu) x where u_var[x] = vv and u_kind[x] = 'guanciale' and not u_used[x] order by x);
+        k := 1;
+        while k + 1 <= coalesce(array_length(g, 1), 0) loop
+          u_used[g[k]] := true; u_used[g[k + 1]] := true;
+          o_code := o_code || 'coppia-guanciali'::text; o_pct := o_pct || pct; o_size := o_size || null::text;
+          o_amount := o_amount || public._round_pct(u_price[g[k]]::bigint + u_price[g[k + 1]], pct, step);
+          o_u1 := o_u1 || g[k]; o_u2 := o_u2 || g[k + 1];
+          k := k + 2;
+        end loop;
+      end loop;
+    end if;
+
+    -- 5. tetto
     cap_pct := case when cfg ? 'tetto' then public._jpct(cfg -> 'tetto' -> 'pct') else 15 end;
     cap := (subtotal * cap_pct) / 100;
     discount := coalesce((select sum(a) from unnest(o_amount) a), 0);
@@ -290,7 +325,7 @@ begin
       end loop;
     end if;
 
-    -- 5. ripartizione sui pezzi (proporzionale al prezzo, resto maggiore, parità al primo)
+    -- 6. ripartizione sui pezzi (proporzionale al prezzo, resto maggiore, parità al primo)
     for k in 1 .. coalesce(array_length(o_amount, 1), 0) loop
       if o_u2[k] is null then
         u_disc[o_u1[k]] := u_disc[o_u1[k]] + o_amount[k];
@@ -319,7 +354,8 @@ begin
           'code', o_code[k],
           'label', coalesce((select label from public.offers where code = o_code[k]),
                             case o_code[k] when 'letto-completo' then 'Vantaggio letto completo' when 'letti-multipli' then 'Vantaggio più letti'
-                                           when 'accessori' then 'Vantaggio accessori' else 'Vantaggio per due' end),
+                                           when 'accessori' then 'Vantaggio accessori' when 'coppia-guanciali' then 'Vantaggio coppia di guanciali'
+                                           else 'Vantaggio per due' end),
           'pct', o_pct[k], 'size', o_size[k], 'amount_cents', o_amount[k], 'count', 1);
       else
         offers_out := jsonb_set(jsonb_set(offers_out, array[idx::text, 'amount_cents'], to_jsonb((offers_out -> idx ->> 'amount_cents')::int + o_amount[k])),

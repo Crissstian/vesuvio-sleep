@@ -146,3 +146,54 @@ test('una percentuale fuori scala viene limitata (30 %) e il tetto vale sempre',
   const r = core.priceCart(idx, [{ variant_id: V('memory-duo', '160x190', 25), qty: 1 }, { variant_id: V('rete-flex', '160x190'), qty: 1 }], c);
   assert.equal(r.discount_cents, Math.floor((46000 * 15) / 100), 'il tetto del 15 % riduce lo sconto');
 });
+
+// ---------- guanciali (17/11/2026): prezzi di PROVA, solo per questi test
+const PILLOW = { 'guanciale-memory-classic': 4000, 'guanciale-memory-flakes': 3500 };
+const pillowIds = new Set(SEED.products.filter((p) => PILLOW[p.slug]).map((p) => p.id));
+const snapP = {
+  ...SEED,
+  offers_enabled: true,
+  categories: SEED.categories.map((c) => (c.kind === 'guanciale' ? { ...c, status: 'published' } : c)),
+  products: SEED.products.map((p) => (PILLOW[p.slug] ? { ...p, status: 'published' } : p)),
+  variants: SEED.variants.map((v) => (pillowIds.has(v.product_id) ? { ...v, price_cents: PILLOW[SEED.products.find((p) => p.id === v.product_id).slug], availability: 'made_to_order' } : v)),
+};
+const idxP = new core.CatalogIndex(snapP);
+const cfgP = core.catalogOfferConfig(idxP);
+const pv = (slug) => snapP.variants.find((v) => v.product_id === SEED.products.find((p) => p.slug === slug).id).id;
+
+test('guanciali: −15 % con un materasso, anche senza rete', () => {
+  const r = core.priceCart(idxP, [{ variant_id: V('memory-duo', '160x190', 25), qty: 1 }, { variant_id: pv('guanciale-memory-classic'), qty: 2 }], cfgP);
+  assert.equal(eur(r.discount_cents), 12, '2 × 40 € × 15 % = 12 €');
+  assert.deepEqual(r.offers.map((o) => o.code), ['accessori']);
+});
+test('guanciali: due per materasso, poi la coppia', () => {
+  const r = core.priceCart(idxP, [{ variant_id: V('memory-duo', '160x190', 25), qty: 1 }, { variant_id: pv('guanciale-memory-flakes'), qty: 4 }], cfgP);
+  // 2 con il materasso: 2 × 35 × 15 % = 5,25 → 5 € l'uno (arrotondato all'euro) = 10; gli altri 2 in coppia: 70 × 10 % = 7
+  assert.equal(eur(r.discount_cents), 17);
+  assert.deepEqual(r.offers.map((o) => [o.code, o.count]), [['accessori', 2], ['coppia-guanciali', 1]]);
+});
+test('coppia di guanciali da sola; un guanciale da solo no', () => {
+  assert.equal(eur(core.priceCart(idxP, [{ variant_id: pv('guanciale-memory-classic'), qty: 2 }], cfgP).discount_cents), 8);
+  assert.equal(core.priceCart(idxP, [{ variant_id: pv('guanciale-memory-classic'), qty: 1 }], cfgP).discount_cents, 0);
+});
+test('letto completo + guanciali: si sommano su pezzi diversi', () => {
+  const r = core.priceCart(idxP, [{ variant_id: V('memory-duo', '160x190', 25), qty: 1 }, { variant_id: V('rete-flex', '160x190'), qty: 1 }, { variant_id: pv('guanciale-memory-classic'), qty: 2 }], cfgP);
+  assert.equal(eur(r.discount_cents), 25 + 12);
+});
+test('suggerimenti: i guanciali consigliati vengono prima della rete, in coppia', () => {
+  const h = core.offerHints(idxP, [{ variant_id: V('memory-duo', '160x190', 25), qty: 1 }], cfgP);
+  assert.deepEqual(h.map((x) => [x.type, x.product.slug, x.qty]), [
+    ['add_guanciali', 'guanciale-memory-flakes', 2],
+    ['add_guanciali', 'guanciale-memory-classic', 2],
+    ['add_rete', 'rete-flex', 1],
+  ]);
+});
+test('vetrine Notte: nascoste senza guanciali in vendita, visibili quando ci sono', () => {
+  assert.ok(!core.publicBundles(idx).some((b) => b.slug.startsWith('notte-')), 'catalogo reale: guanciali senza prezzo → niente vetrine Notte');
+  const pub = core.publicBundles(idxP).map((b) => b.slug);
+  assert.deepEqual(pub.slice(0, 2), ['notte-memory', 'notte-flakes'], 'con i guanciali in vendita le vetrine Notte sono le prime');
+  const nm = snapP.bundles.find((b) => b.slug === 'notte-memory');
+  const q = core.quoteBundle(idxP, nm, '160x190');
+  assert.equal(eur(q.price.subtotal_cents), 280 + 80);
+  assert.equal(eur(q.price.discount_cents), 12);
+});

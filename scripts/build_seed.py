@@ -424,45 +424,64 @@ offers = [
     dict(id=uid('offer', 'letti-multipli'), code='letti-multipli', label='Vantaggio più letti', sort=2, status='active',
          description='Tre o più letti completi nello stesso ordine: camere, case vacanza, strutture.',
          params=dict(tiers=[dict(min_sets=3, pct=10), dict(min_sets=5, pct=12)], quote_from_sets=10), starts_at=None, ends_at=None),
+    # 17/11/2026: i guanciali contano più della rete (si comprano spesso, e in coppia): valgono con
+    # qualunque materasso, anche senza rete. Consigliati per primi: Memory Flakes e Memory Classic.
     dict(id=uid('offer', 'accessori'), code='accessori', label='Vantaggio accessori', sort=3, status='active',
-         description='Topper della stessa misura, e guanciali, insieme a un letto completo.',
-         params=dict(pct=dict(topper=10, guanciale=10), guanciali_per_letto=2, round_eur=1), starts_at=None, ends_at=None),
+         description='Guanciali insieme a un materasso; topper della stessa misura di un letto completo.',
+         params=dict(pct=dict(topper=10, guanciale=15), guanciali_per_materasso=2, round_eur=1,
+                     consigliati=['guanciale-memory-flakes', 'guanciale-memory-classic']), starts_at=None, ends_at=None),
     dict(id=uid('offer', 'per-due'), code='per-due', label='Vantaggio per due', sort=4, status='active',
          description='Due materassi uguali nello stesso ordine, anche senza rete.',
          params=dict(pct=dict(foam=5, pocket=8), round_eur=5), starts_at=None, ends_at=None),
+    dict(id=uid('offer', 'coppia-guanciali'), code='coppia-guanciali', label='Vantaggio coppia di guanciali', sort=5, status='active',
+         description='Due guanciali uguali nello stesso ordine, anche senza materasso.',
+         params=dict(pct=10, round_eur=1), starts_at=None, ends_at=None),
     dict(id=uid('offer', 'tetto'), code='tetto', label='Tetto di sicurezza', sort=5, status='active',
          description='Lo sconto complessivo di un carrello non supera questa percentuale.',
          params=dict(pct=15), starts_at=None, ends_at=None),
 ]
 # Vetrine: offerte con un nome, mostrate come schede speciali. Prezzo sempre calcolato dalle regole.
 BUNDLES = [
-    dict(slug='letto-elite', name='Letto Elite', theme='elite', sort=1, default_size='160x190', sizes=None,
+    # Vetrine con i guanciali: in testa, perché sono l'abbinamento che si vende di più.
+    # Restano nascoste finché i guanciali non hanno un prezzo (la vetrina richiede tutti i
+    # pezzi obbligatori in vendita): appaiono da sole quando l'azienda li pubblica.
+    dict(slug='notte-memory', name='Notte Memory', theme='elite', sort=1, default_size='160x190', sizes=None,
+         badge='Materasso e due guanciali',
+         tagline='Il Memory Duo con due guanciali Memory Classic: tutto quello che serve per dormire, insieme.',
+         description='Il Memory Duo con due guanciali Memory Classic. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.',
+         items=[('memory-duo', 25, False, 1), ('guanciale-memory-classic', None, False, 2), ('rete-flex', None, True, 1)]),
+    dict(slug='notte-flakes', name='Notte Flakes', theme='classic', sort=2, default_size='160x190', sizes=None,
+         badge='Materasso e due guanciali',
+         tagline='Il Memory Trio con due guanciali Memory Flakes, che si modellano sotto la testa.',
+         description='Il Memory Trio con due guanciali Memory Flakes. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.',
+         items=[('memory-trio', 27, False, 1), ('guanciale-memory-flakes', None, False, 2), ('rete-flex', None, True, 1)]),
+    dict(slug='letto-elite', name='Letto Elite', theme='elite', sort=3, default_size='160x190', sizes=None,
          badge='Il più completo',
          tagline='Il nostro materasso a molle più ricco, sulla rete rinforzata della stessa misura.',
          description='Il Pocket 3000 Elite con la Rete Strong, nella stessa misura. Scegli la misura e l\'altezza; '
                      'se vuoi, aggiungi il topper. Il vantaggio del letto completo è già nel prezzo.',
-         items=[('pocket-3000-elite', 25, False), ('rete-strong', None, False), ('topper-memory-cloud-5', None, True)]),
-    dict(slug='letto-pocket', name='Letto Pocket', theme='classic', sort=2, default_size='160x190', sizes=None,
+         items=[('pocket-3000-elite', 25, False, 1), ('rete-strong', None, False, 1), ('topper-memory-cloud-5', None, True, 1)]),
+    dict(slug='letto-pocket', name='Letto Pocket', theme='classic', sort=4, default_size='160x190', sizes=None,
          badge='Molle insacchettate',
          tagline='Le molle indipendenti insacchettate, con la rete a doghe della stessa misura.',
          description='Il Pocket 1600 con la Rete Flex, nella stessa misura. È il modo più diretto per passare a un materasso a molle.',
-         items=[('pocket-1600', 25, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
-    dict(slug='letto-trio', name='Letto Trio', theme='classic', sort=3, default_size='160x190', sizes=None,
+         items=[('pocket-1600', 25, False, 1), ('rete-flex', None, False, 1), ('topper-memory-cloud-5', None, True, 1)]),
+    dict(slug='letto-trio', name='Letto Trio', theme='classic', sort=5, default_size='160x190', sizes=None,
          badge='27 cm di Memory Foam',
          tagline='Tre strati di Memory Foam, 27 cm, sulla rete a doghe della stessa misura.',
          description='Il Memory Trio con la Rete Flex, nella stessa misura. Il più alto della gamma in schiuma.',
-         items=[('memory-trio', 27, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
-    dict(slug='letto-memory', name='Letto Memory', theme='classic', sort=4, default_size='160x190', sizes=None,
+         items=[('memory-trio', 27, False, 1), ('rete-flex', None, False, 1), ('topper-memory-cloud-5', None, True, 1)]),
+    dict(slug='letto-memory', name='Letto Memory', theme='classic', sort=6, default_size='160x190', sizes=None,
          badge='Sfoderabile',
          tagline='Memory Foam con rivestimento sfoderabile, sulla rete a doghe della stessa misura.',
          description='Il Memory Duo con la Rete Flex, nella stessa misura. Si aggiunge il topper se si vuole un piano ancora più accogliente.',
-         items=[('memory-duo', 25, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
-    dict(slug='singolo-completo', name='Singolo completo', theme='start', sort=5, default_size='80x190',
+         items=[('memory-duo', 25, False, 1), ('rete-flex', None, False, 1), ('topper-memory-cloud-5', None, True, 1)]),
+    dict(slug='singolo-completo', name='Singolo completo', theme='start', sort=7, default_size='80x190',
          sizes=['80x190', '80x200', '90x190', '90x200'],
          badge='Letto singolo',
          tagline='Materasso e rete per un letto singolo: cameretta, ospiti, seconda casa.',
          description='Il Vesuvio Eco alto 20 cm con la Rete Flex, nelle misure da una piazza. Si può scegliere anche un\'altra altezza.',
-         items=[('eco', 20, False), ('rete-flex', None, False)]),
+         items=[('eco', 20, False, 1), ('rete-flex', None, False, 1)]),
 ]
 bundles, bundle_items = [], []
 by_slug = {p['slug']: p['id'] for p in products}
@@ -470,8 +489,8 @@ for b in BUNDLES:
     bid = uid('bundle', b['slug'])
     bundles.append(dict(id=bid, slug=b['slug'], name=b['name'], tagline=b['tagline'], description=b['description'], badge=b['badge'],
                         theme=b['theme'], sizes=b['sizes'], default_size=b['default_size'], status='published', sort=b['sort']))
-    for k, (key, h, optional) in enumerate(b['items']):
-        bundle_items.append(dict(id=uid('bitem', b['slug'], key), bundle_id=bid, product_id=by_slug[key], height_cm=h, qty=1,
+    for k, (key, h, optional, qty) in enumerate(b['items']):
+        bundle_items.append(dict(id=uid('bitem', b['slug'], key), bundle_id=bid, product_id=by_slug[key], height_cm=h, qty=qty,
                                  optional=optional, sort=k + 1))
 settings['offers_enabled'] = True
 
@@ -499,8 +518,13 @@ for m in media:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
 # offerte: ogni pezzo delle vetrine è un prodotto pubblicato, ogni materasso ha una famiglia
+all_ids = {p['id'] for p in products}
 for it in bundle_items:
-    assert it['product_id'] in pub_prods, ('pezzo di offerta non pubblicato', it)
+    assert it['product_id'] in all_ids, ('pezzo di offerta inesistente', it)
+# una vetrina è visibile solo se tutti i pezzi obbligatori sono in vendita (stessa regola della RLS)
+def bundle_visible(b):
+    req = [i for i in bundle_items if i['bundle_id'] == b['id'] and not i['optional']]
+    return b['status'] == 'published' and len(req) >= 2 and all(i['product_id'] in pub_prods for i in req)
 fam = {p['slug']: p['bundle_family'] for p in pub_prods.values() if kind_of[p['category_id']] == 'materasso'}
 assert all(fam.values()), ('materasso pubblicato senza famiglia per le offerte', fam)
 
@@ -518,8 +542,8 @@ public = dict(
     variants=[v for v in variants if v['product_id'] in pub_ids],
     media=[m for m in media if m['published'] and m['product_id'] in pub_ids],
     offers=[o for o in offers if o['status'] != 'draft'],
-    bundles=[b for b in bundles if b['status'] == 'published'],
-    bundle_items=[i for i in bundle_items if i['bundle_id'] in {b['id'] for b in bundles if b['status'] == 'published'}],
+    bundles=[b for b in bundles if bundle_visible(b)],
+    bundle_items=[i for i in bundle_items if i['bundle_id'] in {b['id'] for b in bundles if bundle_visible(b)} and i['product_id'] in pub_prods],
 )
 with open(os.path.join(ROOT, 'preview/js/seed.public.js'), 'w', encoding='utf-8') as f:
     f.write('// Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,\n')
@@ -626,4 +650,4 @@ open(os.path.join(ROOT, 'supabase/catalog/catalogo_corrente.sql'), 'w', encoding
 
 print(f'{len(categories)} categorie, {len(products)} prodotti, {len(variants)} varianti, {len(media)} media')
 print('acquistabili:', len(buyable), by_kind)
-print(f'offerte: {len(offers)} regole, {len(bundles)} vetrine, {len(bundle_items)} pezzi')
+print(f'offerte: {len(offers)} regole, {len(bundles)} vetrine ({sum(1 for b in bundles if bundle_visible(b))} visibili), {len(bundle_items)} pezzi')

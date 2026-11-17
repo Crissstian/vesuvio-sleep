@@ -14,6 +14,8 @@ Stato al 17/11/2026 (offerte abbinate in `docs/OFFERTE.md`; audit in `AUDIT_2026
 | Made in Italy | **Da verificare** | Autorizzato dal titolare; confermare sui prodotti effettivamente venduti. |
 | Condizioni di spedizione | **Da riconfermare** | Mostrate: gratuita in Italia isole comprese; a Napoli furgone, consegna al piano, ritiro usato, montaggio reti; produzione circa 2 giorni. Riconfermare prima del lancio. |
 | Google Fonts | **Da sistemare al lancio** | I caratteri arrivano dai server di Google, che ricevono l'IP dei visitatori (dichiarato nella privacy). Meglio ospitarli sul sito: in questa sessione non si potevano scaricare. |
+| Recensioni Google | **Predisposte, spente** | Funzione `supabase/functions/google-reviews` scritta, non provata. Servono chiave API Google (Places API, con fatturazione), ID del luogo, deploy della funzione, `reviews: true` in `js/config.js`. Verificare i termini di Google sulla visualizzazione. |
+| Mappa di Google | **Fatta** | Si carica solo al clic, privacy aggiornata. Se l'attività è registrata su Google con un nome, metterlo in `mapsQuery` per mostrarne la scheda. Non verificato che l'anteprima dentro Claude permetta di incorporare Google Maps. |
 | Repository GitHub pubblico | **Da chiudere subito** | `Crissstian/vesuvio-sleep` è pubblico e contiene il listino prezzi e i documenti aziendali. Va reso privato dalle impostazioni del repo. |
 | Dominio, hosting e DNS | **Mancante** | Il sito pubblico è pronto in `dist/`, con la configurazione per **tutti e tre** gli hosting: `_redirects` e `_headers` per Netlify e Cloudflare Pages, `vercel.json` per Vercel. Serve collegare `vesuviosleep.it`, poi inviare la sitemap a Search Console e creare la scheda Google Business. |
 
@@ -29,7 +31,7 @@ Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta** n
 | Percentuali (5 % schiuma, 8 % Pocket, 10/12 % più letti, 10 % accessori, tetto 15 %) | **Da confermare con i costi** | Si cambiano da Admin › Offerte senza toccare il codice. |
 | Strutture oltre 10 letti solo su preventivo | **Da confermare** | |
 | Offerte già attive sul sito attuale | **Da chiedere** | Devono convivere? |
-| Prezzi dei guanciali | **Mancanti** | Sbloccano la regola accessori sui guanciali, già pronta. |
+| **Prezzi dei guanciali** | **Mancanti, ora prioritari** | Dal 17/11/2026 i guanciali sono l'offerta principale: −15 % su due guanciali con qualunque materasso (anche senza rete), −10 % sulla coppia da sola; consigliati per primi Memory Flakes e Memory Classic; vetrine «Notte Memory» e «Notte Flakes» in testa. **Tutto pronto e nascosto** finché i guanciali non hanno un prezzo: file `input-vesuvio/listini/2026-11-17_guanciali_da_compilare.xlsx` (prezzi, misure, altezza da confermare, domande). |
 | Clausola sul recesso parziale e presentazione «separati / insieme» | **Da far rivedere all'avvocato** | Bozza nel progetto, §4.3. Direttiva Omnibus sulle riduzioni di prezzo. |
 | Interruttore sul sito pubblico | **Da decidere al lancio** | Oggi `offers_enabled` è acceso nel database perché il sito non è ancora pubblico e la preview deve mostrare le offerte. |
 

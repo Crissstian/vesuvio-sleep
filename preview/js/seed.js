@@ -3866,14 +3866,18 @@ export const SEED = {
    "label": "Vantaggio accessori",
    "sort": 3,
    "status": "active",
-   "description": "Topper della stessa misura, e guanciali, insieme a un letto completo.",
+   "description": "Guanciali insieme a un materasso; topper della stessa misura di un letto completo.",
    "params": {
     "pct": {
      "topper": 10,
-     "guanciale": 10
+     "guanciale": 15
     },
-    "guanciali_per_letto": 2,
-    "round_eur": 1
+    "guanciali_per_materasso": 2,
+    "round_eur": 1,
+    "consigliati": [
+     "guanciale-memory-flakes",
+     "guanciale-memory-classic"
+    ]
    },
    "starts_at": null,
    "ends_at": null
@@ -3896,6 +3900,20 @@ export const SEED = {
    "ends_at": null
   },
   {
+   "id": "b1977561-5e18-5859-a153-9f006adad759",
+   "code": "coppia-guanciali",
+   "label": "Vantaggio coppia di guanciali",
+   "sort": 5,
+   "status": "active",
+   "description": "Due guanciali uguali nello stesso ordine, anche senza materasso.",
+   "params": {
+    "pct": 10,
+    "round_eur": 1
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
    "id": "1fab243c-5571-545d-a607-a6cb3f7da462",
    "code": "tetto",
    "label": "Tetto di sicurezza",
@@ -3911,6 +3929,32 @@ export const SEED = {
  ],
  "bundles": [
   {
+   "id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "slug": "notte-memory",
+   "name": "Notte Memory",
+   "tagline": "Il Memory Duo con due guanciali Memory Classic: tutto quello che serve per dormire, insieme.",
+   "description": "Il Memory Duo con due guanciali Memory Classic. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.",
+   "badge": "Materasso e due guanciali",
+   "theme": "elite",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 1
+  },
+  {
+   "id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "slug": "notte-flakes",
+   "name": "Notte Flakes",
+   "tagline": "Il Memory Trio con due guanciali Memory Flakes, che si modellano sotto la testa.",
+   "description": "Il Memory Trio con due guanciali Memory Flakes. Se cambi anche la rete, aggiungi la Rete Flex della stessa misura.",
+   "badge": "Materasso e due guanciali",
+   "theme": "classic",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 2
+  },
+  {
    "id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
    "slug": "letto-elite",
    "name": "Letto Elite",
@@ -3921,7 +3965,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 1
+   "sort": 3
   },
   {
    "id": "35f250db-e566-53ae-9383-fb2ad0883489",
@@ -3934,7 +3978,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 2
+   "sort": 4
   },
   {
    "id": "734b3556-03ae-5d6a-a771-4812d31353bc",
@@ -3947,7 +3991,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 3
+   "sort": 5
   },
   {
    "id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
@@ -3960,7 +4004,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 4
+   "sort": 6
   },
   {
    "id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
@@ -3978,10 +4022,64 @@ export const SEED = {
    ],
    "default_size": "80x190",
    "status": "published",
-   "sort": 5
+   "sort": 7
   }
  ],
  "bundle_items": [
+  {
+   "id": "4605b9a7-ef6e-5c74-b22a-5ddfd6631581",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "height_cm": 25,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "8ff55f36-8c37-5438-8a2c-350d463a270a",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "85473b6c-22b0-51a4-9f3d-34b9bb1dd6c6",
+   "height_cm": null,
+   "qty": 2,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "59a018a3-47b2-50cf-befd-5096726b65bc",
+   "bundle_id": "76e4ae67-5a0c-5e2c-a92a-9710a7845fc7",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "ca41e322-3527-59f4-a46f-d0c86f6c84e9",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
+   "height_cm": 27,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "e8f054f4-dce8-5b82-b94f-441cf49d1a5a",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "f18a729c-0e68-54f0-b748-72904165b275",
+   "height_cm": null,
+   "qty": 2,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "f69b33a8-b3fa-5bc6-847f-cba58fcdc24c",
+   "bundle_id": "2201fd23-3dbb-514f-a8ba-249bebca4e52",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
   {
    "id": "b33523bc-2ffe-5f38-b05b-d05543d6d4b1",
    "bundle_id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",

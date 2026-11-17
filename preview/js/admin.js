@@ -474,6 +474,7 @@ function viewOfferAdmin() {
   const lm = rule('letti-multipli')?.params ?? {};
   const ac = rule('accessori')?.params ?? {};
   const pd = rule('per-due')?.params ?? {};
+  const cg = rule('coppia-guanciali')?.params ?? {};
   const tt = rule('tetto')?.params ?? {};
   const t = lm.tiers ?? [];
   // esempi con le regole salvate (anche a interruttore spento: servono a decidere)
@@ -511,9 +512,13 @@ function viewOfferAdmin() {
         <p class="small muted">Vale la percentuale più alta tra questa e quella del letto completo, su ogni letto dell'ordine.</p>
         <div class="adm-filters">${st('letti-multipli')}${num('t1-min', t[0]?.min_sets, 'Da letti', 'letti')}${num('t1-pct', t[0]?.pct, 'Sconto')}${num('t2-min', t[1]?.min_sets, 'Da letti', 'letti')}${num('t2-pct', t[1]?.pct, 'Sconto')}</div>
       </section>
-      <section class="adm-card"><h2 class="adm-h2">Accessori</h2>
-        <p class="small muted">Il topper della stessa misura di un letto completo; i guanciali (fino a ${ac.guanciali_per_letto ?? 2} per letto) quando avranno un prezzo.</p>
-        <div class="adm-filters">${st('accessori')}${num('ac-topper', ac.pct?.topper, 'Topper')}${num('ac-guanciale', ac.pct?.guanciale, 'Guanciali')}</div>
+      <section class="adm-card"><h2 class="adm-h2">Guanciali e topper</h2>
+        <p class="small muted">Guanciali: fino a ${ac.guanciali_per_materasso ?? 2} per materasso, anche senza rete. Proposti per primi: ${esc((ac.consigliati ?? []).map((x) => x.replace('guanciale-', '').replace(/-/g, ' ')).join(', ') || '—')}. Si vedono sul sito solo quando i guanciali hanno un prezzo. Topper: con un letto completo della stessa misura.</p>
+        <div class="adm-filters">${st('accessori')}${num('ac-guanciale', ac.pct?.guanciale, 'Guanciali con materasso')}${num('ac-topper', ac.pct?.topper, 'Topper')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Coppia di guanciali</h2>
+        <p class="small muted">Due guanciali uguali, anche senza materasso.</p>
+        <div class="adm-filters">${st('coppia-guanciali')}${num('cg-pct', cg.pct, 'Sconto sulla coppia')}</div>
       </section>
       <section class="adm-card"><h2 class="adm-h2">Per due</h2>
         <p class="small muted">Due materassi uguali nello stesso ordine, senza rete.</p>
@@ -560,7 +565,9 @@ function readOfferForm(f) {
       ],
       quote_from_sets: 10,
     },
-    accessori: { pct: { topper: n('ac-topper', 'Topper'), guanciale: n('ac-guanciale', 'Guanciali') }, guanciali_per_letto: 2, round_eur: 1 },
+    // numero per materasso e guanciali consigliati restano quelli salvati: qui si cambiano solo le percentuali
+    accessori: { ...(db().offers?.find((o) => o.code === 'accessori')?.params ?? {}), pct: { topper: n('ac-topper', 'Topper'), guanciale: n('ac-guanciale', 'Guanciali') } },
+    'coppia-guanciali': { pct: n('cg-pct', 'Coppia di guanciali'), round_eur: 1 },
     'per-due': { pct: { foam: n('pd-foam', 'Per due, schiuma'), pocket: n('pd-pocket', 'Per due, molle') }, round_eur: 5 },
     tetto: { pct: n('tt-pct', 'Tetto') },
   };
@@ -568,7 +575,7 @@ function readOfferForm(f) {
   if (!errs.length && b.min_sets <= a.min_sets) errs.push('Il secondo scaglione deve partire da più letti del primo');
   return { errs, params: out, fd };
 }
-const OFFER_FIELDS = { 'letto-completo': ['lc-foam', 'lc-pocket'], 'letti-multipli': ['t1-min', 't1-pct', 't2-min', 't2-pct'], accessori: ['ac-topper', 'ac-guanciale'], 'per-due': ['pd-foam', 'pd-pocket'], tetto: ['tt-pct'] };
+const OFFER_FIELDS = { 'letto-completo': ['lc-foam', 'lc-pocket'], 'letti-multipli': ['t1-min', 't1-pct', 't2-min', 't2-pct'], accessori: ['ac-topper', 'ac-guanciale'], 'per-due': ['pd-foam', 'pd-pocket'], 'coppia-guanciali': ['cg-pct'], tetto: ['tt-pct'] };
 
 // ------------------------------------------------------------- impostazioni
 function viewSettings() {

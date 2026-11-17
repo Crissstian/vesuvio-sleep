@@ -62,7 +62,7 @@ export interface Product {
 export type BundleFamily = 'foam' | 'pocket';
 export type OfferStatus = 'draft' | 'active' | 'paused';
 /** Codici delle regole: uno per tipo di logica. */
-export type OfferCode = 'letto-completo' | 'letti-multipli' | 'accessori' | 'per-due' | 'tetto';
+export type OfferCode = 'letto-completo' | 'letti-multipli' | 'accessori' | 'per-due' | 'coppia-guanciali' | 'tetto';
 
 /** Una regola di sconto. I numeri stanno in params e si cambiano da Admin. */
 export interface OfferRule {

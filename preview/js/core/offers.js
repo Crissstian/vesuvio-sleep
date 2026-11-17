@@ -9,10 +9,12 @@
 //  1. letto completo: un materasso con famiglia + una rete della stessa misura.
 //     Si abbinano prima i materassi più cari, ciascuno alla rete più cara libera della sua misura;
 //  2. percentuale del letto = max(percentuale di famiglia, scaglione per numero di letti);
-//  3. accessori: un topper per letto della stessa misura, guanciali fino a N per letto;
+//  3. accessori: un topper per letto completo della stessa misura; guanciali fino a N per
+//     materasso, anche senza rete (i guanciali si comprano più spesso della rete);
 //  4. per due: due materassi uguali rimasti senza rete;
-//  5. tetto: lo sconto totale non supera cap_pct del totale a listino;
-//  6. lo sconto di ogni offerta si divide sui pezzi in proporzione al prezzo (resto maggiore):
+//  5. coppia di guanciali: due guanciali uguali rimasti fuori dalle regole precedenti;
+//  6. tetto: lo sconto totale non supera cap_pct del totale a listino;
+//  7. lo sconto di ogni offerta si divide sui pezzi in proporzione al prezzo (resto maggiore):
 //     è la base dei rimborsi in caso di recesso parziale.
 // Solo numeri interi (centesimi e percentuali intere): niente virgola mobile, niente sorprese.
 /** Tetto usato se la regola "tetto" manca o è in pausa: lo sconto non resta mai senza limite. */
@@ -43,6 +45,7 @@ export function offerConfig(rules, enabled, now = new Date()) {
     const tiers = p('letti-multipli');
     const addon = p('accessori');
     const pair = p('per-due');
+    const pillowPair = p('coppia-guanciali');
     const cap = p('tetto');
     const labels = {};
     for (const r of rules)
@@ -55,11 +58,13 @@ export function offerConfig(rules, enabled, now = new Date()) {
         addon: addon
             ? {
                 pct: { topper: clampPct(addon.pct?.topper), guanciale: clampPct(addon.pct?.guanciale) },
-                guanciali_per_letto: Math.max(0, num(addon.guanciali_per_letto, 2)),
+                guanciali_per_materasso: Math.max(0, num(addon.guanciali_per_materasso, 2)),
                 round_eur: Math.max(1, num(addon.round_eur, 1)),
+                consigliati: Array.isArray(addon.consigliati) ? addon.consigliati.filter((x) => typeof x === 'string') : [],
             }
             : null,
         pair: pair ? { pct: famPct(pair.pct), round_eur: Math.max(1, num(pair.round_eur, 5)) } : null,
+        pillowPair: pillowPair ? { pct: clampPct(pillowPair.pct), round_eur: Math.max(1, num(pillowPair.round_eur, 1)) } : null,
         cap_pct: cap ? clampPct(cap.pct) : DEFAULT_CAP_PCT,
         labels,
     };
@@ -100,6 +105,7 @@ const DEFAULT_LABELS = {
     'letti-multipli': 'Vantaggio più letti',
     accessori: 'Vantaggio accessori',
     'per-due': 'Vantaggio per due',
+    'coppia-guanciali': 'Vantaggio coppia di guanciali',
 };
 /**
  * Sconto di un carrello. `lines` sono righe GIÀ VALIDE (variante acquistabile, prezzo attuale).
@@ -142,8 +148,9 @@ export function priceCart(idx, lines, cfg) {
             const step = cfg.set?.round_eur ?? 5;
             raw.push({ code: tier > base ? 'letti-multipli' : 'letto-completo', pct, size: m.size, amount: pctRounded(m.price + r.price, pct, step), units: [m, r] });
         }
-        // 2. accessori (un topper per letto della stessa misura; guanciali fino a N per letto)
-        if (cfg.addon && sets > 0) {
+        // 2. accessori: un topper per letto completo della stessa misura; guanciali fino a N per
+        //    materasso, con o senza rete
+        if (cfg.addon) {
             const a = cfg.addon;
             const perSize = new Map();
             for (const [m] of pairs)
@@ -156,7 +163,7 @@ export function priceCart(idx, lines, cfg) {
                 u.used = true;
                 raw.push({ code: 'accessori', pct: a.pct.topper, size: u.size, amount: pctRounded(u.price, a.pct.topper, a.round_eur), units: [u] });
             }
-            let pillows = sets * a.guanciali_per_letto;
+            let pillows = units.filter((x) => x.kind === 'materasso' && x.family).length * a.guanciali_per_materasso;
             for (const u of units.filter((x) => x.kind === 'guanciale').sort(byPrice)) {
                 if (pillows <= 0 || a.pct.guanciale <= 0)
                     break;
@@ -185,14 +192,32 @@ export function priceCart(idx, lines, cfg) {
                 }
             }
         }
-        // 4. tetto
+        // 4. coppia di guanciali: guanciali uguali rimasti liberi, a coppie, nell'ordine del carrello
+        if (cfg.pillowPair && cfg.pillowPair.pct > 0) {
+            const pp = cfg.pillowPair;
+            const groups = new Map();
+            for (const u of units) {
+                if (u.kind !== 'guanciale' || u.used)
+                    continue;
+                const g = groups.get(u.variant_id) ?? [];
+                g.push(u);
+                groups.set(u.variant_id, g);
+            }
+            for (const g of groups.values()) {
+                for (let k = 0; k + 1 < g.length; k += 2) {
+                    g[k].used = g[k + 1].used = true;
+                    raw.push({ code: 'coppia-guanciali', pct: pp.pct, size: null, amount: pctRounded(g[k].price + g[k + 1].price, pp.pct, pp.round_eur), units: [g[k], g[k + 1]] });
+                }
+            }
+        }
+        // 5. tetto
         let discount = raw.reduce((a, o) => a + o.amount, 0);
         const cap = Math.floor((subtotal * cfg.cap_pct) / 100);
         if (discount > cap) {
             for (const o of raw)
                 o.amount = Math.floor((o.amount * cap) / discount);
         }
-        // 5. ripartizione sui pezzi
+        // 6. ripartizione sui pezzi
         for (const o of raw) {
             const parts = spread(o.amount, o.units.map((u) => u.price));
             o.units.forEach((u, k) => (u.disc += parts[k]));
@@ -231,7 +256,7 @@ function summarize(raw, labels) {
  * per ogni letto completo senza topper, il topper della stessa misura. Il risparmio non è
  * stimato: si ricalcola il carrello con il pezzo aggiunto e si guarda la differenza.
  */
-export function offerHints(idx, lines, cfg, max = 2) {
+export function offerHints(idx, lines, cfg, max = 3) {
     if (!cfg)
         return [];
     const now = priceCart(idx, lines, cfg);
@@ -246,7 +271,21 @@ export function offerHints(idx, lines, cfg, max = 2) {
     const mats = kindsInCart('materasso').filter((v) => idx.products.get(v.product_id)?.bundle_family);
     const reti = kindsInCart('rete');
     const toppers = kindsInCart('topper');
-    const trial = (v) => priceCart(idx, [...lines, { variant_id: v.id, qty: 1 }], cfg).discount_cents - now.discount_cents;
+    const trial = (v, qty = 1) => priceCart(idx, [...lines, { variant_id: v.id, qty }], cfg).discount_cents - now.discount_cents;
+    // guanciali per primi: due per materasso, i consigliati nell'ordine scelto dall'admin
+    const pillows = kindsInCart('guanciale');
+    if (cfg.addon && cfg.addon.pct.guanciale > 0 && mats.length && pillows.length < mats.length * cfg.addon.guanciali_per_materasso) {
+        const pub = idx.publicProducts('guanciale');
+        const order = cfg.addon.consigliati.map((slug) => pub.find((p) => p.slug === slug)).filter(Boolean);
+        for (const p of [...order, ...pub.filter((x) => !order.includes(x))].slice(0, 2)) {
+            const v = idx.purchasableVariants(p)[0];
+            if (!v || inCart.has(v.id))
+                continue;
+            const save = trial(v, 2);
+            if (save > 0)
+                out.push({ type: 'add_guanciali', product: p, variant: v, size: null, qty: 2, save_cents: save });
+        }
+    }
     // materassi senza rete della loro misura
     const retiLeft = reti.map((r) => r.size);
     for (const m of mats) {
@@ -264,7 +303,7 @@ export function offerHints(idx, lines, cfg, max = 2) {
             continue;
         const save = trial(best.v);
         if (save > 0)
-            out.push({ type: 'add_rete', product: best.p, variant: best.v, size: m.size, save_cents: save });
+            out.push({ type: 'add_rete', product: best.p, variant: best.v, size: m.size, qty: 1, save_cents: save });
     }
     // letti completi senza topper della stessa misura
     if (now.sets > 0 && cfg.addon && cfg.addon.pct.topper > 0) {
@@ -279,7 +318,7 @@ export function offerHints(idx, lines, cfg, max = 2) {
                     continue;
                 const save = trial(v);
                 if (save > 0)
-                    out.push({ type: 'add_topper', product: p, variant: v, size, save_cents: save });
+                    out.push({ type: 'add_topper', product: p, variant: v, size, qty: 1, save_cents: save });
                 break;
             }
         }
@@ -323,7 +362,14 @@ export function quoteBundle(idx, b, size, opts = {}, cfg = catalogOfferConfig(id
         return [{ item, product, kind: idx.kind(product), variant, included }];
     });
     const inc = lines.filter((l) => l.included);
-    const available = inc.length > 0 && inc.every((l) => l.variant && idx.isProductPurchasable(l.product));
+    // una vetrina è almeno due pezzi: se un pezzo obbligatorio manca dal catalogo (per esempio
+    // un guanciale non ancora in vendita) la vetrina non si mostra, invece di diventare un pezzo solo
+    const required = bundleItemsOf(idx, b).filter((i) => !i.optional);
+    const reqOk = required.length >= 2 && required.every((i) => lines.some((l) => l.item.id === i.id));
+    // un pezzo facoltativo non in vendita semplicemente non si propone
+    const shown = lines.filter((l) => !l.item.optional || (l.variant && idx.isProductPurchasable(l.product)));
+    lines.splice(0, lines.length, ...shown);
+    const available = reqOk && inc.length > 0 && inc.every((l) => l.variant && idx.isProductPurchasable(l.product));
     const price = priceCart(idx, available ? inc.map((l) => ({ variant_id: l.variant.id, qty: l.item.qty })) : [], cfg);
     const mat = lines.find((l) => l.kind === 'materasso');
     return { size, height: mat?.variant?.height_cm ?? null, lines, available, price };

@@ -44,7 +44,8 @@ const TODAY = new Date().toISOString().slice(0, 10);
 const SUPABASE = (() => {
   const src = fs.readFileSync(path.join(SRC, 'js/config.js'), 'utf8');
   const get = (k) => (new RegExp(`${k}:\\s*'([^']*)'`).exec(src) ?? [])[1] ?? '';
-  return { url: get('supabaseUrl'), key: get('supabaseKey'), bucket: get('supabaseBucket') || 'product-media' };
+  const flag = (k) => new RegExp(`${k}:\\s*true`).test(src);
+  return { url: get('supabaseUrl'), key: get('supabaseKey'), bucket: get('supabaseBucket') || 'product-media', mapsQuery: get('mapsQuery'), reviews: flag('reviews') };
 })();
 
 // ------------------------------------------------------------------ file statici
@@ -58,7 +59,7 @@ execFileSync('python3', ['-I', path.join(ROOT, 'scripts/bundle.py'), path.join(S
 fs.writeFileSync(
   path.join(OUT, 'js/config.js'),
   `// Sito pubblico: indirizzi veri e indicizzazione attiva.\n// La chiave Supabase è quella pubblicabile: sta nel browser per progetto, e a decidere\n// che cosa si legge sono le policy RLS. La service role non è in nessun file.\nwindow.VS_CONFIG = ${JSON.stringify(
-    { preview: false, routing: 'path', siteUrl: SITE, whatsappNumber: '', mapEmbed: false, supabaseUrl: SUPABASE.url, supabaseKey: SUPABASE.key, supabaseBucket: SUPABASE.bucket },
+    { preview: false, routing: 'path', siteUrl: SITE, whatsappNumber: '', mapsQuery: SUPABASE.mapsQuery, reviews: SUPABASE.reviews, supabaseUrl: SUPABASE.url, supabaseKey: SUPABASE.key, supabaseBucket: SUPABASE.bucket },
     null,
     1,
   )};\n`,

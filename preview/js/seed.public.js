@@ -2865,14 +2865,18 @@ export const SEED = {
    "label": "Vantaggio accessori",
    "sort": 3,
    "status": "active",
-   "description": "Topper della stessa misura, e guanciali, insieme a un letto completo.",
+   "description": "Guanciali insieme a un materasso; topper della stessa misura di un letto completo.",
    "params": {
     "pct": {
      "topper": 10,
-     "guanciale": 10
+     "guanciale": 15
     },
-    "guanciali_per_letto": 2,
-    "round_eur": 1
+    "guanciali_per_materasso": 2,
+    "round_eur": 1,
+    "consigliati": [
+     "guanciale-memory-flakes",
+     "guanciale-memory-classic"
+    ]
    },
    "starts_at": null,
    "ends_at": null
@@ -2890,6 +2894,20 @@ export const SEED = {
      "pocket": 8
     },
     "round_eur": 5
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "b1977561-5e18-5859-a153-9f006adad759",
+   "code": "coppia-guanciali",
+   "label": "Vantaggio coppia di guanciali",
+   "sort": 5,
+   "status": "active",
+   "description": "Due guanciali uguali nello stesso ordine, anche senza materasso.",
+   "params": {
+    "pct": 10,
+    "round_eur": 1
    },
    "starts_at": null,
    "ends_at": null
@@ -2920,7 +2938,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 1
+   "sort": 3
   },
   {
    "id": "35f250db-e566-53ae-9383-fb2ad0883489",
@@ -2933,7 +2951,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 2
+   "sort": 4
   },
   {
    "id": "734b3556-03ae-5d6a-a771-4812d31353bc",
@@ -2946,7 +2964,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 3
+   "sort": 5
   },
   {
    "id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
@@ -2959,7 +2977,7 @@ export const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 4
+   "sort": 6
   },
   {
    "id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
@@ -2977,7 +2995,7 @@ export const SEED = {
    ],
    "default_size": "80x190",
    "status": "published",
-   "sort": 5
+   "sort": 7
   }
  ],
  "bundle_items": [

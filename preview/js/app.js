@@ -261,7 +261,7 @@ async function dispatch(cur) {
     [P.sizes]: viewSizes,
     [P.quote]: () => viewQuote(query),
     [P.showroom]: viewShowroom,
-    [P.cart]: viewCart,
+    [P.cart]: () => viewCart(query),
     [P.review]: viewReview,
     [P.search]: () => viewSearch(query.q || ''),
     [P.offers]: viewOffers,
@@ -474,9 +474,72 @@ function showroomHtml(compact = false) {
         <path d="M250 300 C270 230 300 215 330 170 C350 150 370 160 400 140" fill="none" stroke="#c8785b" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
       </svg>
       <span class="pin-dot" aria-hidden="true"></span>
-      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 0"><strong>Via Raffaele Salierno 38, Casoria</strong></p></div>
+      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 0"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
+        <button class="btn btn--ghost btn--sm map-load" data-act="map-load">Mostra la mappa interattiva</button>
+        <p class="small muted map-note">Si carica Google Maps: Google riceve il tuo indirizzo IP e può usare cookie.</p></div>
     </div></div>
-  </div>`;
+  </div>
+  ${reviewsSlot()}`;
+}
+
+// ---------------------------------------------------------------- MAPPA E RECENSIONI
+// La mappa di Google si carica solo quando la chiedi (prima nessuna connessione a Google):
+// è il modo per mostrarla senza banner dei cookie. Vale per la visita in corso.
+const MAP_QUERY = CFG.mapsQuery || 'Via Raffaele Salierno 38, 80026 Casoria NA';
+function mapIframe() {
+  return `<iframe class="map-frame" title="Mappa: Vesuvio Sleep, Via Raffaele Salierno 38, Casoria" src="https://maps.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&hl=it&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+}
+function loadMap(card) {
+  if (!card) return;
+  card.classList.add('is-live');
+  card.innerHTML = mapIframe() + `<a class="map-open small" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}" target="_blank" rel="noopener">Apri in Google Maps</a>`;
+  try {
+    sessionStorage.setItem('vs-map-ok', '1');
+  } catch {
+    /* ignora */
+  }
+}
+/** Dopo il disegno: se in questa visita la mappa è già stata chiesta, si carica da sola. */
+function afterShowroom() {
+  let ok = false;
+  try {
+    ok = sessionStorage.getItem('vs-map-ok') === '1';
+  } catch {
+    /* ignora */
+  }
+  if (ok) $$('.map-card').forEach(loadMap);
+  loadReviews();
+}
+
+// Recensioni di Google. Le legge una funzione del nostro database (supabase/functions/google-reviews)
+// con la chiave API, che non sta mai nel browser; il browser non si collega a Google. Si mostrano
+// tutte quelle che Google restituisce, nel suo ordine, con voto medio e numero totale: nessuna scelta
+// nostra. Finché la funzione non è configurata la sezione non compare.
+let reviewsCache = null;
+function reviewsSlot() {
+  return CFG.reviews ? '<section class="reviews" id="g-reviews" aria-labelledby="rev-t" hidden></section>' : '';
+}
+async function loadReviews() {
+  const el = $('#g-reviews');
+  if (!el || !CFG.reviews || !CFG.supabaseUrl) return;
+  try {
+    reviewsCache ??= await Promise.race([
+      fetch(`${String(CFG.supabaseUrl).replace(/\/$/, '')}/functions/v1/google-reviews`, { headers: { apikey: CFG.supabaseKey, Authorization: `Bearer ${CFG.supabaseKey}` } }).then((r) => (r.ok ? r.json() : null)),
+      new Promise((res) => setTimeout(() => res(null), 4000)),
+    ]);
+  } catch {
+    reviewsCache = null;
+  }
+  const d = reviewsCache;
+  if (!d?.configured || !d.count || !$('#g-reviews')) return;
+  const stars = (n) => `<span class="stars" aria-label="${n} su 5">${'★'.repeat(Math.round(n))}${'☆'.repeat(5 - Math.round(n))}</span>`;
+  el.innerHTML = `<div class="reviews__head"><h2 id="rev-t">Cosa dicono di noi su Google</h2>
+      <p class="reviews__score"><strong>${String(d.rating ?? '').replace('.', ',')}</strong> ${stars(d.rating ?? 0)} <span class="muted">${d.count} recensioni</span></p></div>
+    <ul class="reviews__list">${(d.reviews ?? [])
+      .map((r) => `<li class="review"><p class="review__meta">${stars(r.rating)} <span class="muted small">${esc(r.when)}</span></p><p class="review__text">${esc(r.text)}</p><p class="small"><strong>${r.authorUri ? `<a href="${esc(r.authorUri)}" target="_blank" rel="noopener">${esc(r.author)}</a>` : esc(r.author)}</strong></p></li>`)
+      .join('')}</ul>
+    <p class="small muted">Recensioni pubblicate su Google: le mostriamo come le restituisce Google, senza selezionarle. ${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Leggile tutte su Google Maps</a>` : ''}</p>`;
+  el.hidden = false;
 }
 
 function viewHome() {
@@ -580,6 +643,7 @@ function viewHome() {
   tiltCards(app);
   requestAnimationFrame(moveThumb);
   bindLab();
+  afterShowroom();
 }
 function heroSlides() {
   return HERO_SLIDES.map((key) => {
@@ -931,6 +995,7 @@ function renderBuy(idx, p) {
     </div>
     <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
     ${ok && kind === 'materasso' ? bedPanelHtml(idx, p, v, sel.qty) : ''}
+    ${ok && kind === 'guanciale' ? pairPanelHtml(idx, v) : ''}
     <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
     <div class="buy__extra">
       <a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
@@ -1271,14 +1336,19 @@ function togetherHtml(pr, { size = '', big = false } = {}) {
 }
 /** Il letto composto: la rete sotto, il materasso appoggiato sopra, il topper come etichetta. */
 function bedVisual(idx, lines, { sizes = '(max-width: 700px) 80vw, 30vw', eager = false } = {}) {
-  const pick = (k) => lines.find((l) => l.kind === k && l.included !== false)?.product;
-  const mat = pick('materasso');
-  const rete = pick('rete');
-  const top = pick('topper');
-  return `<div class="bedvis${rete ? '' : ' bedvis--solo'}" aria-hidden="true">
-    ${rete ? `<div class="bedvis__rete">${coverHtml(idx, rete, { sizes, eager })}</div>` : ''}
+  const pick = (k) => lines.find((l) => l.kind === k && l.included !== false);
+  const mat = pick('materasso')?.product;
+  const pil = pick('guanciale');
+  const rete = pick('rete')?.product;
+  const top = pick('topper')?.product;
+  // nel riquadro piccolo va il pezzo che conta di più: i guanciali, se ci sono, altrimenti la rete
+  const inset = pil?.product ?? rete;
+  const qty = (l) => l?.qty ?? l?.item?.qty ?? 1;
+  const chips = [pil && rete ? shortName(rete) : null, top ? shortName(top) : null].filter(Boolean);
+  return `<div class="bedvis${inset ? '' : ' bedvis--solo'}" aria-hidden="true">
+    ${inset ? `<div class="bedvis__rete${pil ? ' bedvis__rete--pillow' : ''}">${coverHtml(idx, inset, { sizes, eager })}${pil && qty(pil) > 1 ? `<span class="bedvis__qty">× ${qty(pil)}</span>` : ''}</div>` : ''}
     ${mat ? `<div class="bedvis__mat">${coverHtml(idx, mat, { sizes, eager })}</div>` : ''}
-    ${top ? `<span class="bedvis__plus">+ ${esc(shortName(top))}</span>` : ''}
+    ${chips.length ? `<span class="bedvis__plus">+ ${chips.map(esc).join(' + ')}</span>` : ''}
   </div>`;
 }
 function bundleQuoteFor(idx, b) {
@@ -1292,7 +1362,7 @@ function bundleCard(idx, b, { wide = false, d = 0 } = {}) {
   if (!q) return '';
   const inc = q.lines.filter((l) => l.included);
   const opt = q.lines.filter((l) => !l.included);
-  const parts = inc.map((l) => `${shortName(l.product)}${l.kind === 'materasso' && l.variant?.height_cm ? ' H' + l.variant.height_cm : ''}`);
+  const parts = inc.map((l) => `${l.item.qty > 1 ? l.item.qty + ' × ' : ''}${l.kind === 'guanciale' ? 'guanciali ' : ''}${shortName(l.product)}${l.kind === 'materasso' && l.variant?.height_cm ? ' H' + l.variant.height_cm : ''}`);
   return `<article class="bcard bcard--${esc(b.theme)}${wide ? ' bcard--wide' : ''} rv" style="--d:${d}" data-bundle="${esc(b.slug)}">
     <div class="bcard__vis">${bedVisual(idx, q.lines, { sizes: wide ? '(max-width: 860px) 92vw, 50vw' : '(max-width: 700px) 92vw, 30vw' })}${saveTag(q.price.discount_cents)}</div>
     <div class="bcard__body">
@@ -1321,7 +1391,9 @@ function rulesHtml(cfg) {
     rows.push(['Letto completo', `Materasso e rete della stessa misura nello stesso ordine: −${cfg.set.pct.foam} % con un materasso in schiuma (Eco, Memory), −${cfg.set.pct.pocket} % con un materasso a molle (Pocket), sul totale dei due. Arrotondato ai ${cfg.set.round_eur} €.`]);
   if (cfg.tiers.length)
     rows.push(['Più letti', cfg.tiers.map((t) => `da ${t.min_sets} letti completi −${t.pct} %`).join(', ') + ' su tutti i letti dell\'ordine. Dieci o più? Ti facciamo un preventivo.']);
-  if (cfg.addon) rows.push(['Accessori', `Il topper della stessa misura di un letto completo costa il ${cfg.addon.pct.topper} % in meno.`]);
+  if (cfg.addon && cfg.addon.pct.guanciale) rows.push(['Guanciali', `Con ogni materasso, fino a ${cfg.addon.guanciali_per_materasso} guanciali costano il ${cfg.addon.pct.guanciale} % in meno, anche se non cambi la rete.`]);
+  if (cfg.pillowPair?.pct) rows.push(['Coppia di guanciali', `Due guanciali uguali nello stesso ordine, anche senza materasso: −${cfg.pillowPair.pct} % sulla coppia.`]);
+  if (cfg.addon && cfg.addon.pct.topper) rows.push(['Topper', `Il topper della stessa misura di un letto completo costa il ${cfg.addon.pct.topper} % in meno.`]);
   if (cfg.pair) rows.push(['Per due', `Due materassi uguali nello stesso ordine, anche senza rete: −${cfg.pair.pct.foam} % (schiuma) o −${cfg.pair.pct.pocket} % (molle) sui due.`]);
   rows.push(['Regole', `Su ogni articolo vale un solo vantaggio. Lo sconto complessivo di un carrello non supera il ${cfg.cap_pct} %. Il vantaggio si vede nel carrello e nel riepilogo, e viene ricontrollato quando invii la richiesta.`]);
   rows.push(['Se restituisci una parte', 'Il vantaggio è diviso tra i pezzi in proporzione al prezzo. Se eserciti il recesso su un pezzo ti rimborsiamo quanto hai pagato per quel pezzo; sui pezzi che tieni il vantaggio resta tuo.']);
@@ -1341,7 +1413,7 @@ function bundlesSectionHtml(idx, { title = 'Letti completi', lead = '', id = 'bu
 // ---------- pagina /offerte/: vetrine, Componi il tuo letto, regole
 function builderState(idx) {
   const mats = idx.publicProducts('materasso').filter((p) => p.bundle_family);
-  const b = (state.builder ??= { size: '160x190', model: null, height: null, rete: null, topper: false, beds: 1 });
+  const b = (state.builder ??= { size: '160x190', model: null, height: null, rete: null, topper: false, beds: 1, pillow: null });
   if (!mats.some((p) => p.id === b.model)) b.model = mats.find((p) => p.slug === 'memory-duo')?.id ?? mats[0]?.id ?? null;
   const mat = b.model && idx.products.get(b.model);
   if (mat) {
@@ -1367,6 +1439,8 @@ function builderLines(idx) {
     const tv = tp && idx.cheapestAtSize(tp, b.size);
     if (tv) lines.push({ kind: 'topper', product: tp, variant: tv, qty: b.beds });
   }
+  const pil = pillowOptions(idx, offerCfg(idx)).find((x) => x.p.id === b.pillow);
+  if (pil) lines.push({ kind: 'guanciale', product: pil.p, variant: pil.v, qty: 2 * b.beds });
   return lines;
 }
 function builderHtml(idx) {
@@ -1379,6 +1453,7 @@ function builderHtml(idx) {
   const tp = idx.publicProducts('topper')[0];
   const tv = tp && idx.cheapestAtSize(tp, b.size);
   const quoteFrom = offerCfg(idx)?.tiers.length ? 10 : 0;
+  const hasPil = pillowOptions(idx, offerCfg(idx)).length > 0;
   return `<div class="builder__grid">
     <div class="builder__steps">
       <fieldset class="opt"><legend><span class="builder__n">1</span> Misura</legend><div class="seg">${sizes
@@ -1392,11 +1467,19 @@ function builderHtml(idx) {
         .join('')}</div>
         ${heights.length > 1 ? `<div class="seg seg--h" role="group" aria-label="Altezza">${heights.map((h) => `<input type="radio" name="bd-h" id="bd-h${h}" value="${h}" data-act="bd" data-k="height" ${b.height === h ? 'checked' : ''}><label for="bd-h${h}">H${h}</label>`).join('')}</div>` : ''}
       </fieldset>
-      <fieldset class="opt"><legend><span class="builder__n">3</span> Rete</legend><div class="bd-models bd-models--row">
+      ${(() => {
+        const pills = pillowOptions(idx, offerCfg(idx));
+        if (!pills.length) return '';
+        return `<fieldset class="opt"><legend><span class="builder__n">3</span> Guanciali</legend><div class="bd-models bd-models--row">
+          ${pills.map((x) => `<div><input type="radio" name="bd-pil" id="bd-p${x.p.id}" value="${x.p.id}" data-act="bd" data-k="pillow" ${b.pillow === x.p.id ? 'checked' : ''}><label for="bd-p${x.p.id}"><strong>2 × ${esc(shortName(x.p))}</strong><em>${formatCents(x.v.price_cents)} l'uno</em></label></div>`).join('')}
+          <div><input type="radio" name="bd-pil" id="bd-pnone" value="none" data-act="bd" data-k="pillow" ${!pills.some((x) => x.p.id === b.pillow) ? 'checked' : ''}><label for="bd-pnone"><strong>Niente guanciali</strong><em>li ho già</em></label></div>
+        </div></fieldset>`;
+      })()}
+      <fieldset class="opt"><legend><span class="builder__n">${hasPil ? 4 : 3}</span> Rete</legend><div class="bd-models bd-models--row">
         ${reti.map((r) => `<div><input type="radio" name="bd-rete" id="bd-r${r.p.id}" value="${r.p.id}" data-act="bd" data-k="rete" ${b.rete === r.p.id ? 'checked' : ''}><label for="bd-r${r.p.id}"><strong>${esc(shortName(r.p))}</strong><em>${formatCents(r.v.price_cents)}</em></label></div>`).join('')}
         <div><input type="radio" name="bd-rete" id="bd-rnone" value="none" data-act="bd" data-k="rete" ${b.rete === 'none' ? 'checked' : ''}><label for="bd-rnone"><strong>Ho già la rete</strong><em>solo materasso</em></label></div>
       </div></fieldset>
-      <fieldset class="opt"><legend><span class="builder__n">4</span> Completa</legend>
+      <fieldset class="opt"><legend><span class="builder__n">${hasPil ? 5 : 4}</span> Completa</legend>
         ${tv ? `<label class="check-row"><input type="checkbox" data-act="bd" data-k="topper" ${b.topper ? 'checked' : ''}> <span><strong>${esc(tp.name)}</strong> ${formatSize(b.size)}, ${formatCents(tv.price_cents)}${offerCfg(idx)?.addon ? ` <small>· −${offerCfg(idx).addon.pct.topper} % con il letto completo</small>` : ''}</span></label>` : ''}
         <div class="bd-beds"><span>Quanti letti?</span><div class="qty" role="group" aria-label="Numero di letti"><button type="button" data-act="bd-beds" data-d="-1" aria-label="Un letto in meno">${icon('minus', 18)}</button><output aria-live="polite">${b.beds}</output><button type="button" data-act="bd-beds" data-d="1" aria-label="Un letto in più" ${b.beds >= 9 ? 'disabled' : ''}>${icon('plus', 18)}</button></div>
         ${quoteFrom ? `<small>Da ${quoteFrom} letti in su: <a href="${u(P.quote)}">preventivo per strutture</a></small>` : ''}</div>
@@ -1524,16 +1607,43 @@ function bedPanelHtml(idx, p, v, qty) {
   const pick = (state.bedRete ??= {})[p.id];
   const cur = opts.find((o) => o.p.id === pick) ?? opts[0];
   const bundle = publicBundles(idx).find((b) => bundleMattress(idx, b)?.id === p.id);
+  const pills = pillowOptions(idx, cfg).map((x) => ({ ...x, save: priceCart(idx, [{ variant_id: v.id, qty }, { variant_id: x.v.id, qty: 2 * qty }], cfg).discount_cents }));
   return `<section class="bedpanel" aria-labelledby="bed-t">
-    <div class="bedpanel__head"><h2 id="bed-t">Completa il letto</h2>${saveTag(cur.pr.discount_cents)}</div>
+    <div class="bedpanel__head"><h2 id="bed-t">Completa il letto</h2>${saveTag(Math.max(cur.pr.discount_cents, ...pills.map((x) => x.save)))}</div>
+    ${pills.length ? `<p class="small"><strong>Due guanciali</strong>, uno per lato: con il materasso costano meno, anche se non cambi la rete.</p>
+    <div class="bedpanel__opts">${pills
+      .map((x) => `<div class="bedopt bedopt--btn"><span class="bedopt__img">${coverHtml(idx, x.p, { sizes: '72px' })}</span><span class="bedopt__txt"><strong>${2 * qty} × ${esc(shortName(x.p))}</strong><small>${formatCents(x.v.price_cents)} l'uno</small></span>${x.save ? `<span class="bedopt__save">−${formatCents(x.save)}</span>` : '<span></span>'}<button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(x.v.id)}" data-q="${2 * qty}">Aggiungi</button></div>`)
+      .join('')}</div>
+    <p class="small"><strong>Cambi anche la rete?</strong></p>` : ''}
     <p class="small">Con la rete ${formatSize(v.size)} il materasso e la rete costano meno insieme che separati.</p>
     <div class="bedpanel__opts" role="radiogroup" aria-label="Rete">${opts
       .map((o) => `<label class="bedopt"><input type="radio" name="bed-rete" value="${esc(o.p.id)}" data-act="bed-rete" ${o === cur ? 'checked' : ''}><span class="bedopt__img">${coverHtml(idx, o.p, { sizes: '72px' })}</span><span class="bedopt__txt"><strong>${esc(shortName(o.p))}</strong><small>${formatCents(o.v.price_cents)}</small></span>${o.pr.discount_cents ? `<span class="bedopt__save">−${formatCents(o.pr.discount_cents)}</span>` : ''}</label>`)
       .join('')}</div>
     ${togetherHtml(cur.pr, { size: v.size })}
     <button class="btn btn--accent" style="width:100%" data-act="add-bed" data-m="${esc(v.id)}" data-r="${esc(cur.v.id)}" data-q="${qty}">Aggiungi materasso e rete${qty > 1 ? ` (${qty} letti)` : ''}</button>
-    ${bundle ? `<a class="small" href="${u(bundlePath(bundle))}">Vedi il ${esc(bundle.name)}, anche con il topper</a>` : `<a class="small" href="${u(P.offers + '#componi')}">Componi il letto con il topper</a>`}
+    ${bundle ? `<a class="small" href="${u(bundlePath(bundle))}">Vedi il ${esc(bundle.name)}</a>` : `<a class="small" href="${u(P.offers + '#componi')}">Componi il letto con il topper</a>`}
   </section>`;
+}
+
+/** Scheda guanciale: la coppia, con il vantaggio calcolato. */
+function pairPanelHtml(idx, v) {
+  const cfg = offerCfg(idx);
+  if (!cfg?.pillowPair?.pct) return '';
+  const pr = priceCart(idx, [{ variant_id: v.id, qty: 2 }], cfg);
+  if (!pr.discount_cents) return '';
+  return `<section class="bedpanel" aria-labelledby="pair-t2">
+    <div class="bedpanel__head"><h2 id="pair-t2">Prendine due</h2>${saveTag(pr.discount_cents)}</div>
+    <p class="small">Uno per lato del letto: due guanciali uguali costano meno. Con un materasso nello stesso ordine il vantaggio è più alto.</p>
+    ${togetherHtml(pr)}
+    <button class="btn btn--accent" style="width:100%" data-act="add-variant" data-id="${esc(v.id)}" data-q="2">Aggiungi la coppia</button>
+  </section>`;
+}
+/** Guanciali consigliati in vendita (Memory Flakes e Memory Classic per primi). */
+function pillowOptions(idx, cfg) {
+  if (!cfg?.addon?.pct.guanciale) return [];
+  const pub = idx.publicProducts('guanciale');
+  const order = cfg.addon.consigliati.map((slug) => pub.find((p) => p.slug === slug)).filter(Boolean);
+  return order.map((p) => ({ p, v: idx.purchasableVariants(p)[0] })).filter((x) => x.v);
 }
 
 // ---------- carrello e riepilogo: vantaggi, "Aggiungi" e "Sali di gamma"
@@ -1573,10 +1683,10 @@ function cartOffersHtml(idx, v, { where = 'cart' } = {}) {
     ${hints
       .map((h) => `<div class="hint">
         <div class="hint__img">${coverHtml(idx, h.product, { sizes: '72px' })}</div>
-        <div class="hint__txt"><strong>${h.type === 'add_rete' ? `Aggiungi la ${esc(shortName(h.product))} ${formatSize(h.size)}` : `Aggiungi il ${esc(shortName(h.product))} ${formatSize(h.size)}`}</strong>
-          <small>${formatCents(h.variant.price_cents)} · ${h.type === 'add_rete' ? 'stessa misura del materasso: insieme diventano un letto completo' : 'stessa misura del tuo letto completo'}</small></div>
+        <div class="hint__txt"><strong>${h.type === 'add_guanciali' ? `Aggiungi ${h.qty} guanciali ${esc(shortName(h.product))}` : h.type === 'add_rete' ? `Aggiungi la ${esc(shortName(h.product))} ${formatSize(h.size)}` : `Aggiungi il ${esc(shortName(h.product))} ${formatSize(h.size)}`}</strong>
+          <small>${h.qty > 1 ? `${h.qty} × ` : ''}${formatCents(h.variant.price_cents)} · ${h.type === 'add_guanciali' ? 'uno per lato del letto, con il vantaggio del materasso' : h.type === 'add_rete' ? 'stessa misura del materasso: insieme diventano un letto completo' : 'stessa misura del tuo letto completo'}</small></div>
         ${saveTag(h.save_cents)}
-        <button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(h.variant.id)}">Aggiungi</button>
+        <button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(h.variant.id)}" data-q="${h.qty}">Aggiungi</button>
       </div>`)
       .join('')}
     ${up ? `<div class="hint hint--up">
@@ -1595,7 +1705,53 @@ function totalsHtml(v) {
 }
 
 // ---------------------------------------------------------------- CARRELLO
-async function viewCart() {
+// Carrello condivisibile: un link con SKU e quantità (nessun prezzo, nessun dato personale),
+// da mandare a chi decide insieme a te. I prezzi si ricalcolano all'apertura.
+function shareLink() {
+  const idx = catalog();
+  const c = cart.items
+    .map((i) => {
+      const v = idx.variants.get(i.variant_id);
+      return v ? `${v.sku}*${i.qty}` : null;
+    })
+    .filter(Boolean)
+    .join(',');
+  const base = MODE === 'path' ? location.origin : location.href.split('#')[0];
+  return `${base}${u(P.cart)}?c=${encodeURIComponent(c)}`;
+}
+function sharedItems(code) {
+  const idx = catalog();
+  const bySku = new Map([...idx.variants.values()].map((v) => [v.sku, v]));
+  return String(code || '')
+    .split(',')
+    .slice(0, 30)
+    .map((x) => {
+      const [sku, q] = x.split('*');
+      const v = bySku.get(sku);
+      const p = v && idx.products.get(v.product_id);
+      const qty = Math.max(1, Math.min(MAX_QTY, Number(q) || 1));
+      return v && p && idx.purchasableVariants(p).includes(v) ? { variant_id: v.id, qty, seen_price_cents: v.price_cents } : null;
+    })
+    .filter(Boolean);
+}
+async function viewCart(query = {}) {
+  if (query.c) {
+    // si arriva da un carrello condiviso: si chiede che cosa farne, senza toccare il proprio
+    const items = sharedItems(query.c);
+    state.shared = items;
+    const idx0 = catalog();
+    const v0 = await api.validateCart(items.length ? items : []).catch(() => null);
+    setMeta('Carrello condiviso', 'Un carrello Vesuvio Sleep condiviso con te.', [], { noindex: true });
+    app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello condiviso' }], 'Un carrello condiviso con te')}
+      <div class="wrap section--tight">${items.length
+        ? `<p class="lead">Ecco cosa ti hanno mandato. I prezzi sono quelli di oggi${v0?.discount_cents ? `, con i vantaggi già calcolati: <strong>${formatCents(v0.total_cents)}</strong> invece di ${formatCents(v0.subtotal_cents)}` : `: <strong>${formatCents(v0?.total_cents ?? 0)}</strong>`}.</p>
+          <ul class="builder__lines" style="max-width:640px">${(v0?.lines ?? []).filter((l) => l.status === 'ok').map((l) => `<li><span>${l.item.qty > 1 ? l.item.qty + ' × ' : ''}<a href="${href.product(l.product)}">${esc(l.product.name)}</a> <span class="small muted">${[l.variant.size ? formatSize(l.variant.size) : '', l.variant.height_cm && idx0.kind(l.product) === 'materasso' ? 'H' + l.variant.height_cm : ''].filter(Boolean).join(' · ')}</span></span><span>${formatCents(l.unit_cents * l.item.qty)}</span></li>`).join('')}
+            ${(v0?.offers ?? []).map((o) => `<li class="is-save"><span>${esc(o.label)}</span><span>−${formatCents(o.amount_cents)}</span></li>`).join('')}</ul>
+          <div class="btn-row" style="margin-top:20px"><button class="btn btn--primary" data-act="shared-use">Usa questo carrello</button>${cart.items.length ? '<button class="btn btn--ghost" data-act="shared-add">Aggiungilo al mio</button>' : ''}</div>
+          ${cart.items.length ? `<p class="small muted">Nel tuo carrello ci sono già ${cart.count()} articoli: «Usa questo carrello» li sostituisce.</p>` : ''}`
+        : `<div class="empty"><h2>Il link non contiene articoli in vendita</h2><p>Forse un prodotto non è più disponibile. <a href="${u('/materassi/')}">Guarda i materassi</a>.</p></div>`}</div>`;
+    return;
+  }
   const current = freshRender();
   const v = await api.validateCart(cart.items);
   if (!current()) return;
@@ -1627,6 +1783,8 @@ async function viewCart() {
       ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
       <a class="btn btn--primary" style="width:100%" href="${u(P.review)}" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
       <p style="margin:12px 0 0;text-align:center"><a href="${u('/materassi/')}" class="small">Continua a scegliere</a></p>
+      <div class="share-cart"><button class="link-btn small" data-act="share-cart">${icon('copy', 16)} Condividi il carrello</button><span class="small muted">con chi sceglie insieme a te</span></div>
+      <div id="share-out" aria-live="polite"></div>
     </aside>
   </div>`;
 }
@@ -1723,6 +1881,7 @@ function sentNote() {
 function viewShowroom() {
   setMeta(VIEW_SEO[P.showroom].metaTitle, VIEW_SEO[P.showroom].description, [localBusinessJsonLd(abs('/'), { image: absAsset(siteImage('showroom')?.src), logo: absAsset('img/logo.png') }), trail([{ name: 'Home', path: P.home }, { name: 'Showroom', path: P.showroom }]).ld], { image: siteImage('showroom')?.src });
   app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
+  afterShowroom();
 }
 function viewNotFound() {
   setMeta('Pagina non trovata', 'La pagina che cerchi non esiste o è stata spostata.', [], { noindex: true });
@@ -2001,7 +2160,7 @@ document.addEventListener('click', async (e) => {
       const v = idx.variants.get(t.dataset.id);
       const p = v && idx.products.get(v.product_id);
       if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
-      addVariant(v, 1);
+      addVariant(v, Math.max(1, Math.min(MAX_QTY, Number(t.dataset.q) || 1)));
       if (isAt(P.cart)) viewCart();
       if (isAt(P.review)) viewReview();
       break;
@@ -2057,6 +2216,37 @@ document.addEventListener('click', async (e) => {
       viewCart();
       break;
     }
+    case 'share-cart': {
+      const link = shareLink();
+      const msg = `Guarda cosa ho scelto su Vesuvio Sleep: ${link}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Il mio carrello Vesuvio Sleep', url: link });
+          break;
+        } catch {
+          /* annullato: si offrono le alternative */
+        }
+      }
+      const copied = await (navigator.clipboard ? navigator.clipboard.writeText(link).then(() => true, () => false) : Promise.resolve(false));
+      $('#share-out').innerHTML = `<p class="note note--ok small" style="margin-top:10px">${copied ? 'Link copiato.' : 'Copia il link qui sotto.'} <a href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Mandalo su WhatsApp</a></p>${copied ? '' : `<input class="input" readonly value="${esc(link)}" aria-label="Link del carrello">`}`;
+      break;
+    }
+    case 'shared-use':
+    case 'shared-add': {
+      const items = state.shared ?? [];
+      let next = act === 'shared-use' ? [] : cart.items;
+      const idx = catalog();
+      for (const i of items) next = addToCart(next, idx.variants.get(i.variant_id), i.qty);
+      cart.set(next);
+      state.shared = null;
+      toast(act === 'shared-use' ? 'Carrello aggiornato' : 'Articoli aggiunti al tuo carrello');
+      go(P.cart, { replace: true });
+      break;
+    }
+    case 'map-load':
+      loadMap(t.closest('.map-card'));
+      $('.map-card iframe')?.focus();
+      break;
     case 'review-refresh':
       try {
         sessionStorage.removeItem('vs-review');

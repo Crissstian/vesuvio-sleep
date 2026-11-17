@@ -855,3 +855,126 @@
 .wrap.narrow {
   max-width: 900px;
 }
+
+/* guanciali nel riquadro piccolo del letto composto, e righe con pulsante nel pannello */
+.bedvis__rete--pillow {
+  background: var(--paper);
+}
+.bedvis__rete--pillow img {
+  object-fit: contain;
+  padding: 6%;
+}
+.bedvis__qty {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  font: 800 0.9rem var(--f-display);
+  color: var(--lava-ink);
+  background: #fbeee8;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.bedopt--btn {
+  grid-template-columns: 52px 1fr auto auto;
+  cursor: default;
+}
+@media (max-width: 420px) {
+  .bedopt--btn {
+    grid-template-columns: 52px 1fr auto;
+  }
+  .bedopt--btn .btn {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+}
+
+/* ------------------------------------------------------------ mappa su richiesta e recensioni */
+.map-load {
+  margin-top: 12px;
+}
+.map-note {
+  margin: 8px 0 0;
+  max-width: 260px;
+}
+.map-card.is-live {
+  padding: 0;
+  display: block;
+  min-height: 320px;
+}
+.map-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border: 0;
+}
+.map-open {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 14px rgba(14, 52, 68, 0.18);
+}
+.reviews {
+  margin-top: 40px;
+}
+.reviews__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.reviews__head h2 {
+  margin: 0;
+}
+.reviews__score strong {
+  font: 800 1.6rem var(--f-display);
+  color: var(--deep);
+}
+.stars {
+  color: #c98a2b;
+  letter-spacing: 1px;
+}
+.reviews__list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+.review {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+}
+.review__meta,
+.review__text {
+  margin: 0 0 8px;
+}
+.review__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* carrello condivisibile */
+.share-cart {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-strong);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.share-cart .link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

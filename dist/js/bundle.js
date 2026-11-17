@@ -461,10 +461,12 @@ __def("core/offers.js", function (__exp) {
 //  1. letto completo: un materasso con famiglia + una rete della stessa misura.
 //     Si abbinano prima i materassi più cari, ciascuno alla rete più cara libera della sua misura;
 //  2. percentuale del letto = max(percentuale di famiglia, scaglione per numero di letti);
-//  3. accessori: un topper per letto della stessa misura, guanciali fino a N per letto;
+//  3. accessori: un topper per letto completo della stessa misura; guanciali fino a N per
+//     materasso, anche senza rete (i guanciali si comprano più spesso della rete);
 //  4. per due: due materassi uguali rimasti senza rete;
-//  5. tetto: lo sconto totale non supera cap_pct del totale a listino;
-//  6. lo sconto di ogni offerta si divide sui pezzi in proporzione al prezzo (resto maggiore):
+//  5. coppia di guanciali: due guanciali uguali rimasti fuori dalle regole precedenti;
+//  6. tetto: lo sconto totale non supera cap_pct del totale a listino;
+//  7. lo sconto di ogni offerta si divide sui pezzi in proporzione al prezzo (resto maggiore):
 //     è la base dei rimborsi in caso di recesso parziale.
 // Solo numeri interi (centesimi e percentuali intere): niente virgola mobile, niente sorprese.
 /** Tetto usato se la regola "tetto" manca o è in pausa: lo sconto non resta mai senza limite. */
@@ -495,6 +497,7 @@ function offerConfig(rules, enabled, now = new Date()) {
     const tiers = p('letti-multipli');
     const addon = p('accessori');
     const pair = p('per-due');
+    const pillowPair = p('coppia-guanciali');
     const cap = p('tetto');
     const labels = {};
     for (const r of rules)
@@ -507,11 +510,13 @@ function offerConfig(rules, enabled, now = new Date()) {
         addon: addon
             ? {
                 pct: { topper: clampPct(addon.pct?.topper), guanciale: clampPct(addon.pct?.guanciale) },
-                guanciali_per_letto: Math.max(0, num(addon.guanciali_per_letto, 2)),
+                guanciali_per_materasso: Math.max(0, num(addon.guanciali_per_materasso, 2)),
                 round_eur: Math.max(1, num(addon.round_eur, 1)),
+                consigliati: Array.isArray(addon.consigliati) ? addon.consigliati.filter((x) => typeof x === 'string') : [],
             }
             : null,
         pair: pair ? { pct: famPct(pair.pct), round_eur: Math.max(1, num(pair.round_eur, 5)) } : null,
+        pillowPair: pillowPair ? { pct: clampPct(pillowPair.pct), round_eur: Math.max(1, num(pillowPair.round_eur, 1)) } : null,
         cap_pct: cap ? clampPct(cap.pct) : DEFAULT_CAP_PCT,
         labels,
     };
@@ -552,6 +557,7 @@ const DEFAULT_LABELS = {
     'letti-multipli': 'Vantaggio più letti',
     accessori: 'Vantaggio accessori',
     'per-due': 'Vantaggio per due',
+    'coppia-guanciali': 'Vantaggio coppia di guanciali',
 };
 /**
  * Sconto di un carrello. `lines` sono righe GIÀ VALIDE (variante acquistabile, prezzo attuale).
@@ -594,8 +600,9 @@ function priceCart(idx, lines, cfg) {
             const step = cfg.set?.round_eur ?? 5;
             raw.push({ code: tier > base ? 'letti-multipli' : 'letto-completo', pct, size: m.size, amount: pctRounded(m.price + r.price, pct, step), units: [m, r] });
         }
-        // 2. accessori (un topper per letto della stessa misura; guanciali fino a N per letto)
-        if (cfg.addon && sets > 0) {
+        // 2. accessori: un topper per letto completo della stessa misura; guanciali fino a N per
+        //    materasso, con o senza rete
+        if (cfg.addon) {
             const a = cfg.addon;
             const perSize = new Map();
             for (const [m] of pairs)
@@ -608,7 +615,7 @@ function priceCart(idx, lines, cfg) {
                 u.used = true;
                 raw.push({ code: 'accessori', pct: a.pct.topper, size: u.size, amount: pctRounded(u.price, a.pct.topper, a.round_eur), units: [u] });
             }
-            let pillows = sets * a.guanciali_per_letto;
+            let pillows = units.filter((x) => x.kind === 'materasso' && x.family).length * a.guanciali_per_materasso;
             for (const u of units.filter((x) => x.kind === 'guanciale').sort(byPrice)) {
                 if (pillows <= 0 || a.pct.guanciale <= 0)
                     break;
@@ -637,14 +644,32 @@ function priceCart(idx, lines, cfg) {
                 }
             }
         }
-        // 4. tetto
+        // 4. coppia di guanciali: guanciali uguali rimasti liberi, a coppie, nell'ordine del carrello
+        if (cfg.pillowPair && cfg.pillowPair.pct > 0) {
+            const pp = cfg.pillowPair;
+            const groups = new Map();
+            for (const u of units) {
+                if (u.kind !== 'guanciale' || u.used)
+                    continue;
+                const g = groups.get(u.variant_id) ?? [];
+                g.push(u);
+                groups.set(u.variant_id, g);
+            }
+            for (const g of groups.values()) {
+                for (let k = 0; k + 1 < g.length; k += 2) {
+                    g[k].used = g[k + 1].used = true;
+                    raw.push({ code: 'coppia-guanciali', pct: pp.pct, size: null, amount: pctRounded(g[k].price + g[k + 1].price, pp.pct, pp.round_eur), units: [g[k], g[k + 1]] });
+                }
+            }
+        }
+        // 5. tetto
         let discount = raw.reduce((a, o) => a + o.amount, 0);
         const cap = Math.floor((subtotal * cfg.cap_pct) / 100);
         if (discount > cap) {
             for (const o of raw)
                 o.amount = Math.floor((o.amount * cap) / discount);
         }
-        // 5. ripartizione sui pezzi
+        // 6. ripartizione sui pezzi
         for (const o of raw) {
             const parts = spread(o.amount, o.units.map((u) => u.price));
             o.units.forEach((u, k) => (u.disc += parts[k]));
@@ -683,7 +708,7 @@ function summarize(raw, labels) {
  * per ogni letto completo senza topper, il topper della stessa misura. Il risparmio non è
  * stimato: si ricalcola il carrello con il pezzo aggiunto e si guarda la differenza.
  */
-function offerHints(idx, lines, cfg, max = 2) {
+function offerHints(idx, lines, cfg, max = 3) {
     if (!cfg)
         return [];
     const now = priceCart(idx, lines, cfg);
@@ -698,7 +723,21 @@ function offerHints(idx, lines, cfg, max = 2) {
     const mats = kindsInCart('materasso').filter((v) => idx.products.get(v.product_id)?.bundle_family);
     const reti = kindsInCart('rete');
     const toppers = kindsInCart('topper');
-    const trial = (v) => priceCart(idx, [...lines, { variant_id: v.id, qty: 1 }], cfg).discount_cents - now.discount_cents;
+    const trial = (v, qty = 1) => priceCart(idx, [...lines, { variant_id: v.id, qty }], cfg).discount_cents - now.discount_cents;
+    // guanciali per primi: due per materasso, i consigliati nell'ordine scelto dall'admin
+    const pillows = kindsInCart('guanciale');
+    if (cfg.addon && cfg.addon.pct.guanciale > 0 && mats.length && pillows.length < mats.length * cfg.addon.guanciali_per_materasso) {
+        const pub = idx.publicProducts('guanciale');
+        const order = cfg.addon.consigliati.map((slug) => pub.find((p) => p.slug === slug)).filter(Boolean);
+        for (const p of [...order, ...pub.filter((x) => !order.includes(x))].slice(0, 2)) {
+            const v = idx.purchasableVariants(p)[0];
+            if (!v || inCart.has(v.id))
+                continue;
+            const save = trial(v, 2);
+            if (save > 0)
+                out.push({ type: 'add_guanciali', product: p, variant: v, size: null, qty: 2, save_cents: save });
+        }
+    }
     // materassi senza rete della loro misura
     const retiLeft = reti.map((r) => r.size);
     for (const m of mats) {
@@ -716,7 +755,7 @@ function offerHints(idx, lines, cfg, max = 2) {
             continue;
         const save = trial(best.v);
         if (save > 0)
-            out.push({ type: 'add_rete', product: best.p, variant: best.v, size: m.size, save_cents: save });
+            out.push({ type: 'add_rete', product: best.p, variant: best.v, size: m.size, qty: 1, save_cents: save });
     }
     // letti completi senza topper della stessa misura
     if (now.sets > 0 && cfg.addon && cfg.addon.pct.topper > 0) {
@@ -731,7 +770,7 @@ function offerHints(idx, lines, cfg, max = 2) {
                     continue;
                 const save = trial(v);
                 if (save > 0)
-                    out.push({ type: 'add_topper', product: p, variant: v, size, save_cents: save });
+                    out.push({ type: 'add_topper', product: p, variant: v, size, qty: 1, save_cents: save });
                 break;
             }
         }
@@ -775,7 +814,14 @@ function quoteBundle(idx, b, size, opts = {}, cfg = catalogOfferConfig(idx)) {
         return [{ item, product, kind: idx.kind(product), variant, included }];
     });
     const inc = lines.filter((l) => l.included);
-    const available = inc.length > 0 && inc.every((l) => l.variant && idx.isProductPurchasable(l.product));
+    // una vetrina è almeno due pezzi: se un pezzo obbligatorio manca dal catalogo (per esempio
+    // un guanciale non ancora in vendita) la vetrina non si mostra, invece di diventare un pezzo solo
+    const required = bundleItemsOf(idx, b).filter((i) => !i.optional);
+    const reqOk = required.length >= 2 && required.every((i) => lines.some((l) => l.item.id === i.id));
+    // un pezzo facoltativo non in vendita semplicemente non si propone
+    const shown = lines.filter((l) => !l.item.optional || (l.variant && idx.isProductPurchasable(l.product)));
+    lines.splice(0, lines.length, ...shown);
+    const available = reqOk && inc.length > 0 && inc.every((l) => l.variant && idx.isProductPurchasable(l.product));
     const price = priceCart(idx, available ? inc.map((l) => ({ variant_id: l.variant.id, qty: l.item.qty })) : [], cfg);
     const mat = lines.find((l) => l.kind === 'materasso');
     return { size, height: mat?.variant?.height_cm ?? null, lines, available, price };
@@ -1649,7 +1695,9 @@ const PAGES = {
         <p>Non usiamo i tuoi dati per pubblicità, non li vendiamo e non facciamo profilazione. Non prendiamo decisioni basate unicamente su trattamenti automatizzati.</p>`)}
       ${sec('terzi', 'Servizi di terzi', `<p><strong>WhatsApp.</strong> Se scegli di inviare la richiesta su WhatsApp, lasci il nostro sito e usi il servizio di WhatsApp (Meta), che tratta i dati secondo la propria informativa. Puoi sempre scegliere email o telefono.</p>
         <p><strong>Caratteri tipografici.</strong> Il sito carica i caratteri dal servizio Google Fonts: il tuo browser si collega ai server di Google, che ricevono il tuo indirizzo IP.</p>
-        <p><strong>Mappe.</strong> I pulsanti "Indicazioni stradali" aprono Google Maps o Apple Mappe in una nuova pagina: nel nostro sito non c'è nessuna mappa incorporata.</p>
+        <p><strong>Mappe.</strong> La mappa di Google Maps nella pagina dello showroom si carica solo se premi «Mostra la mappa interattiva»: da quel momento, e per la visita in corso, Google riceve il tuo indirizzo IP e può usare cookie secondo la propria informativa. Prima del clic nessun dato arriva a Google. I pulsanti "Indicazioni stradali" aprono Google Maps o Apple Mappe in una nuova pagina.</p>
+        <p><strong>Recensioni.</strong> Se mostriamo le recensioni di Google, le legge il nostro server: il tuo browser non si collega a Google per vederle.</p>
+        <p><strong>Database del sito.</strong> Catalogo, prezzi e richieste stanno su Supabase (Supabase Inc.), che ospita il nostro database: il tuo browser vi si collega per leggere il catalogo e ricontrollare il carrello, e Supabase riceve il tuo indirizzo IP. Agisce come responsabile del trattamento.</p>
         <p>Questi servizi possono trasferire dati fuori dall'Unione Europea, in particolare negli Stati Uniti, sulla base del Data Privacy Framework UE-USA o di clausole contrattuali standard.</p>`)}
       ${sec('destinatari', 'A chi li comunichiamo', `<p>Solo a chi ci serve per fornirti il servizio: corrieri per la consegna, banca per i pagamenti, consulenti fiscali, fornitori tecnici del sito (hosting). Agiscono come responsabili del trattamento o come titolari autonomi. Non diffondiamo i tuoi dati.</p>`)}
       ${sec('conservazione', 'Per quanto tempo', `<p>I dati di ordini e fatture sono conservati per 10 anni, come prevede la legge. Le richieste e i preventivi che non diventano ordini sono conservati per 12 mesi. I dati di navigazione sono conservati per il tempo strettamente necessario alla sicurezza del sito.</p>`)}
@@ -1672,7 +1720,7 @@ const PAGES = {
         <tr><td>vs-review</td><td>Memoria di sessione</td><td>Collega il riepilogo al suo numero di riferimento</td><td>Fino alla chiusura della scheda</td></tr>
         </tbody></table></div>
         <p>Per gli strumenti tecnici non serve il consenso, per questo il sito non mostra un banner. Se in futuro aggiungeremo strumenti di statistica o di marketing, ti chiederemo prima il consenso.</p>`)}
-      ${sec('terzi', 'Servizi esterni', `<p>Il sito carica i caratteri tipografici da Google Fonts, che riceve l'indirizzo IP del tuo browser. I collegamenti a WhatsApp, Google Maps e Apple Mappe aprono servizi esterni, con le loro regole sui cookie. Vedi l'${a(P.privacy, 'informativa sulla privacy')}.</p>`)}
+      ${sec('terzi', 'Servizi esterni', `<p>Il sito carica i caratteri tipografici da Google Fonts, che riceve l'indirizzo IP del tuo browser. La mappa di Google Maps si carica solo se la chiedi con il pulsante, e da quel momento Google può usare i suoi cookie. I collegamenti a WhatsApp, Google Maps e Apple Mappe aprono servizi esterni, con le loro regole sui cookie. Vedi l'${a(P.privacy, 'informativa sulla privacy')}.</p>`)}
       ${sec('gestire', 'Come cancellarli', `<p>Puoi cancellare in qualsiasi momento i dati salvati dal sito dalle impostazioni del browser (cronologia o dati dei siti). In quel caso il carrello si svuota.</p>`)}
       <p class="small muted">Ultimo aggiornamento: ${LEGAL_UPDATED}.</p>`,
   },
@@ -4648,14 +4696,18 @@ const SEED = {
    "label": "Vantaggio accessori",
    "sort": 3,
    "status": "active",
-   "description": "Topper della stessa misura, e guanciali, insieme a un letto completo.",
+   "description": "Guanciali insieme a un materasso; topper della stessa misura di un letto completo.",
    "params": {
     "pct": {
      "topper": 10,
-     "guanciale": 10
+     "guanciale": 15
     },
-    "guanciali_per_letto": 2,
-    "round_eur": 1
+    "guanciali_per_materasso": 2,
+    "round_eur": 1,
+    "consigliati": [
+     "guanciale-memory-flakes",
+     "guanciale-memory-classic"
+    ]
    },
    "starts_at": null,
    "ends_at": null
@@ -4673,6 +4725,20 @@ const SEED = {
      "pocket": 8
     },
     "round_eur": 5
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "b1977561-5e18-5859-a153-9f006adad759",
+   "code": "coppia-guanciali",
+   "label": "Vantaggio coppia di guanciali",
+   "sort": 5,
+   "status": "active",
+   "description": "Due guanciali uguali nello stesso ordine, anche senza materasso.",
+   "params": {
+    "pct": 10,
+    "round_eur": 1
    },
    "starts_at": null,
    "ends_at": null
@@ -4703,7 +4769,7 @@ const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 1
+   "sort": 3
   },
   {
    "id": "35f250db-e566-53ae-9383-fb2ad0883489",
@@ -4716,7 +4782,7 @@ const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 2
+   "sort": 4
   },
   {
    "id": "734b3556-03ae-5d6a-a771-4812d31353bc",
@@ -4729,7 +4795,7 @@ const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 3
+   "sort": 5
   },
   {
    "id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
@@ -4742,7 +4808,7 @@ const SEED = {
    "sizes": null,
    "default_size": "160x190",
    "status": "published",
-   "sort": 4
+   "sort": 6
   },
   {
    "id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
@@ -4760,7 +4826,7 @@ const SEED = {
    ],
    "default_size": "80x190",
    "status": "published",
-   "sort": 5
+   "sort": 7
   }
  ],
  "bundle_items": [
@@ -7368,6 +7434,7 @@ function viewOfferAdmin() {
   const lm = rule('letti-multipli')?.params ?? {};
   const ac = rule('accessori')?.params ?? {};
   const pd = rule('per-due')?.params ?? {};
+  const cg = rule('coppia-guanciali')?.params ?? {};
   const tt = rule('tetto')?.params ?? {};
   const t = lm.tiers ?? [];
   // esempi con le regole salvate (anche a interruttore spento: servono a decidere)
@@ -7405,9 +7472,13 @@ function viewOfferAdmin() {
         <p class="small muted">Vale la percentuale più alta tra questa e quella del letto completo, su ogni letto dell'ordine.</p>
         <div class="adm-filters">${st('letti-multipli')}${num('t1-min', t[0]?.min_sets, 'Da letti', 'letti')}${num('t1-pct', t[0]?.pct, 'Sconto')}${num('t2-min', t[1]?.min_sets, 'Da letti', 'letti')}${num('t2-pct', t[1]?.pct, 'Sconto')}</div>
       </section>
-      <section class="adm-card"><h2 class="adm-h2">Accessori</h2>
-        <p class="small muted">Il topper della stessa misura di un letto completo; i guanciali (fino a ${ac.guanciali_per_letto ?? 2} per letto) quando avranno un prezzo.</p>
-        <div class="adm-filters">${st('accessori')}${num('ac-topper', ac.pct?.topper, 'Topper')}${num('ac-guanciale', ac.pct?.guanciale, 'Guanciali')}</div>
+      <section class="adm-card"><h2 class="adm-h2">Guanciali e topper</h2>
+        <p class="small muted">Guanciali: fino a ${ac.guanciali_per_materasso ?? 2} per materasso, anche senza rete. Proposti per primi: ${esc((ac.consigliati ?? []).map((x) => x.replace('guanciale-', '').replace(/-/g, ' ')).join(', ') || '—')}. Si vedono sul sito solo quando i guanciali hanno un prezzo. Topper: con un letto completo della stessa misura.</p>
+        <div class="adm-filters">${st('accessori')}${num('ac-guanciale', ac.pct?.guanciale, 'Guanciali con materasso')}${num('ac-topper', ac.pct?.topper, 'Topper')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Coppia di guanciali</h2>
+        <p class="small muted">Due guanciali uguali, anche senza materasso.</p>
+        <div class="adm-filters">${st('coppia-guanciali')}${num('cg-pct', cg.pct, 'Sconto sulla coppia')}</div>
       </section>
       <section class="adm-card"><h2 class="adm-h2">Per due</h2>
         <p class="small muted">Due materassi uguali nello stesso ordine, senza rete.</p>
@@ -7454,7 +7525,9 @@ function readOfferForm(f) {
       ],
       quote_from_sets: 10,
     },
-    accessori: { pct: { topper: n('ac-topper', 'Topper'), guanciale: n('ac-guanciale', 'Guanciali') }, guanciali_per_letto: 2, round_eur: 1 },
+    // numero per materasso e guanciali consigliati restano quelli salvati: qui si cambiano solo le percentuali
+    accessori: { ...(db().offers?.find((o) => o.code === 'accessori')?.params ?? {}), pct: { topper: n('ac-topper', 'Topper'), guanciale: n('ac-guanciale', 'Guanciali') } },
+    'coppia-guanciali': { pct: n('cg-pct', 'Coppia di guanciali'), round_eur: 1 },
     'per-due': { pct: { foam: n('pd-foam', 'Per due, schiuma'), pocket: n('pd-pocket', 'Per due, molle') }, round_eur: 5 },
     tetto: { pct: n('tt-pct', 'Tetto') },
   };
@@ -7462,7 +7535,7 @@ function readOfferForm(f) {
   if (!errs.length && b.min_sets <= a.min_sets) errs.push('Il secondo scaglione deve partire da più letti del primo');
   return { errs, params: out, fd };
 }
-const OFFER_FIELDS = { 'letto-completo': ['lc-foam', 'lc-pocket'], 'letti-multipli': ['t1-min', 't1-pct', 't2-min', 't2-pct'], accessori: ['ac-topper', 'ac-guanciale'], 'per-due': ['pd-foam', 'pd-pocket'], tetto: ['tt-pct'] };
+const OFFER_FIELDS = { 'letto-completo': ['lc-foam', 'lc-pocket'], 'letti-multipli': ['t1-min', 't1-pct', 't2-min', 't2-pct'], accessori: ['ac-topper', 'ac-guanciale'], 'per-due': ['pd-foam', 'pd-pocket'], 'coppia-guanciali': ['cg-pct'], tetto: ['tt-pct'] };
 
 // ------------------------------------------------------------- impostazioni
 function viewSettings() {
@@ -8420,7 +8493,7 @@ async function dispatch(cur) {
     [P.sizes]: viewSizes,
     [P.quote]: () => viewQuote(query),
     [P.showroom]: viewShowroom,
-    [P.cart]: viewCart,
+    [P.cart]: () => viewCart(query),
     [P.review]: viewReview,
     [P.search]: () => viewSearch(query.q || ''),
     [P.offers]: viewOffers,
@@ -8633,9 +8706,72 @@ function showroomHtml(compact = false) {
         <path d="M250 300 C270 230 300 215 330 170 C350 150 370 160 400 140" fill="none" stroke="#c8785b" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
       </svg>
       <span class="pin-dot" aria-hidden="true"></span>
-      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 0"><strong>Via Raffaele Salierno 38, Casoria</strong></p></div>
+      <div class="pin" style="margin-top:110px">${icon('pin', 24)}<p style="margin:6px 0 0"><strong>Via Raffaele Salierno 38, Casoria</strong></p>
+        <button class="btn btn--ghost btn--sm map-load" data-act="map-load">Mostra la mappa interattiva</button>
+        <p class="small muted map-note">Si carica Google Maps: Google riceve il tuo indirizzo IP e può usare cookie.</p></div>
     </div></div>
-  </div>`;
+  </div>
+  ${reviewsSlot()}`;
+}
+
+// ---------------------------------------------------------------- MAPPA E RECENSIONI
+// La mappa di Google si carica solo quando la chiedi (prima nessuna connessione a Google):
+// è il modo per mostrarla senza banner dei cookie. Vale per la visita in corso.
+const MAP_QUERY = CFG.mapsQuery || 'Via Raffaele Salierno 38, 80026 Casoria NA';
+function mapIframe() {
+  return `<iframe class="map-frame" title="Mappa: Vesuvio Sleep, Via Raffaele Salierno 38, Casoria" src="https://maps.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&hl=it&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+}
+function loadMap(card) {
+  if (!card) return;
+  card.classList.add('is-live');
+  card.innerHTML = mapIframe() + `<a class="map-open small" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}" target="_blank" rel="noopener">Apri in Google Maps</a>`;
+  try {
+    sessionStorage.setItem('vs-map-ok', '1');
+  } catch {
+    /* ignora */
+  }
+}
+/** Dopo il disegno: se in questa visita la mappa è già stata chiesta, si carica da sola. */
+function afterShowroom() {
+  let ok = false;
+  try {
+    ok = sessionStorage.getItem('vs-map-ok') === '1';
+  } catch {
+    /* ignora */
+  }
+  if (ok) $$('.map-card').forEach(loadMap);
+  loadReviews();
+}
+
+// Recensioni di Google. Le legge una funzione del nostro database (supabase/functions/google-reviews)
+// con la chiave API, che non sta mai nel browser; il browser non si collega a Google. Si mostrano
+// tutte quelle che Google restituisce, nel suo ordine, con voto medio e numero totale: nessuna scelta
+// nostra. Finché la funzione non è configurata la sezione non compare.
+let reviewsCache = null;
+function reviewsSlot() {
+  return CFG.reviews ? '<section class="reviews" id="g-reviews" aria-labelledby="rev-t" hidden></section>' : '';
+}
+async function loadReviews() {
+  const el = $('#g-reviews');
+  if (!el || !CFG.reviews || !CFG.supabaseUrl) return;
+  try {
+    reviewsCache ??= await Promise.race([
+      fetch(`${String(CFG.supabaseUrl).replace(/\/$/, '')}/functions/v1/google-reviews`, { headers: { apikey: CFG.supabaseKey, Authorization: `Bearer ${CFG.supabaseKey}` } }).then((r) => (r.ok ? r.json() : null)),
+      new Promise((res) => setTimeout(() => res(null), 4000)),
+    ]);
+  } catch {
+    reviewsCache = null;
+  }
+  const d = reviewsCache;
+  if (!d?.configured || !d.count || !$('#g-reviews')) return;
+  const stars = (n) => `<span class="stars" aria-label="${n} su 5">${'★'.repeat(Math.round(n))}${'☆'.repeat(5 - Math.round(n))}</span>`;
+  el.innerHTML = `<div class="reviews__head"><h2 id="rev-t">Cosa dicono di noi su Google</h2>
+      <p class="reviews__score"><strong>${String(d.rating ?? '').replace('.', ',')}</strong> ${stars(d.rating ?? 0)} <span class="muted">${d.count} recensioni</span></p></div>
+    <ul class="reviews__list">${(d.reviews ?? [])
+      .map((r) => `<li class="review"><p class="review__meta">${stars(r.rating)} <span class="muted small">${esc(r.when)}</span></p><p class="review__text">${esc(r.text)}</p><p class="small"><strong>${r.authorUri ? `<a href="${esc(r.authorUri)}" target="_blank" rel="noopener">${esc(r.author)}</a>` : esc(r.author)}</strong></p></li>`)
+      .join('')}</ul>
+    <p class="small muted">Recensioni pubblicate su Google: le mostriamo come le restituisce Google, senza selezionarle. ${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Leggile tutte su Google Maps</a>` : ''}</p>`;
+  el.hidden = false;
 }
 
 function viewHome() {
@@ -8739,6 +8875,7 @@ function viewHome() {
   tiltCards(app);
   requestAnimationFrame(moveThumb);
   bindLab();
+  afterShowroom();
 }
 function heroSlides() {
   return HERO_SLIDES.map((key) => {
@@ -9090,6 +9227,7 @@ function renderBuy(idx, p) {
     </div>
     <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
     ${ok && kind === 'materasso' ? bedPanelHtml(idx, p, v, sel.qty) : ''}
+    ${ok && kind === 'guanciale' ? pairPanelHtml(idx, v) : ''}
     <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
     <div class="buy__extra">
       <a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
@@ -9430,14 +9568,19 @@ function togetherHtml(pr, { size = '', big = false } = {}) {
 }
 /** Il letto composto: la rete sotto, il materasso appoggiato sopra, il topper come etichetta. */
 function bedVisual(idx, lines, { sizes = '(max-width: 700px) 80vw, 30vw', eager = false } = {}) {
-  const pick = (k) => lines.find((l) => l.kind === k && l.included !== false)?.product;
-  const mat = pick('materasso');
-  const rete = pick('rete');
-  const top = pick('topper');
-  return `<div class="bedvis${rete ? '' : ' bedvis--solo'}" aria-hidden="true">
-    ${rete ? `<div class="bedvis__rete">${coverHtml(idx, rete, { sizes, eager })}</div>` : ''}
+  const pick = (k) => lines.find((l) => l.kind === k && l.included !== false);
+  const mat = pick('materasso')?.product;
+  const pil = pick('guanciale');
+  const rete = pick('rete')?.product;
+  const top = pick('topper')?.product;
+  // nel riquadro piccolo va il pezzo che conta di più: i guanciali, se ci sono, altrimenti la rete
+  const inset = pil?.product ?? rete;
+  const qty = (l) => l?.qty ?? l?.item?.qty ?? 1;
+  const chips = [pil && rete ? shortName(rete) : null, top ? shortName(top) : null].filter(Boolean);
+  return `<div class="bedvis${inset ? '' : ' bedvis--solo'}" aria-hidden="true">
+    ${inset ? `<div class="bedvis__rete${pil ? ' bedvis__rete--pillow' : ''}">${coverHtml(idx, inset, { sizes, eager })}${pil && qty(pil) > 1 ? `<span class="bedvis__qty">× ${qty(pil)}</span>` : ''}</div>` : ''}
     ${mat ? `<div class="bedvis__mat">${coverHtml(idx, mat, { sizes, eager })}</div>` : ''}
-    ${top ? `<span class="bedvis__plus">+ ${esc(shortName(top))}</span>` : ''}
+    ${chips.length ? `<span class="bedvis__plus">+ ${chips.map(esc).join(' + ')}</span>` : ''}
   </div>`;
 }
 function bundleQuoteFor(idx, b) {
@@ -9451,7 +9594,7 @@ function bundleCard(idx, b, { wide = false, d = 0 } = {}) {
   if (!q) return '';
   const inc = q.lines.filter((l) => l.included);
   const opt = q.lines.filter((l) => !l.included);
-  const parts = inc.map((l) => `${shortName(l.product)}${l.kind === 'materasso' && l.variant?.height_cm ? ' H' + l.variant.height_cm : ''}`);
+  const parts = inc.map((l) => `${l.item.qty > 1 ? l.item.qty + ' × ' : ''}${l.kind === 'guanciale' ? 'guanciali ' : ''}${shortName(l.product)}${l.kind === 'materasso' && l.variant?.height_cm ? ' H' + l.variant.height_cm : ''}`);
   return `<article class="bcard bcard--${esc(b.theme)}${wide ? ' bcard--wide' : ''} rv" style="--d:${d}" data-bundle="${esc(b.slug)}">
     <div class="bcard__vis">${bedVisual(idx, q.lines, { sizes: wide ? '(max-width: 860px) 92vw, 50vw' : '(max-width: 700px) 92vw, 30vw' })}${saveTag(q.price.discount_cents)}</div>
     <div class="bcard__body">
@@ -9480,7 +9623,9 @@ function rulesHtml(cfg) {
     rows.push(['Letto completo', `Materasso e rete della stessa misura nello stesso ordine: −${cfg.set.pct.foam} % con un materasso in schiuma (Eco, Memory), −${cfg.set.pct.pocket} % con un materasso a molle (Pocket), sul totale dei due. Arrotondato ai ${cfg.set.round_eur} €.`]);
   if (cfg.tiers.length)
     rows.push(['Più letti', cfg.tiers.map((t) => `da ${t.min_sets} letti completi −${t.pct} %`).join(', ') + ' su tutti i letti dell\'ordine. Dieci o più? Ti facciamo un preventivo.']);
-  if (cfg.addon) rows.push(['Accessori', `Il topper della stessa misura di un letto completo costa il ${cfg.addon.pct.topper} % in meno.`]);
+  if (cfg.addon && cfg.addon.pct.guanciale) rows.push(['Guanciali', `Con ogni materasso, fino a ${cfg.addon.guanciali_per_materasso} guanciali costano il ${cfg.addon.pct.guanciale} % in meno, anche se non cambi la rete.`]);
+  if (cfg.pillowPair?.pct) rows.push(['Coppia di guanciali', `Due guanciali uguali nello stesso ordine, anche senza materasso: −${cfg.pillowPair.pct} % sulla coppia.`]);
+  if (cfg.addon && cfg.addon.pct.topper) rows.push(['Topper', `Il topper della stessa misura di un letto completo costa il ${cfg.addon.pct.topper} % in meno.`]);
   if (cfg.pair) rows.push(['Per due', `Due materassi uguali nello stesso ordine, anche senza rete: −${cfg.pair.pct.foam} % (schiuma) o −${cfg.pair.pct.pocket} % (molle) sui due.`]);
   rows.push(['Regole', `Su ogni articolo vale un solo vantaggio. Lo sconto complessivo di un carrello non supera il ${cfg.cap_pct} %. Il vantaggio si vede nel carrello e nel riepilogo, e viene ricontrollato quando invii la richiesta.`]);
   rows.push(['Se restituisci una parte', 'Il vantaggio è diviso tra i pezzi in proporzione al prezzo. Se eserciti il recesso su un pezzo ti rimborsiamo quanto hai pagato per quel pezzo; sui pezzi che tieni il vantaggio resta tuo.']);
@@ -9500,7 +9645,7 @@ function bundlesSectionHtml(idx, { title = 'Letti completi', lead = '', id = 'bu
 // ---------- pagina /offerte/: vetrine, Componi il tuo letto, regole
 function builderState(idx) {
   const mats = idx.publicProducts('materasso').filter((p) => p.bundle_family);
-  const b = (state.builder ??= { size: '160x190', model: null, height: null, rete: null, topper: false, beds: 1 });
+  const b = (state.builder ??= { size: '160x190', model: null, height: null, rete: null, topper: false, beds: 1, pillow: null });
   if (!mats.some((p) => p.id === b.model)) b.model = mats.find((p) => p.slug === 'memory-duo')?.id ?? mats[0]?.id ?? null;
   const mat = b.model && idx.products.get(b.model);
   if (mat) {
@@ -9526,6 +9671,8 @@ function builderLines(idx) {
     const tv = tp && idx.cheapestAtSize(tp, b.size);
     if (tv) lines.push({ kind: 'topper', product: tp, variant: tv, qty: b.beds });
   }
+  const pil = pillowOptions(idx, offerCfg(idx)).find((x) => x.p.id === b.pillow);
+  if (pil) lines.push({ kind: 'guanciale', product: pil.p, variant: pil.v, qty: 2 * b.beds });
   return lines;
 }
 function builderHtml(idx) {
@@ -9538,6 +9685,7 @@ function builderHtml(idx) {
   const tp = idx.publicProducts('topper')[0];
   const tv = tp && idx.cheapestAtSize(tp, b.size);
   const quoteFrom = offerCfg(idx)?.tiers.length ? 10 : 0;
+  const hasPil = pillowOptions(idx, offerCfg(idx)).length > 0;
   return `<div class="builder__grid">
     <div class="builder__steps">
       <fieldset class="opt"><legend><span class="builder__n">1</span> Misura</legend><div class="seg">${sizes
@@ -9551,11 +9699,19 @@ function builderHtml(idx) {
         .join('')}</div>
         ${heights.length > 1 ? `<div class="seg seg--h" role="group" aria-label="Altezza">${heights.map((h) => `<input type="radio" name="bd-h" id="bd-h${h}" value="${h}" data-act="bd" data-k="height" ${b.height === h ? 'checked' : ''}><label for="bd-h${h}">H${h}</label>`).join('')}</div>` : ''}
       </fieldset>
-      <fieldset class="opt"><legend><span class="builder__n">3</span> Rete</legend><div class="bd-models bd-models--row">
+      ${(() => {
+        const pills = pillowOptions(idx, offerCfg(idx));
+        if (!pills.length) return '';
+        return `<fieldset class="opt"><legend><span class="builder__n">3</span> Guanciali</legend><div class="bd-models bd-models--row">
+          ${pills.map((x) => `<div><input type="radio" name="bd-pil" id="bd-p${x.p.id}" value="${x.p.id}" data-act="bd" data-k="pillow" ${b.pillow === x.p.id ? 'checked' : ''}><label for="bd-p${x.p.id}"><strong>2 × ${esc(shortName(x.p))}</strong><em>${formatCents(x.v.price_cents)} l'uno</em></label></div>`).join('')}
+          <div><input type="radio" name="bd-pil" id="bd-pnone" value="none" data-act="bd" data-k="pillow" ${!pills.some((x) => x.p.id === b.pillow) ? 'checked' : ''}><label for="bd-pnone"><strong>Niente guanciali</strong><em>li ho già</em></label></div>
+        </div></fieldset>`;
+      })()}
+      <fieldset class="opt"><legend><span class="builder__n">${hasPil ? 4 : 3}</span> Rete</legend><div class="bd-models bd-models--row">
         ${reti.map((r) => `<div><input type="radio" name="bd-rete" id="bd-r${r.p.id}" value="${r.p.id}" data-act="bd" data-k="rete" ${b.rete === r.p.id ? 'checked' : ''}><label for="bd-r${r.p.id}"><strong>${esc(shortName(r.p))}</strong><em>${formatCents(r.v.price_cents)}</em></label></div>`).join('')}
         <div><input type="radio" name="bd-rete" id="bd-rnone" value="none" data-act="bd" data-k="rete" ${b.rete === 'none' ? 'checked' : ''}><label for="bd-rnone"><strong>Ho già la rete</strong><em>solo materasso</em></label></div>
       </div></fieldset>
-      <fieldset class="opt"><legend><span class="builder__n">4</span> Completa</legend>
+      <fieldset class="opt"><legend><span class="builder__n">${hasPil ? 5 : 4}</span> Completa</legend>
         ${tv ? `<label class="check-row"><input type="checkbox" data-act="bd" data-k="topper" ${b.topper ? 'checked' : ''}> <span><strong>${esc(tp.name)}</strong> ${formatSize(b.size)}, ${formatCents(tv.price_cents)}${offerCfg(idx)?.addon ? ` <small>· −${offerCfg(idx).addon.pct.topper} % con il letto completo</small>` : ''}</span></label>` : ''}
         <div class="bd-beds"><span>Quanti letti?</span><div class="qty" role="group" aria-label="Numero di letti"><button type="button" data-act="bd-beds" data-d="-1" aria-label="Un letto in meno">${icon('minus', 18)}</button><output aria-live="polite">${b.beds}</output><button type="button" data-act="bd-beds" data-d="1" aria-label="Un letto in più" ${b.beds >= 9 ? 'disabled' : ''}>${icon('plus', 18)}</button></div>
         ${quoteFrom ? `<small>Da ${quoteFrom} letti in su: <a href="${u(P.quote)}">preventivo per strutture</a></small>` : ''}</div>
@@ -9683,16 +9839,43 @@ function bedPanelHtml(idx, p, v, qty) {
   const pick = (state.bedRete ??= {})[p.id];
   const cur = opts.find((o) => o.p.id === pick) ?? opts[0];
   const bundle = publicBundles(idx).find((b) => bundleMattress(idx, b)?.id === p.id);
+  const pills = pillowOptions(idx, cfg).map((x) => ({ ...x, save: priceCart(idx, [{ variant_id: v.id, qty }, { variant_id: x.v.id, qty: 2 * qty }], cfg).discount_cents }));
   return `<section class="bedpanel" aria-labelledby="bed-t">
-    <div class="bedpanel__head"><h2 id="bed-t">Completa il letto</h2>${saveTag(cur.pr.discount_cents)}</div>
+    <div class="bedpanel__head"><h2 id="bed-t">Completa il letto</h2>${saveTag(Math.max(cur.pr.discount_cents, ...pills.map((x) => x.save)))}</div>
+    ${pills.length ? `<p class="small"><strong>Due guanciali</strong>, uno per lato: con il materasso costano meno, anche se non cambi la rete.</p>
+    <div class="bedpanel__opts">${pills
+      .map((x) => `<div class="bedopt bedopt--btn"><span class="bedopt__img">${coverHtml(idx, x.p, { sizes: '72px' })}</span><span class="bedopt__txt"><strong>${2 * qty} × ${esc(shortName(x.p))}</strong><small>${formatCents(x.v.price_cents)} l'uno</small></span>${x.save ? `<span class="bedopt__save">−${formatCents(x.save)}</span>` : '<span></span>'}<button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(x.v.id)}" data-q="${2 * qty}">Aggiungi</button></div>`)
+      .join('')}</div>
+    <p class="small"><strong>Cambi anche la rete?</strong></p>` : ''}
     <p class="small">Con la rete ${formatSize(v.size)} il materasso e la rete costano meno insieme che separati.</p>
     <div class="bedpanel__opts" role="radiogroup" aria-label="Rete">${opts
       .map((o) => `<label class="bedopt"><input type="radio" name="bed-rete" value="${esc(o.p.id)}" data-act="bed-rete" ${o === cur ? 'checked' : ''}><span class="bedopt__img">${coverHtml(idx, o.p, { sizes: '72px' })}</span><span class="bedopt__txt"><strong>${esc(shortName(o.p))}</strong><small>${formatCents(o.v.price_cents)}</small></span>${o.pr.discount_cents ? `<span class="bedopt__save">−${formatCents(o.pr.discount_cents)}</span>` : ''}</label>`)
       .join('')}</div>
     ${togetherHtml(cur.pr, { size: v.size })}
     <button class="btn btn--accent" style="width:100%" data-act="add-bed" data-m="${esc(v.id)}" data-r="${esc(cur.v.id)}" data-q="${qty}">Aggiungi materasso e rete${qty > 1 ? ` (${qty} letti)` : ''}</button>
-    ${bundle ? `<a class="small" href="${u(bundlePath(bundle))}">Vedi il ${esc(bundle.name)}, anche con il topper</a>` : `<a class="small" href="${u(P.offers + '#componi')}">Componi il letto con il topper</a>`}
+    ${bundle ? `<a class="small" href="${u(bundlePath(bundle))}">Vedi il ${esc(bundle.name)}</a>` : `<a class="small" href="${u(P.offers + '#componi')}">Componi il letto con il topper</a>`}
   </section>`;
+}
+
+/** Scheda guanciale: la coppia, con il vantaggio calcolato. */
+function pairPanelHtml(idx, v) {
+  const cfg = offerCfg(idx);
+  if (!cfg?.pillowPair?.pct) return '';
+  const pr = priceCart(idx, [{ variant_id: v.id, qty: 2 }], cfg);
+  if (!pr.discount_cents) return '';
+  return `<section class="bedpanel" aria-labelledby="pair-t2">
+    <div class="bedpanel__head"><h2 id="pair-t2">Prendine due</h2>${saveTag(pr.discount_cents)}</div>
+    <p class="small">Uno per lato del letto: due guanciali uguali costano meno. Con un materasso nello stesso ordine il vantaggio è più alto.</p>
+    ${togetherHtml(pr)}
+    <button class="btn btn--accent" style="width:100%" data-act="add-variant" data-id="${esc(v.id)}" data-q="2">Aggiungi la coppia</button>
+  </section>`;
+}
+/** Guanciali consigliati in vendita (Memory Flakes e Memory Classic per primi). */
+function pillowOptions(idx, cfg) {
+  if (!cfg?.addon?.pct.guanciale) return [];
+  const pub = idx.publicProducts('guanciale');
+  const order = cfg.addon.consigliati.map((slug) => pub.find((p) => p.slug === slug)).filter(Boolean);
+  return order.map((p) => ({ p, v: idx.purchasableVariants(p)[0] })).filter((x) => x.v);
 }
 
 // ---------- carrello e riepilogo: vantaggi, "Aggiungi" e "Sali di gamma"
@@ -9732,10 +9915,10 @@ function cartOffersHtml(idx, v, { where = 'cart' } = {}) {
     ${hints
       .map((h) => `<div class="hint">
         <div class="hint__img">${coverHtml(idx, h.product, { sizes: '72px' })}</div>
-        <div class="hint__txt"><strong>${h.type === 'add_rete' ? `Aggiungi la ${esc(shortName(h.product))} ${formatSize(h.size)}` : `Aggiungi il ${esc(shortName(h.product))} ${formatSize(h.size)}`}</strong>
-          <small>${formatCents(h.variant.price_cents)} · ${h.type === 'add_rete' ? 'stessa misura del materasso: insieme diventano un letto completo' : 'stessa misura del tuo letto completo'}</small></div>
+        <div class="hint__txt"><strong>${h.type === 'add_guanciali' ? `Aggiungi ${h.qty} guanciali ${esc(shortName(h.product))}` : h.type === 'add_rete' ? `Aggiungi la ${esc(shortName(h.product))} ${formatSize(h.size)}` : `Aggiungi il ${esc(shortName(h.product))} ${formatSize(h.size)}`}</strong>
+          <small>${h.qty > 1 ? `${h.qty} × ` : ''}${formatCents(h.variant.price_cents)} · ${h.type === 'add_guanciali' ? 'uno per lato del letto, con il vantaggio del materasso' : h.type === 'add_rete' ? 'stessa misura del materasso: insieme diventano un letto completo' : 'stessa misura del tuo letto completo'}</small></div>
         ${saveTag(h.save_cents)}
-        <button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(h.variant.id)}">Aggiungi</button>
+        <button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(h.variant.id)}" data-q="${h.qty}">Aggiungi</button>
       </div>`)
       .join('')}
     ${up ? `<div class="hint hint--up">
@@ -9754,7 +9937,53 @@ function totalsHtml(v) {
 }
 
 // ---------------------------------------------------------------- CARRELLO
-async function viewCart() {
+// Carrello condivisibile: un link con SKU e quantità (nessun prezzo, nessun dato personale),
+// da mandare a chi decide insieme a te. I prezzi si ricalcolano all'apertura.
+function shareLink() {
+  const idx = catalog();
+  const c = cart.items
+    .map((i) => {
+      const v = idx.variants.get(i.variant_id);
+      return v ? `${v.sku}*${i.qty}` : null;
+    })
+    .filter(Boolean)
+    .join(',');
+  const base = MODE === 'path' ? location.origin : location.href.split('#')[0];
+  return `${base}${u(P.cart)}?c=${encodeURIComponent(c)}`;
+}
+function sharedItems(code) {
+  const idx = catalog();
+  const bySku = new Map([...idx.variants.values()].map((v) => [v.sku, v]));
+  return String(code || '')
+    .split(',')
+    .slice(0, 30)
+    .map((x) => {
+      const [sku, q] = x.split('*');
+      const v = bySku.get(sku);
+      const p = v && idx.products.get(v.product_id);
+      const qty = Math.max(1, Math.min(MAX_QTY, Number(q) || 1));
+      return v && p && idx.purchasableVariants(p).includes(v) ? { variant_id: v.id, qty, seen_price_cents: v.price_cents } : null;
+    })
+    .filter(Boolean);
+}
+async function viewCart(query = {}) {
+  if (query.c) {
+    // si arriva da un carrello condiviso: si chiede che cosa farne, senza toccare il proprio
+    const items = sharedItems(query.c);
+    state.shared = items;
+    const idx0 = catalog();
+    const v0 = await api.validateCart(items.length ? items : []).catch(() => null);
+    setMeta('Carrello condiviso', 'Un carrello Vesuvio Sleep condiviso con te.', [], { noindex: true });
+    app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Carrello condiviso' }], 'Un carrello condiviso con te')}
+      <div class="wrap section--tight">${items.length
+        ? `<p class="lead">Ecco cosa ti hanno mandato. I prezzi sono quelli di oggi${v0?.discount_cents ? `, con i vantaggi già calcolati: <strong>${formatCents(v0.total_cents)}</strong> invece di ${formatCents(v0.subtotal_cents)}` : `: <strong>${formatCents(v0?.total_cents ?? 0)}</strong>`}.</p>
+          <ul class="builder__lines" style="max-width:640px">${(v0?.lines ?? []).filter((l) => l.status === 'ok').map((l) => `<li><span>${l.item.qty > 1 ? l.item.qty + ' × ' : ''}<a href="${href.product(l.product)}">${esc(l.product.name)}</a> <span class="small muted">${[l.variant.size ? formatSize(l.variant.size) : '', l.variant.height_cm && idx0.kind(l.product) === 'materasso' ? 'H' + l.variant.height_cm : ''].filter(Boolean).join(' · ')}</span></span><span>${formatCents(l.unit_cents * l.item.qty)}</span></li>`).join('')}
+            ${(v0?.offers ?? []).map((o) => `<li class="is-save"><span>${esc(o.label)}</span><span>−${formatCents(o.amount_cents)}</span></li>`).join('')}</ul>
+          <div class="btn-row" style="margin-top:20px"><button class="btn btn--primary" data-act="shared-use">Usa questo carrello</button>${cart.items.length ? '<button class="btn btn--ghost" data-act="shared-add">Aggiungilo al mio</button>' : ''}</div>
+          ${cart.items.length ? `<p class="small muted">Nel tuo carrello ci sono già ${cart.count()} articoli: «Usa questo carrello» li sostituisce.</p>` : ''}`
+        : `<div class="empty"><h2>Il link non contiene articoli in vendita</h2><p>Forse un prodotto non è più disponibile. <a href="${u('/materassi/')}">Guarda i materassi</a>.</p></div>`}</div>`;
+    return;
+  }
   const current = freshRender();
   const v = await api.validateCart(cart.items);
   if (!current()) return;
@@ -9786,6 +10015,8 @@ async function viewCart() {
       ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
       <a class="btn btn--primary" style="width:100%" href="${u(P.review)}" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
       <p style="margin:12px 0 0;text-align:center"><a href="${u('/materassi/')}" class="small">Continua a scegliere</a></p>
+      <div class="share-cart"><button class="link-btn small" data-act="share-cart">${icon('copy', 16)} Condividi il carrello</button><span class="small muted">con chi sceglie insieme a te</span></div>
+      <div id="share-out" aria-live="polite"></div>
     </aside>
   </div>`;
 }
@@ -9882,6 +10113,7 @@ function sentNote() {
 function viewShowroom() {
   setMeta(VIEW_SEO[P.showroom].metaTitle, VIEW_SEO[P.showroom].description, [localBusinessJsonLd(abs('/'), { image: absAsset(siteImage('showroom')?.src), logo: absAsset('img/logo.png') }), trail([{ name: 'Home', path: P.home }, { name: 'Showroom', path: P.showroom }]).ld], { image: siteImage('showroom')?.src });
   app.innerHTML = `${pageHero([{ name: 'Home', href: u(P.home) }, { name: 'Showroom' }], 'Showroom e fabbrica', 'Via Raffaele Salierno 38, Casoria (Napoli)')}<div class="wrap section--tight">${showroomHtml()}</div>`;
+  afterShowroom();
 }
 function viewNotFound() {
   setMeta('Pagina non trovata', 'La pagina che cerchi non esiste o è stata spostata.', [], { noindex: true });
@@ -10160,7 +10392,7 @@ document.addEventListener('click', async (e) => {
       const v = idx.variants.get(t.dataset.id);
       const p = v && idx.products.get(v.product_id);
       if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
-      addVariant(v, 1);
+      addVariant(v, Math.max(1, Math.min(MAX_QTY, Number(t.dataset.q) || 1)));
       if (isAt(P.cart)) viewCart();
       if (isAt(P.review)) viewReview();
       break;
@@ -10216,6 +10448,37 @@ document.addEventListener('click', async (e) => {
       viewCart();
       break;
     }
+    case 'share-cart': {
+      const link = shareLink();
+      const msg = `Guarda cosa ho scelto su Vesuvio Sleep: ${link}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Il mio carrello Vesuvio Sleep', url: link });
+          break;
+        } catch {
+          /* annullato: si offrono le alternative */
+        }
+      }
+      const copied = await (navigator.clipboard ? navigator.clipboard.writeText(link).then(() => true, () => false) : Promise.resolve(false));
+      $('#share-out').innerHTML = `<p class="note note--ok small" style="margin-top:10px">${copied ? 'Link copiato.' : 'Copia il link qui sotto.'} <a href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Mandalo su WhatsApp</a></p>${copied ? '' : `<input class="input" readonly value="${esc(link)}" aria-label="Link del carrello">`}`;
+      break;
+    }
+    case 'shared-use':
+    case 'shared-add': {
+      const items = state.shared ?? [];
+      let next = act === 'shared-use' ? [] : cart.items;
+      const idx = catalog();
+      for (const i of items) next = addToCart(next, idx.variants.get(i.variant_id), i.qty);
+      cart.set(next);
+      state.shared = null;
+      toast(act === 'shared-use' ? 'Carrello aggiornato' : 'Articoli aggiunti al tuo carrello');
+      go(P.cart, { replace: true });
+      break;
+    }
+    case 'map-load':
+      loadMap(t.closest('.map-card'));
+      $('.map-card iframe')?.focus();
+      break;
     case 'review-refresh':
       try {
         sessionStorage.removeItem('vs-review');

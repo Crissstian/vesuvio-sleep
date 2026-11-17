@@ -1,5 +1,13 @@
 # Changelog
 
+## Guanciali al centro, mappa, recensioni, carrello condivisibile (17/11/2026, notte)
+- **Guanciali**: −15 % su due guanciali con qualunque materasso, anche senza rete; −10 % sulla coppia da sola. Proposti per primi (Memory Flakes, Memory Classic) nella scheda materasso, nel carrello, nel riepilogo e in «Componi il tuo letto»; nella scheda guanciale c'è «Prendine due». Nuove vetrine **Notte Memory** e **Notte Flakes** in testa. Tutto si accende da solo quando i guanciali avranno un prezzo: oggi resta nascosto. Database e sito calcolano allo stesso modo (600 carrelli confrontati, 150 con i guanciali).
+- Una vetrina si mostra solo se tutti i pezzi obbligatori sono in vendita (regola nel database e nel sito).
+- **Mappa di Google** nella pagina showroom e in home, caricata solo al clic: niente collegamenti a Google prima, informativa aggiornata (anche con Supabase, che mancava).
+- **Recensioni di Google** predisposte: funzione server con la chiave API e sezione che le mostra tutte, nell'ordine di Google. Spente finché non ci sono chiave e ID del luogo.
+- **Condividi il carrello**: link con codici e quantità da mandare su WhatsApp; chi lo apre sceglie se usarlo o aggiungerlo al suo.
+- Esame dell'interattività in `docs/INTERATTIVITA.md`, con la proposta di accorciare la home.
+
 ## Vista esplosa completa, rivestimenti per modello, home più leggera (17/11/2026)
 - La vista esplosa («Apri il materasso, strato per strato») ora ha **tutti e sei i materassi**: aggiunti **Memory Trio** (tre strati di Memory Foam) e **Pocket 1600** (Memory Foam, poliuretano, molle, base), con gli strati ricavati dalle foto «esploso» dell'azienda. Le stesse schede prodotto ora mostrano anche «Strato per strato».
 - **Il rivestimento cambia con il modello**, preso dalle foto: Eco tutto bianco con trapuntatura a onde; Duo Classic fascia marrone a rombi con maniglia; Duo fascia grigio antracite; Trio grigio chiaro con catene di esagoni; Pocket 1600 fascia testa di moro e trapuntatura a incastro; Pocket 3000 fascia cammello a righe verticali e capitonné. Anche i riquadri della legenda usano quei colori.

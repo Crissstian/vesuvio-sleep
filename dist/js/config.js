@@ -6,7 +6,8 @@ window.VS_CONFIG = {
  "routing": "path",
  "siteUrl": "https://vesuviosleep.it",
  "whatsappNumber": "",
- "mapEmbed": false,
+ "mapsQuery": "Via Raffaele Salierno 38, 80026 Casoria NA",
+ "reviews": false,
  "supabaseUrl": "https://bsojqhtidiwwzmzqtgde.supabase.co",
  "supabaseKey": "sb_publishable_NVOzmQyo3OyH4iNjaMXQ0A_6di8aWF3",
  "supabaseBucket": "product-media"

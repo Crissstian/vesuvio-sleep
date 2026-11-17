@@ -133,7 +133,8 @@ set role anon;
 set request.jwt.claim.sub = '';
 select pg_temp.check((select count(*) from public.bundles) = 5, 'anon vede le 5 vetrine pubblicate');
 select pg_temp.check((select count(*) from public.bundle_items) = 14, 'anon vede i 14 pezzi delle vetrine');
-select pg_temp.check((select count(*) from public.offers) = 5, 'anon legge le regole attive (le percentuali non sono segrete)');
+select pg_temp.check((select count(*) from public.offers) = 6, 'anon legge le regole attive (le percentuali non sono segrete)');
+select pg_temp.check(not exists (select 1 from public.bundles where slug like 'notte-%'), 'vetrine con i guanciali nascoste finché i guanciali non sono in vendita');
 select pg_temp.check((select value from public.settings where key = 'offers_enabled') = 'true'::jsonb, 'interruttore offerte leggibile dal pubblico');
 select pg_temp.expect_error($q$insert into public.offers (code, label) values ('tetto', 'x')$q$, 'anon non crea regole');
 select pg_temp.expect_error($q$update public.offers set params = '{"pct":{"foam":30,"pocket":30}}' where code = 'letto-completo'$q$, 'anon non cambia le percentuali');
@@ -196,5 +197,21 @@ set role anon;
 select pg_temp.check((select count(*) from public.bundles) = 4, 'vetrina in bozza non più visibile al pubblico');
 reset role;
 update public.bundles set status = 'published' where slug = 'letto-trio';
+-- guanciali in vendita (prezzi di prova, solo per il test): la vetrina Notte Memory appare,
+-- e i guanciali hanno il vantaggio con il materasso anche senza rete, e in coppia da soli
+update public.variants set price_cents = 4000, availability = 'made_to_order' where product_id in (select id from public.products where slug like 'guanciale-memory-%');
+update public.products set status = 'published' where slug in ('guanciale-memory-classic', 'guanciale-memory-flakes');
+update public.categories set status = 'published' where slug = 'guanciali';
+set role anon;
+select pg_temp.check(exists (select 1 from public.bundles where slug = 'notte-memory'), 'guanciali in vendita: la vetrina Notte Memory appare');
+select pg_temp.check((select count(*) from public.bundle_items i join public.bundles b on b.id = i.bundle_id where b.slug = 'notte-memory') = 3, 'Notte Memory: materasso, due guanciali, rete facoltativa');
+select pg_temp.check((public.validate_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-GUA-MCLASSIC'), 'qty', 2))) ->> 'discount_cents')::int = 1200,
+  'materasso senza rete + 2 guanciali: −15 % sui guanciali (12 €)');
+select pg_temp.check((public.validate_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-GUA-MFLAKES'), 'qty', 2))) ->> 'discount_cents')::int = 800,
+  'coppia di guanciali da sola: −10 % (8 €)');
+reset role;
 select pg_temp.expect_error($q$delete from public.products where slug = 'rete-flex'$q$, 'un prodotto usato in una vetrina non si elimina');
 \echo TUTTI I TEST SQL SUPERATI
