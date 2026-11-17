@@ -34,6 +34,7 @@ export const P = {
   privacy: '/privacy/',
   cookies: '/cookie/',
   guides: '/guide/',
+  offers: '/offerte/',
 };
 
 /** href per un percorso canonico ("/materassi/") nella modalità corrente. */

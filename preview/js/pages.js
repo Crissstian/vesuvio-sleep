@@ -457,6 +457,10 @@ export const VIEW_SEO = {
     metaTitle: 'Materassi su misura e fuori misura: preventivo',
     description: 'Materassi su misura e con altezze personalizzate, prodotti nella fabbrica di Casoria (Napoli). Indica misure e modello: ti mandiamo il preventivo su WhatsApp.',
   },
+  [P.offers]: {
+    metaTitle: 'Letto completo: materasso e rete insieme costano meno',
+    description: 'Materasso e rete della stessa misura, prodotti nella fabbrica di Casoria: insieme costano meno che separati. Letti già composti e Componi il tuo letto.',
+  },
   [P.showroom]: {
     metaTitle: 'Showroom e fabbrica di materassi a Casoria (Napoli)',
     description: 'Prova i materassi nello showroom della fabbrica Vesuvio Sleep, Via Raffaele Salierno 38, Casoria (NA). Aperto lun–ven 9–18 e sabato 10–14.',

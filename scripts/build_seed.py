@@ -27,7 +27,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'input-vesuvio/catalogo-2026-11-15/01_CATALOGO/Vesuvio_Sleep_Listino_Prezzi_CONFERMATO_2600_H5.xlsx')
 DATASET = os.path.join(ROOT, 'input-vesuvio/dati/Vesuvio_Sleep_Site_Data_v1.0.json')
-CATALOG_VERSION = 'catalogo-2026-11-16f'
+CATALOG_VERSION = 'catalogo-2026-11-17a'
 
 NS = uuid.UUID('6f1d1b8e-6b2a-4d3e-9a51-0e3444206786')
 def uid(*parts):
@@ -231,7 +231,8 @@ products, variants, media = [], [], []
 def add_product(key, **kw):
     p = dict(id=uid('prod', key), slug=key, technical_name='', short='', description='', composition='',
              highlights=[], claims=[], removable_cover=None, reversible=None, summer_winter=None, hybrid=False,
-             firmness_display=None, line_code='', status='published', sort=0, lead_time=None, match=None, internal_notes='')
+             firmness_display=None, line_code='', status='published', sort=0, lead_time=None, match=None, internal_notes='',
+             bundle_family=None)
     p.update(kw)
     products.append(p)
     return p
@@ -273,7 +274,9 @@ for name, spec in MATTRESSES.items():
                     summer_winter=spec.get('summer_winter'), hybrid=spec.get('hybrid', False),
                     firmness_display=spec.get('firmness'), line_code=spec['line'], sort=spec['sort'],
                     status=spec.get('status') or ('published' if priced else 'draft'), lead_time=LEAD if priced else None,
-                    match=spec.get('match'), internal_notes=spec.get('notes', ''))
+                    match=spec.get('match'), internal_notes=spec.get('notes', ''),
+                    # famiglia per le offerte abbinate (docs/OFFERTE.md): molle -> pocket, schiume -> foam
+                    bundle_family=(('pocket' if spec['match']['tech'] == 'molle' else 'foam') if spec.get('match') else None))
     add_variants(p, spec['key'], spec['line'], rows, 'materasso')
 
 for r in BASES_X:
@@ -411,6 +414,67 @@ settings = dict(whatsapp_number='+39 366 121 8346', public_phone='+39 366 121 83
                 payment_methods=['contrassegno', 'bonifico'], shipping_note='gratuita in tutta Italia, isole comprese', show_claims=True,
                 payments=dict(stripe=False, paypal=False, klarna=False))
 
+# ------------------------------------------------------------------ offerte abbinate (17/11/2026)
+# Regole di calcolo: i numeri stanno in params e si cambiano da Admin › Offerte. Percentuali
+# scelte prudenti in assenza dei margini (docs/OFFERTE.md, §1): DA CONFERMARE con l'azienda.
+offers = [
+    dict(id=uid('offer', 'letto-completo'), code='letto-completo', label='Vantaggio letto completo', sort=1, status='active',
+         description='Materasso e rete della stessa misura nello stesso ordine.',
+         params=dict(pct=dict(foam=5, pocket=8), round_eur=5), starts_at=None, ends_at=None),
+    dict(id=uid('offer', 'letti-multipli'), code='letti-multipli', label='Vantaggio più letti', sort=2, status='active',
+         description='Tre o più letti completi nello stesso ordine: camere, case vacanza, strutture.',
+         params=dict(tiers=[dict(min_sets=3, pct=10), dict(min_sets=5, pct=12)], quote_from_sets=10), starts_at=None, ends_at=None),
+    dict(id=uid('offer', 'accessori'), code='accessori', label='Vantaggio accessori', sort=3, status='active',
+         description='Topper della stessa misura, e guanciali, insieme a un letto completo.',
+         params=dict(pct=dict(topper=10, guanciale=10), guanciali_per_letto=2, round_eur=1), starts_at=None, ends_at=None),
+    dict(id=uid('offer', 'per-due'), code='per-due', label='Vantaggio per due', sort=4, status='active',
+         description='Due materassi uguali nello stesso ordine, anche senza rete.',
+         params=dict(pct=dict(foam=5, pocket=8), round_eur=5), starts_at=None, ends_at=None),
+    dict(id=uid('offer', 'tetto'), code='tetto', label='Tetto di sicurezza', sort=5, status='active',
+         description='Lo sconto complessivo di un carrello non supera questa percentuale.',
+         params=dict(pct=15), starts_at=None, ends_at=None),
+]
+# Vetrine: offerte con un nome, mostrate come schede speciali. Prezzo sempre calcolato dalle regole.
+BUNDLES = [
+    dict(slug='letto-elite', name='Letto Elite', theme='elite', sort=1, default_size='160x190', sizes=None,
+         badge='Il più completo',
+         tagline='Il nostro materasso a molle più ricco, sulla rete rinforzata della stessa misura.',
+         description='Il Pocket 3000 Elite con la Rete Strong, nella stessa misura. Scegli la misura e l\'altezza; '
+                     'se vuoi, aggiungi il topper. Il vantaggio del letto completo è già nel prezzo.',
+         items=[('pocket-3000-elite', 25, False), ('rete-strong', None, False), ('topper-memory-cloud-5', None, True)]),
+    dict(slug='letto-pocket', name='Letto Pocket', theme='classic', sort=2, default_size='160x190', sizes=None,
+         badge='Molle insacchettate',
+         tagline='Le molle indipendenti insacchettate, con la rete a doghe della stessa misura.',
+         description='Il Pocket 1600 con la Rete Flex, nella stessa misura. È il modo più diretto per passare a un materasso a molle.',
+         items=[('pocket-1600', 25, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
+    dict(slug='letto-trio', name='Letto Trio', theme='classic', sort=3, default_size='160x190', sizes=None,
+         badge='27 cm di Memory Foam',
+         tagline='Tre strati di Memory Foam, 27 cm, sulla rete a doghe della stessa misura.',
+         description='Il Memory Trio con la Rete Flex, nella stessa misura. Il più alto della gamma in schiuma.',
+         items=[('memory-trio', 27, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
+    dict(slug='letto-memory', name='Letto Memory', theme='classic', sort=4, default_size='160x190', sizes=None,
+         badge='Sfoderabile',
+         tagline='Memory Foam con rivestimento sfoderabile, sulla rete a doghe della stessa misura.',
+         description='Il Memory Duo con la Rete Flex, nella stessa misura. Si aggiunge il topper se si vuole un piano ancora più accogliente.',
+         items=[('memory-duo', 25, False), ('rete-flex', None, False), ('topper-memory-cloud-5', None, True)]),
+    dict(slug='singolo-completo', name='Singolo completo', theme='start', sort=5, default_size='80x190',
+         sizes=['80x190', '80x200', '90x190', '90x200'],
+         badge='Letto singolo',
+         tagline='Materasso e rete per un letto singolo: cameretta, ospiti, seconda casa.',
+         description='Il Vesuvio Eco alto 20 cm con la Rete Flex, nelle misure da una piazza. Si può scegliere anche un\'altra altezza.',
+         items=[('eco', 20, False), ('rete-flex', None, False)]),
+]
+bundles, bundle_items = [], []
+by_slug = {p['slug']: p['id'] for p in products}
+for b in BUNDLES:
+    bid = uid('bundle', b['slug'])
+    bundles.append(dict(id=bid, slug=b['slug'], name=b['name'], tagline=b['tagline'], description=b['description'], badge=b['badge'],
+                        theme=b['theme'], sizes=b['sizes'], default_size=b['default_size'], status='published', sort=b['sort']))
+    for k, (key, h, optional) in enumerate(b['items']):
+        bundle_items.append(dict(id=uid('bitem', b['slug'], key), bundle_id=bid, product_id=by_slug[key], height_cm=h, qty=1,
+                                 optional=optional, sort=k + 1))
+settings['offers_enabled'] = True
+
 # ------------------------------------------------------------------ controlli
 pub_cats = {c['id'] for c in categories if c['status'] == 'published'}
 pub_prods = {p['id']: p for p in products if p['status'] == 'published' and p['category_id'] in pub_cats}
@@ -434,9 +498,15 @@ for m in media:
     if m['is_cover']:
         covers[m['product_id']] = covers.get(m['product_id'], 0) + 1
 assert all(n == 1 for n in covers.values()), 'più copertine per prodotto'
+# offerte: ogni pezzo delle vetrine è un prodotto pubblicato, ogni materasso ha una famiglia
+for it in bundle_items:
+    assert it['product_id'] in pub_prods, ('pezzo di offerta non pubblicato', it)
+fam = {p['slug']: p['bundle_family'] for p in pub_prods.values() if kind_of[p['category_id']] == 'materasso'}
+assert all(fam.values()), ('materasso pubblicato senza famiglia per le offerte', fam)
 
-seed = dict(version='seed-2026-11-16f', catalog_version=CATALOG_VERSION, authoritative=True,
-            categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings)
+seed = dict(version='seed-2026-11-17a', catalog_version=CATALOG_VERSION, authoritative=True,
+            categories=categories, products=products, variants=variants, media=media, redirects=redirects, settings=settings,
+            offers=offers, bundles=bundles, bundle_items=bundle_items)
 # Catalogo per il sito pubblico: niente bozze, niente archiviati, niente note interne.
 # Sul sito statico il JavaScript è leggibile da chiunque: ciò che non è pubblicato non ci va.
 pub_cat_ids = {c['id'] for c in categories if c['status'] == 'published'}
@@ -447,6 +517,9 @@ public = dict(
     products=[{k: v for k, v in p.items() if k != 'internal_notes'} for p in products if p['id'] in pub_ids],
     variants=[v for v in variants if v['product_id'] in pub_ids],
     media=[m for m in media if m['published'] and m['product_id'] in pub_ids],
+    offers=[o for o in offers if o['status'] != 'draft'],
+    bundles=[b for b in bundles if b['status'] == 'published'],
+    bundle_items=[i for i in bundle_items if i['bundle_id'] in {b['id'] for b in bundles if b['status'] == 'published'}],
 )
 with open(os.path.join(ROOT, 'preview/js/seed.public.js'), 'w', encoding='utf-8') as f:
     f.write('// Catalogo del sito pubblico, generato da scripts/build_seed.py: solo prodotti pubblicati,\n')
@@ -466,7 +539,20 @@ def q(v):
     return "'" + str(v).replace("'", "''") + "'"
 
 PCOLS = ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition', 'highlights', 'claims',
-         'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match']
+         'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match',
+         'bundle_family']
+OCOLS = ['id', 'code', 'label', 'description', 'params', 'status', 'starts_at', 'ends_at', 'sort']
+BCOLS = ['id', 'slug', 'name', 'tagline', 'description', 'badge', 'theme', 'sizes', 'default_size', 'status', 'sort']
+ICOLS = ['id', 'bundle_id', 'product_id', 'height_cm', 'qty', 'optional', 'sort']
+def ins_b(row, conflict):
+    vals = []
+    for c in BCOLS:
+        v = row.get(c)
+        if c == 'sizes':
+            vals.append('null' if v is None else "array[" + ', '.join(q(x) for x in v) + "]::text[]")
+        else:
+            vals.append(q(v))
+    return f"insert into public.bundles ({', '.join(BCOLS)}) values ({', '.join(vals)}) {conflict};"
 VCOLS = ['id', 'product_id', 'sku', 'size', 'height_cm', 'price_cents', 'availability', 'active', 'sort']
 MCOLS = ['id', 'product_id', 'slot', 'storage_path', 'alt', 'caption', 'illustrative', 'is_cover', 'published', 'sort', 'focal_x', 'focal_y', 'width', 'height', 'hotspots', 'fit', 'bg']
 def mrow(m):
@@ -489,10 +575,16 @@ for v in variants:
     seed_sql.append(ins('variants', VCOLS, v, 'on conflict (id) do nothing'))
 for m in media:
     seed_sql.append(ins('media', MCOLS, mrow(m), 'on conflict (id) do nothing'))
+for o in offers:
+    seed_sql.append(ins('offers', OCOLS, o, 'on conflict (id) do nothing'))
+for b in bundles:
+    seed_sql.append(ins_b(b, 'on conflict (id) do nothing'))
+for it in bundle_items:
+    seed_sql.append(ins('bundle_items', ICOLS, it, 'on conflict (id) do nothing'))
 for r in redirects:
     seed_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do nothing;")
 for k, v in settings.items():
-    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods') else 'false'
+    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods', 'offers_enabled') else 'false'
     seed_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {q(v if isinstance(v, (dict, list)) else json.dumps(v))}{'' if isinstance(v, (dict, list)) else '::jsonb'}, {pub}) on conflict (key) do nothing;")
 seed_sql.append('commit;')
 open(os.path.join(ROOT, 'supabase/seed.sql'), 'w', encoding='utf-8').write('\n'.join(seed_sql) + '\n')
@@ -513,11 +605,19 @@ for v in variants:
     upd_sql.append(ins('variants', VCOLS, v, upd(VCOLS)))
 for m in media:
     upd_sql.append(ins('media', MCOLS, mrow(m), upd(MCOLS)))
+upd_sql.append('-- offerte abbinate: le regole (percentuali) si scrivono solo se mancano, perché le decide l\'admin;')
+upd_sql.append('-- le vetrine si aggiornano nei testi ma lo stato (pubblicata o no) resta quello scelto in Admin')
+for o in offers:
+    upd_sql.append(ins('offers', OCOLS, o, 'on conflict (id) do nothing'))
+for b in bundles:
+    upd_sql.append(ins_b(b, upd([c for c in BCOLS if c != 'status'])))
+for it in bundle_items:
+    upd_sql.append(ins('bundle_items', ICOLS, it, upd(ICOLS)))
 for r in redirects:
     upd_sql.append(f"insert into public.slug_redirects (old_slug, new_slug) values ({q(r['old_slug'])}, {q(r['new_slug'])}) on conflict (old_slug) do update set new_slug = excluded.new_slug;")
 upd_sql.append('-- contatti e pagamenti (15/11/2026): si scrivono solo dove l\'admin non ha già un valore')
 for k, v in settings.items():
-    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods') else 'false'
+    pub = 'true' if k in ('shipping_note', 'show_claims', 'whatsapp_number', 'public_phone', 'contact_email', 'payment_methods', 'offers_enabled') else 'false'
     val = q(v) if isinstance(v, (dict, list)) else q(json.dumps(v)) + '::jsonb'
     upd_sql.append(f"insert into public.settings (key, value, is_public) values ({q(k)}, {val}, {pub}) on conflict (key) do update set value = excluded.value, is_public = excluded.is_public where public.settings.value in ('\"\"'::jsonb, 'null'::jsonb);")
 upd_sql.append('commit;')
@@ -526,3 +626,4 @@ open(os.path.join(ROOT, 'supabase/catalog/catalogo_corrente.sql'), 'w', encoding
 
 print(f'{len(categories)} categorie, {len(products)} prodotti, {len(variants)} varianti, {len(media)} media')
 print('acquistabili:', len(buyable), by_kind)
+print(f'offerte: {len(offers)} regole, {len(bundles)} vetrine, {len(bundle_items)} pezzi')

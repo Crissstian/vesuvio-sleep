@@ -50,8 +50,63 @@ export interface Product {
   seo_title?: string;
   seo_description?: string;
   match?: MatchTraits | null;
+  /**
+   * Famiglia commerciale per le offerte abbinate: decide la percentuale del letto completo.
+   * null = il prodotto non partecipa alle offerte. È una scelta commerciale, non tecnica.
+   */
+  bundle_family?: BundleFamily | null;
   /** Note interne admin (conflitti, campi da verificare). Mai pubbliche. */
   internal_notes?: string;
+}
+
+export type BundleFamily = 'foam' | 'pocket';
+export type OfferStatus = 'draft' | 'active' | 'paused';
+/** Codici delle regole: uno per tipo di logica. */
+export type OfferCode = 'letto-completo' | 'letti-multipli' | 'accessori' | 'per-due' | 'tetto';
+
+/** Una regola di sconto. I numeri stanno in params e si cambiano da Admin. */
+export interface OfferRule {
+  id: string;
+  code: OfferCode;
+  label: string;
+  description: string;
+  params: Record<string, unknown>;
+  status: OfferStatus;
+  starts_at: string | null;
+  ends_at: string | null;
+  sort: number;
+}
+
+export type BundleTheme = 'elite' | 'classic' | 'start';
+
+/** Un'offerta abbinata in vetrina (es. "Letto Elite"): i prodotti e la misura di partenza. */
+export interface Bundle {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  description: string;
+  badge: string;
+  theme: BundleTheme;
+  /** Misure ammesse; null = tutte quelle in cui i pezzi obbligatori sono acquistabili. */
+  sizes: string[] | null;
+  default_size: string;
+  status: PublishStatus;
+  sort: number;
+  seo_title?: string;
+  seo_description?: string;
+}
+
+export interface BundleItem {
+  id: string;
+  bundle_id: string;
+  product_id: string;
+  /** Altezza proposta per il materasso; null = la più bassa acquistabile. */
+  height_cm: number | null;
+  qty: number;
+  /** Pezzo facoltativo (es. topper): il cliente decide se includerlo. */
+  optional: boolean;
+  sort: number;
 }
 
 export interface Variant {
@@ -91,6 +146,12 @@ export interface CatalogSnapshot {
   products: Product[];
   variants: Variant[];
   media: Media[];
+  /** Offerte abbinate: regole di calcolo e vetrine. Facoltative per compatibilità. */
+  offers?: OfferRule[];
+  bundles?: Bundle[];
+  bundle_items?: BundleItem[];
+  /** Interruttore generale (impostazione offers_enabled). */
+  offers_enabled?: boolean;
 }
 
 export interface CartItem {

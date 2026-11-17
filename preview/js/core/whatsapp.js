@@ -22,14 +22,24 @@ function lineText(l, i) {
     const spec = [l.size ? formatSize(l.size) : null, l.height_cm ? `H${l.height_cm}` : null].filter(Boolean).join(', ');
     return `${i + 1}) ${l.name}${spec ? ' – ' + spec : ''}\n   SKU ${l.sku} · ${l.qty} × ${formatCents(l.unit_cents)} = ${formatCents(l.unit_cents * l.qty)}`;
 }
+/** "Vantaggio letto completo 160×190: −25,00 €" (× 3 se si applica più volte). */
+export function offerText(o) {
+    const where = o.size ? ` ${formatSize(o.size)}` : '';
+    const times = o.count > 1 ? ` (× ${o.count})` : '';
+    return `${o.label}${where}${times}: −${formatCents(o.amount_cents)}`;
+}
 /** Riepilogo completo: è anche il testo del pulsante "Copia il riepilogo". Nessun dato personale. */
 export function buildFullMessage(s) {
+    const disc = s.discount_cents ?? 0;
     return [
         'Ciao Vesuvio Sleep, vorrei confermare questa richiesta dal sito.',
         `Riferimento: ${s.ref}`,
         '',
         ...s.lines.map(lineText),
         '',
+        ...(disc > 0
+            ? [`Subtotale: ${formatCents(s.subtotal_cents ?? s.total_cents + disc)}`, ...(s.offers ?? []).map(offerText)]
+            : []),
         `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
         ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
         ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
@@ -42,7 +52,7 @@ export function buildShortMessage(s) {
     return [
         'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
         `Riferimento: ${s.ref}`,
-        `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+        `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa${(s.discount_cents ?? 0) > 0 ? `, vantaggio di ${formatCents(s.discount_cents)} già applicato` : ''}).`,
         ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
         'Incollo qui sotto il riepilogo completo copiato dal sito.',
     ].join('\n');

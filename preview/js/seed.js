@@ -1,7 +1,7 @@
 // Generato da scripts/build_seed.py dal listino confermato del 15/11/2026. Non modificare a mano.
 export const SEED = {
- "version": "seed-2026-11-16f",
- "catalog_version": "catalogo-2026-11-16f",
+ "version": "seed-2026-11-17a",
+ "catalog_version": "catalogo-2026-11-17a",
  "authoritative": true,
  "categories": [
   {
@@ -84,6 +84,7 @@ export const SEED = {
     "independent_springs": false
    },
    "internal_notes": "Rinominato da \"Vesuvio Essential Foam\" il 16/11/2026 su indicazione dell'azienda. Il vecchio indirizzo /materassi/essential-foam/ reindirizza qui. Da verificare: il nome \"Eco\" e' una denominazione commerciale, sul sito non e' accompagnato da alcuna dichiarazione ambientale perche' non ne abbiamo di documentate.",
+   "bundle_family": "foam",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Eco"
   },
@@ -120,6 +121,7 @@ export const SEED = {
     "independent_springs": false
    },
    "internal_notes": "H30 indicata dall'azienda la sera del 16/11/2026. Un solo valore corretto su autorizzazione: il 160x190 in H30 era scritto 329 euro, unico prezzo dei materassi non multiplo di 10, tra un 290 e un 340: portato a 330. Da ricontrollare al prossimo listino.",
+   "bundle_family": "foam",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Duo"
   },
@@ -151,6 +153,7 @@ export const SEED = {
     "independent_springs": false
    },
    "internal_notes": "Aggiunto il 16/11/2026 su indicazione dell'azienda. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Bamboo\", che la scheda non riprende perche' non e' una caratteristica verificata. DA CONFERMARE: che sia il tessuto di questo modello. Prezzi: Memory Duo sfoderabile meno 20 euro per ogni misura, confermati dall'azienda la sera del 16/11/2026 rimandando indietro il listino. Da confermare: se è reversibile estate/inverno come lo sfoderabile e quali claim valgono per questo tessuto.",
+   "bundle_family": "foam",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Duo Classic"
   },
@@ -187,6 +190,7 @@ export const SEED = {
     "independent_springs": true
    },
    "internal_notes": "Storico del nome: \"Pocket 2400 Elite\" fino al 15/11/2026, \"Pocket 2600 Elite\" fino al 16/11/2026, poi \"Pocket 3000 Elite\" su indicazione dell'azienda. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e a quale misura si riferisce; le foto in scheda sono quelle scattate il 15/11/2026. Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 620 euro (fattore 1,1273) e CONFERMATI dall'azienda la sera del 16/11 rimandando indietro il listino. H30 indicata dall'azienda la sera del 16/11.",
+   "bundle_family": "pocket",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 3000 Elite"
   },
@@ -218,6 +222,7 @@ export const SEED = {
     "independent_springs": true
    },
    "internal_notes": "Rientrato in catalogo il 16/11/2026 (era archiviato dalla mattina dello stesso giorno). Prezzi H25 del 16/11/2026: ricostruiti in proporzione dal listino portando il 160x190 a 500 euro (fattore 1,1111) e CONFERMATI dall'azienda la sera del 16/11. H30 indicata la stessa sera. Un solo valore corretto su autorizzazione: in H30 il 160x190 era scritto 540 euro, piu del 160x200 e del 165x190 (530), cioe il prezzo scendeva al crescere della misura. Portato a 520, cioe H25 (500) piu 20 euro, lo scarto H25->H30 di 9 misure su 13 di questo modello: ristabilisce anche l'ordine 520 < 530 = 530, come in H25 (500 < 510 = 510). Da ricontrollare al prossimo listino. DA VERIFICARE PRIMA DEL LANCIO: il numero di molle pubblicato e la composizione di dettaglio. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Antibatterico\", che la scheda non riprende perche' non e' una caratteristica verificata. DA CONFERMARE: che sia il tessuto di questo modello.",
+   "bundle_family": "pocket",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Pocket 1600"
   },
@@ -249,6 +254,7 @@ export const SEED = {
     "independent_springs": false
    },
    "internal_notes": "Rinominato da \"Memory Foam 3 strati\" (nome di listino) a \"Vesuvio Memory Trio\" il 16/11/2026: il nome richiama il Memory Duo e dichiara i tre strati. Il vecchio indirizzo reindirizza qui. DA VERIFICARE PRIMA DEL LANCIO: la composizione di dettaglio dei tre strati e se è sfoderabile. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Grafeno\", ripetuta sul piano. L'immagine era marcata \"non associare ad alcun prodotto\" nel MEDIA_MANIFEST del 15/11, con riserva \"fino a istruzioni successive\": l'azienda le ha assegnate a questo modello la sera del 16/11. La scheda non riprende la scritta, perche' il grafene non e' una caratteristica verificata. DA CONFERMARE: che sia il tessuto di questo modello.",
+   "bundle_family": "foam",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Trio"
   },
@@ -286,6 +292,7 @@ export const SEED = {
     "independent_springs": false
    },
    "internal_notes": "Fuori gamma dal 16/11/2026: non compare nell'elenco dei prodotti indicato dall'azienda. Archiviato, non compare sul sito. Si ripubblica da Admin se rientra in gamma.",
+   "bundle_family": "foam",
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Memory Air 3D"
   },
@@ -309,6 +316,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Fuori gamma dal 16/11/2026: non compare nell'elenco dei prodotti indicato dall'azienda. Archiviato, non compare sul sito. Si ripubblica da Admin se rientra in gamma.",
+   "bundle_family": null,
    "category_id": "9cd67f1e-437e-55f2-a4f8-4ebf83864bd7",
    "name": "Vesuvio Bonnell Classic"
   },
@@ -336,6 +344,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Flex"
   },
@@ -363,6 +372,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Portata massima non verificata: non pubblicare un valore.",
+   "bundle_family": null,
    "category_id": "081007a7-5196-569c-97e5-d95d486d696c",
    "name": "Vesuvio Rete Strong"
   },
@@ -389,6 +399,7 @@ export const SEED = {
    "lead_time": "Produzione in circa 2 giorni prima della spedizione",
    "match": null,
    "internal_notes": "Altezza 5 cm confermata (il valore 80 del file originario era un errore). SKU VS-TOP-MC5-… proposto. Foto consegnate la sera del 16/11/2026: il tessuto porta la scritta \"Aloe Vera\", che la scheda non riprende perche' non e' una caratteristica verificata. Nessuna delle due e' un primo piano del tessuto: la seconda mostra la cerniera sul bordo ed e' usata nello spazio \"dettaglio\". DA CONFERMARE il tessuto.",
+   "bundle_family": null,
    "category_id": "8d155eb6-483a-5b06-93c4-d5c96794fa0d",
    "name": "Vesuvio Topper Memory Cloud 5"
   },
@@ -414,6 +425,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Piuma"
   },
@@ -439,6 +451,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Flakes"
   },
@@ -464,6 +477,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Classic"
   },
@@ -489,6 +503,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Sospeso: nessun prezzo nel listino del 15/11/2026.",
+   "bundle_family": null,
    "category_id": "d13d67b4-9aa1-5b1d-b636-53db094666e6",
    "name": "Vesuvio Memory Cervical"
   },
@@ -512,6 +527,7 @@ export const SEED = {
    "lead_time": null,
    "match": null,
    "internal_notes": "Sospeso: misure e prezzi non presenti nel listino.",
+   "bundle_family": null,
    "category_id": "f2317874-21e7-594e-982e-5154d66caf0a",
    "name": "Vesuvio Castello Steel"
   }
@@ -3800,6 +3816,297 @@ export const SEED = {
    "stripe": false,
    "paypal": false,
    "klarna": false
+  },
+  "offers_enabled": true
+ },
+ "offers": [
+  {
+   "id": "89c9f8d7-5645-533f-8487-0243c9a90a53",
+   "code": "letto-completo",
+   "label": "Vantaggio letto completo",
+   "sort": 1,
+   "status": "active",
+   "description": "Materasso e rete della stessa misura nello stesso ordine.",
+   "params": {
+    "pct": {
+     "foam": 5,
+     "pocket": 8
+    },
+    "round_eur": 5
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "23a39193-2476-596a-acd9-55a2f36762c5",
+   "code": "letti-multipli",
+   "label": "Vantaggio più letti",
+   "sort": 2,
+   "status": "active",
+   "description": "Tre o più letti completi nello stesso ordine: camere, case vacanza, strutture.",
+   "params": {
+    "tiers": [
+     {
+      "min_sets": 3,
+      "pct": 10
+     },
+     {
+      "min_sets": 5,
+      "pct": 12
+     }
+    ],
+    "quote_from_sets": 10
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "e0609a58-b9f8-5d4f-80bd-4660b496c5a5",
+   "code": "accessori",
+   "label": "Vantaggio accessori",
+   "sort": 3,
+   "status": "active",
+   "description": "Topper della stessa misura, e guanciali, insieme a un letto completo.",
+   "params": {
+    "pct": {
+     "topper": 10,
+     "guanciale": 10
+    },
+    "guanciali_per_letto": 2,
+    "round_eur": 1
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "d8d851c5-9fea-54a6-a6fe-849a939b0c65",
+   "code": "per-due",
+   "label": "Vantaggio per due",
+   "sort": 4,
+   "status": "active",
+   "description": "Due materassi uguali nello stesso ordine, anche senza rete.",
+   "params": {
+    "pct": {
+     "foam": 5,
+     "pocket": 8
+    },
+    "round_eur": 5
+   },
+   "starts_at": null,
+   "ends_at": null
+  },
+  {
+   "id": "1fab243c-5571-545d-a607-a6cb3f7da462",
+   "code": "tetto",
+   "label": "Tetto di sicurezza",
+   "sort": 5,
+   "status": "active",
+   "description": "Lo sconto complessivo di un carrello non supera questa percentuale.",
+   "params": {
+    "pct": 15
+   },
+   "starts_at": null,
+   "ends_at": null
   }
- }
+ ],
+ "bundles": [
+  {
+   "id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
+   "slug": "letto-elite",
+   "name": "Letto Elite",
+   "tagline": "Il nostro materasso a molle più ricco, sulla rete rinforzata della stessa misura.",
+   "description": "Il Pocket 3000 Elite con la Rete Strong, nella stessa misura. Scegli la misura e l'altezza; se vuoi, aggiungi il topper. Il vantaggio del letto completo è già nel prezzo.",
+   "badge": "Il più completo",
+   "theme": "elite",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 1
+  },
+  {
+   "id": "35f250db-e566-53ae-9383-fb2ad0883489",
+   "slug": "letto-pocket",
+   "name": "Letto Pocket",
+   "tagline": "Le molle indipendenti insacchettate, con la rete a doghe della stessa misura.",
+   "description": "Il Pocket 1600 con la Rete Flex, nella stessa misura. È il modo più diretto per passare a un materasso a molle.",
+   "badge": "Molle insacchettate",
+   "theme": "classic",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 2
+  },
+  {
+   "id": "734b3556-03ae-5d6a-a771-4812d31353bc",
+   "slug": "letto-trio",
+   "name": "Letto Trio",
+   "tagline": "Tre strati di Memory Foam, 27 cm, sulla rete a doghe della stessa misura.",
+   "description": "Il Memory Trio con la Rete Flex, nella stessa misura. Il più alto della gamma in schiuma.",
+   "badge": "27 cm di Memory Foam",
+   "theme": "classic",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 3
+  },
+  {
+   "id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
+   "slug": "letto-memory",
+   "name": "Letto Memory",
+   "tagline": "Memory Foam con rivestimento sfoderabile, sulla rete a doghe della stessa misura.",
+   "description": "Il Memory Duo con la Rete Flex, nella stessa misura. Si aggiunge il topper se si vuole un piano ancora più accogliente.",
+   "badge": "Sfoderabile",
+   "theme": "classic",
+   "sizes": null,
+   "default_size": "160x190",
+   "status": "published",
+   "sort": 4
+  },
+  {
+   "id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
+   "slug": "singolo-completo",
+   "name": "Singolo completo",
+   "tagline": "Materasso e rete per un letto singolo: cameretta, ospiti, seconda casa.",
+   "description": "Il Vesuvio Eco alto 20 cm con la Rete Flex, nelle misure da una piazza. Si può scegliere anche un'altra altezza.",
+   "badge": "Letto singolo",
+   "theme": "start",
+   "sizes": [
+    "80x190",
+    "80x200",
+    "90x190",
+    "90x200"
+   ],
+   "default_size": "80x190",
+   "status": "published",
+   "sort": 5
+  }
+ ],
+ "bundle_items": [
+  {
+   "id": "b33523bc-2ffe-5f38-b05b-d05543d6d4b1",
+   "bundle_id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
+   "product_id": "0eedacdc-4815-5c09-b7d4-2cce6820b44d",
+   "height_cm": 25,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "5b8f63c7-a87f-545d-9263-4097ac5d314c",
+   "bundle_id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
+   "product_id": "c9e5b52e-2898-51a0-ab16-a8ddf1e7442e",
+   "height_cm": null,
+   "qty": 1,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "8ad71cf5-5aa2-5b01-b610-2d8e3d4a476c",
+   "bundle_id": "7f92b69c-f50d-5d9c-b382-a71f6aa46933",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "87cb7d87-82b5-5d61-83ec-caf44705173c",
+   "bundle_id": "35f250db-e566-53ae-9383-fb2ad0883489",
+   "product_id": "b0919e50-0d2d-5c21-ab4e-c06ecb1c8735",
+   "height_cm": 25,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "5b6ec7d6-cd59-5d10-8bc2-b31769ce93cd",
+   "bundle_id": "35f250db-e566-53ae-9383-fb2ad0883489",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "4f01d365-3733-50c7-aef6-b6a2c80f6a56",
+   "bundle_id": "35f250db-e566-53ae-9383-fb2ad0883489",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "f7db75b2-1bfa-5d28-b9f8-a1fec0f1bbc3",
+   "bundle_id": "734b3556-03ae-5d6a-a771-4812d31353bc",
+   "product_id": "7e3a44cc-14d7-5af3-b0dd-21efdf0a9f3c",
+   "height_cm": 27,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "e0ce34fe-1180-56a0-b04e-d43acbd3e853",
+   "bundle_id": "734b3556-03ae-5d6a-a771-4812d31353bc",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "47acbb41-d31b-5aac-8806-8a2e442ca7a4",
+   "bundle_id": "734b3556-03ae-5d6a-a771-4812d31353bc",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "47498161-aeca-5ddf-950a-469f17220f27",
+   "bundle_id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
+   "product_id": "71f76b5b-1cdd-5adb-baa5-614ec6ad9552",
+   "height_cm": 25,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "763b4f3f-9203-56f3-a09f-ff6059b3c678",
+   "bundle_id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": false,
+   "sort": 2
+  },
+  {
+   "id": "ba516350-4a2e-5cb2-8e36-c6bd0d32634a",
+   "bundle_id": "3c2acc74-a439-5c34-a85b-b7e64af5fd21",
+   "product_id": "9f788966-fb6f-5b8d-bb03-3f717ca03395",
+   "height_cm": null,
+   "qty": 1,
+   "optional": true,
+   "sort": 3
+  },
+  {
+   "id": "696526d6-9755-5bd2-b71f-ba5008ed5e0d",
+   "bundle_id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
+   "product_id": "4e3ab029-d797-558f-8017-b4b2566294f0",
+   "height_cm": 20,
+   "qty": 1,
+   "optional": false,
+   "sort": 1
+  },
+  {
+   "id": "9d24d2d9-b99e-52b1-af80-64c7ea93ed3b",
+   "bundle_id": "c77837ef-4bb2-5842-9f74-89b48bf99689",
+   "product_id": "0bb8a3e7-acf6-587e-8bb3-6d6cbcdfb47f",
+   "height_cm": null,
+   "qty": 1,
+   "optional": false,
+   "sort": 2
+  }
+ ]
 };

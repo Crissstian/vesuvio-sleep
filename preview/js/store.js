@@ -9,7 +9,7 @@
 import { SEED } from './seed.js';
 import { configured as sbConfigured, rpc as sbRpc } from './supabase.js';
 import { SITE_SLOTS } from './slots.js';
-import { CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber } from './core/index.js';
+import { CatalogIndex, validateCart, makeRef, customSku, normalizeWhatsAppNumber, catalogOfferConfig } from './core/index.js';
 
 const DB_KEY = 'vs-preview-db-v1';
 const CART_KEY = 'vs-cart-v1';
@@ -49,6 +49,10 @@ if (!db?.seed_version) {
 }
 db.site_media ??= [];
 db.redirects ??= clone(SEED.redirects ?? []);
+// offerte abbinate (17/11/2026): regole e vetrine, assenti nei salvataggi precedenti
+db.offers ??= clone(SEED.offers ?? []);
+db.bundles ??= clone(SEED.bundles ?? []);
+db.bundle_items ??= clone(SEED.bundle_items ?? []);
 // Aggiornamento del seed. Con un catalogo UFFICIALE (SEED.authoritative) gli elementi
 // del seed vengono aggiornati per ID (upsert: prezzi, varianti, stati, foto) senza
 // duplicarli; restano intatti prodotti e foto creati dall'admin, richieste, impostazioni.
@@ -74,6 +78,19 @@ if (db.seed_version !== SEED.version) {
     db.audit?.unshift({ id: rid0(), at: nowIso(), action: 'catalogo', entity: SEED.catalog_version, detail: 'Catalogo ufficiale applicato (prezzi, varianti, stati, foto)' });
   }
   db.redirects = clone(SEED.redirects ?? []);
+  // offerte: le regole nuove si aggiungono, quelle esistenti restano come le ha lasciate l'admin
+  // (le percentuali sono sue); le vetrine si aggiornano nei testi ma conservano lo stato scelto.
+  for (const o of SEED.offers ?? []) if (!db.offers.some((x) => x.id === o.id)) db.offers.push(clone(o));
+  for (const b of SEED.bundles ?? []) {
+    const k = db.bundles.findIndex((x) => x.id === b.id);
+    if (k < 0) db.bundles.push(clone(b));
+    else db.bundles[k] = { ...clone(b), status: db.bundles[k].status };
+  }
+  for (const it of SEED.bundle_items ?? []) {
+    const k = db.bundle_items.findIndex((x) => x.id === it.id);
+    if (k < 0) db.bundle_items.push(clone(it));
+    else db.bundle_items[k] = clone(it);
+  }
   // impostazioni nuove (contatti, pagamenti): si aggiungono, quelle già scelte dall'admin restano
   for (const [k, v] of Object.entries(SEED.settings ?? {})) {
     if (db.settings[k] === undefined || db.settings[k] === '' || db.settings[k] === null) db.settings[k] = clone(v);
@@ -220,6 +237,10 @@ export function catalog({ drafts = false } = {}) {
       : db.products,
     variants: db.variants,
     media: drafts ? db.media : db.media.filter((m) => m.published),
+    offers: db.offers ?? [],
+    bundles: db.bundles ?? [],
+    bundle_items: db.bundle_items ?? [],
+    offers_enabled: db.settings?.offers_enabled === true,
   };
   return new CatalogIndex(snap);
 }
@@ -264,6 +285,10 @@ export function applyRemoteCatalog(cat) {
   db.variants = clone(cat.variants);
   db.media = [...clone(cat.media), ...locali.filter((m) => !remoti.has(m.id))];
   db.redirects = clone(cat.redirects ?? []);
+  // un database senza le tabelle delle offerte (migrazione non ancora applicata) non le cancella
+  if (Array.isArray(cat.offers)) db.offers = clone(cat.offers);
+  if (Array.isArray(cat.bundles)) db.bundles = clone(cat.bundles);
+  if (Array.isArray(cat.bundle_items)) db.bundle_items = clone(cat.bundle_items);
   for (const [k, v] of Object.entries(cat.settings ?? {})) db.settings[k] = clone(v);
   db.catalog_source = 'supabase';
   db.catalog_at = nowIso();
@@ -303,14 +328,27 @@ export const api = {
         if (mapped) return mapped;
       }
     }
-    return validateCart(catalog(), items);
+    const idx = catalog();
+    return validateCart(idx, items, catalogOfferConfig(idx));
   },
+  /**
+   * Crea la richiesta. Si manda anche il totale che il cliente ha visto: se nel frattempo
+   * un'offerta è cambiata il database non crea nulla e risponde offer_changed, e la pagina
+   * mostra il nuovo totale da confermare. Restituisce la richiesta, oppure
+   * { offerChanged: true, validation } in quel caso.
+   */
   async createCartRequest(validation) {
     if (remoteUsable()) {
+      const okLines = validation.lines.filter((l) => l.status === 'ok');
       const r = await remote('create_cart_request', {
-        items: validation.lines.filter((l) => l.status === 'ok').map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents })),
+        items: okLines.map((l) => ({ variant_id: l.variant.id, qty: l.item.qty, seen_price_cents: l.unit_cents })),
+        seen_total_cents: validation.total_cents,
       });
       if (r?.ok && r.ref) return localCartRequest(validation, r.ref, true);
+      if (r && r.ok === false && r.reason === 'offer_changed' && r.validation) {
+        const mapped = remoteValidation(r.validation, okLines.map((l) => l.item));
+        if (mapped) return { offerChanged: true, validation: mapped };
+      }
     }
     return localCartRequest(validation, makeRef('R', new Date()), false);
   },
@@ -330,6 +368,7 @@ function localCartRequest(validation, ref, remota) {
         height_cm: l.variant.height_cm,
         qty: l.item.qty,
         unit_cents: l.unit_cents,
+        discount_cents: l.discount_cents ?? 0,
       }));
     const r = {
       id: rid(),
@@ -337,13 +376,16 @@ function localCartRequest(validation, ref, remota) {
       type: 'cart',
       status: 'bozza',
       items,
+      subtotal_cents: validation.subtotal_cents ?? validation.total_cents,
+      discount_cents: validation.discount_cents ?? 0,
+      offers: validation.offers ?? [],
       total_cents: validation.total_cents,
       quote: null,
       internal_notes: '',
       tracking: '',
       created_at: nowIso(),
       updated_at: nowIso(),
-      history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: 'Riepilogo generato dal carrello' }],
+      history: [{ at: nowIso(), status: 'bozza', by: 'sito', note: (validation.discount_cents ?? 0) > 0 ? 'Riepilogo generato dal carrello, con offerta abbinata' : 'Riepilogo generato dal carrello' }],
     };
   db.requests.unshift(r);
   store.commit('requests');
@@ -367,13 +409,24 @@ function remoteValidation(r, items) {
       variant,
       product,
       unit_cents: l.unit_cents ?? null,
+      // un database senza la migrazione delle offerte non manda discount_cents: vale 0
+      discount_cents: l.discount_cents ?? 0,
       qty: l.qty,
     };
   });
   // una riga che il database conosce ma il catalogo in pagina no: si rinuncia e si
   // ricontrolla in locale, meglio che disegnare una riga senza nome né prezzo
   if (lines.some((l) => l.status !== 'missing' && !l.variant)) return null;
-  return { lines, total_cents: r.total_cents, issues: r.issues, canSubmit: r.can_submit === true };
+  const discount = r.discount_cents ?? 0;
+  return {
+    lines,
+    subtotal_cents: r.subtotal_cents ?? r.total_cents + discount,
+    discount_cents: discount,
+    total_cents: r.total_cents,
+    offers: Array.isArray(r.offers) ? r.offers : [],
+    issues: r.issues,
+    canSubmit: r.can_submit === true,
+  };
 }
 
 Object.assign(api, {

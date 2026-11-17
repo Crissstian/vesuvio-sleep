@@ -2,8 +2,8 @@
 // CRUD categorie/prodotti/varianti, media, richieste, impostazioni, storico.
 // L'accesso qui è locale al browser (PBKDF2 + sessione); in produzione è Supabase Auth + RLS.
 
-import { adminKey, go, P, legacyToPath } from './nav.js';
-import { formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex } from './core/index.js';
+import { adminKey, go, P, legacyToPath, u as navHref } from './nav.js';
+import { formatCents, formatSize, parseEuroToCents, skuFor, STANDARD_SIZES, buildSitemap, normalizeWhatsAppNumber, PROVIDERS, AVAILABILITY_LABEL, CatalogIndex, offerConfig, priceCart, refundForLine, MAX_RULE_PCT } from './core/index.js';
 import { store, catalog, media, processUpload, whatsappStatus, REQUEST_STATUS, REQUEST_TYPE, api, applyRemoteCatalog, catalogSource } from './store.js';
 import { configured as sbConfigured, currentUser as sbUser, signIn as sbSignIn, signOut as sbSignOut, sendRecovery as sbRecovery, isAdmin as sbIsAdmin, loadCatalog as sbLoad, pushCatalog as sbPush, SB } from './supabase.js';
 import { SITE_SLOTS } from './slots.js';
@@ -67,6 +67,7 @@ const SECTIONS = [
   ['admin-categorie', 'Categorie'],
   ['admin-immagini', 'Immagini del sito'],
   ['admin-richieste', 'Richieste'],
+  ['admin-offerte', 'Offerte'],
   ['admin-impostazioni', 'Impostazioni'],
   ['admin-storico', 'Storico'],
 ];
@@ -88,6 +89,8 @@ function blockers() {
   const noPhoto = idx.publicProducts().filter((p) => !db().media.some((m) => m.product_id === p.id && m.published));
   if (noPhoto.length) out.push(['info', `${noPhoto.length} prodotti pubblicati senza foto confermate (si vede l'illustrazione di categoria): ${noPhoto.map((p) => p.name.replace('Vesuvio ', '')).join(', ')}.`, `#admin-prodotto-${noPhoto[0].id}`, 'Carica foto']);
   for (const p of db().products.filter((x) => x.status === 'published' && !idx.isProductPurchasable(x))) out.push(['warn', `${p.name}: pubblicato ma senza varianti acquistabili, quindi nascosto.`, `#admin-prodotto-${p.id}`, 'Apri']);
+  if (db().settings.offers_enabled === true)
+    out.push(['info', 'Offerte abbinate attive (beta): le percentuali sono una scelta prudente da confermare con i costi.', '#admin-offerte', 'Rivedi']);
   if (!media.available()) out.push(['warn', 'IndexedDB non disponibile: le foto caricate non resteranno dopo il ricaricamento.', null, null]);
   return out;
 }
@@ -428,7 +431,15 @@ function viewRequest(ref) {
     <form id="adm-request" class="form" data-ref="${esc(r.ref)}" novalidate>
       <div class="adm-grid2">
         <section class="adm-card">
-          ${r.items.length ? `<h2 class="adm-h2">Articoli</h2><table class="size-table"><tbody>${r.items.map((i) => `<tr><td>${esc(i.name)}<br><span class="small muted">${i.size ? formatSize(i.size) : ''}${i.height_cm && i.size ? ' H' + i.height_cm : ''} · ${esc(i.sku)}</span></td><td>${i.qty}×</td><td style="text-align:right">${formatCents(i.unit_cents * i.qty)}</td></tr>`).join('')}<tr><td colspan="2"><strong>Totale</strong></td><td style="text-align:right"><strong>${formatCents(r.total_cents)}</strong></td></tr></tbody></table>` : ''}
+          ${r.items.length ? `<h2 class="adm-h2">Articoli</h2><table class="size-table"><tbody>${r.items.map((i) => `<tr><td>${esc(i.name)}<br><span class="small muted">${i.size ? formatSize(i.size) : ''}${i.height_cm && i.size ? ' H' + i.height_cm : ''} · ${esc(i.sku)}</span></td><td>${i.qty}×</td><td style="text-align:right">${formatCents(i.unit_cents * i.qty)}${i.discount_cents ? `<br><span class="small" style="color:var(--lava-ink)">−${formatCents(i.discount_cents)} vantaggio</span>` : ''}</td></tr>`).join('')}
+            ${r.discount_cents ? `<tr><td colspan="2">Subtotale</td><td style="text-align:right">${formatCents(r.subtotal_cents)}</td></tr>${(r.offers ?? []).map((o) => `<tr><td colspan="2" style="color:var(--lava-ink)">${esc(o.label)}${o.size ? ' ' + formatSize(o.size) : ''}${o.count > 1 ? ` × ${o.count}` : ''} (${o.pct} %)</td><td style="text-align:right;color:var(--lava-ink)">−${formatCents(o.amount_cents)}</td></tr>`).join('')}` : ''}
+            <tr><td colspan="2"><strong>Totale</strong></td><td style="text-align:right"><strong>${formatCents(r.total_cents)}</strong></td></tr></tbody></table>
+            <details class="adm-pay" style="margin-top:14px"><summary><strong>Recesso parziale</strong> <span class="small muted">quanto rimborsare</span></summary>
+              <p class="small">Indica quanti pezzi restituisce il cliente: si rimborsa quanto ha pagato per quei pezzi, compresa la loro quota di vantaggio. Sui pezzi che tiene il vantaggio resta suo.</p>
+              ${r.items.map((i, k) => `<div class="field" style="display:flex;gap:10px;align-items:center"><input class="input" style="max-width:80px" type="number" min="0" max="${i.qty}" value="0" data-refund="${k}" aria-label="Pezzi restituiti: ${esc(i.name)}"><span class="small">${esc(i.name)} ${i.size ? formatSize(i.size) : ''} (su ${i.qty})</span></div>`).join('')}
+              <p class="note small" id="refund-out" aria-live="polite">Rimborso: ${formatCents(0)}</p>
+              <div class="btn-row"><button type="button" class="btn btn--ghost btn--sm" data-adm="refund-calc">Calcola</button><button type="button" class="btn btn--ghost btn--sm" data-adm="refund-log">Registra nello storico</button></div>
+            </details>` : ''}
           ${q ? `<h2 class="adm-h2">Preventivo fuori misura</h2>
             <dl class="facts-list"><dt>Prodotto</dt><dd>${esc(q.product)}</dd><dt>Misura</dt><dd>${q.width_cm}×${q.length_cm} cm${q.height_cm ? `, H${q.height_cm}` : ''}</dd><dt>Note cliente</dt><dd>${esc(q.notes || '—')}</dd>${q.custom_sku ? `<dt>SKU personalizzato</dt><dd>${esc(q.custom_sku)}</dd>` : ''}</dl>
             <div class="adm-grid" style="margin-top:14px"><div class="field"><label for="r-price">Prezzo proposto €</label><input class="input" id="r-price" name="price" inputmode="decimal" value="${q.price_cents ? (q.price_cents / 100).toFixed(2).replace('.', ',') : ''}"></div>
@@ -450,6 +461,114 @@ function viewRequest(ref) {
       </div>
     </form>`);
 }
+
+// ------------------------------------------------------------- offerte abbinate
+const RULE_STATUS = { active: 'Attiva', paused: 'In pausa', draft: 'Bozza' };
+function viewOfferAdmin() {
+  const d = db();
+  const rule = (c) => (d.offers ?? []).find((o) => o.code === c);
+  const num = (name, val, label, hint = '%') =>
+    `<div class="field" style="max-width:150px"><label for="o-${name}">${esc(label)}</label><div style="display:flex;align-items:center;gap:6px"><input class="input" id="o-${name}" name="${name}" inputmode="numeric" value="${val ?? ''}"><span class="small">${hint}</span></div></div>`;
+  const st = (c) => `<div class="field" style="max-width:160px"><label for="o-st-${c}">Stato</label><select class="input" id="o-st-${c}" name="st-${c}">${['active', 'paused'].map((k) => `<option value="${k}" ${rule(c)?.status === k ? 'selected' : ''}>${RULE_STATUS[k]}</option>`).join('')}</select></div>`;
+  const lc = rule('letto-completo')?.params ?? {};
+  const lm = rule('letti-multipli')?.params ?? {};
+  const ac = rule('accessori')?.params ?? {};
+  const pd = rule('per-due')?.params ?? {};
+  const tt = rule('tetto')?.params ?? {};
+  const t = lm.tiers ?? [];
+  // esempi con le regole salvate (anche a interruttore spento: servono a decidere)
+  const idx = catalog();
+  const cfg = offerConfig(d.offers, true);
+  const V = (slug, size, h) => {
+    const p = idx.snap.products.find((x) => x.slug === slug);
+    return p && idx.purchasableVariants(p).find((v) => v.size === size && (h == null || v.height_cm === h));
+  };
+  const EX = [
+    ['Memory Duo H25 + Rete Flex, 160×190', [['memory-duo', '160x190', 25, 1], ['rete-flex', '160x190', null, 1]]],
+    ['Pocket 3000 Elite H25 + Rete Strong, 160×190', [['pocket-3000-elite', '160x190', 25, 1], ['rete-strong', '160x190', null, 1]]],
+    ['Come sopra + Topper', [['pocket-3000-elite', '160x190', 25, 1], ['rete-strong', '160x190', null, 1], ['topper-memory-cloud-5', '160x190', 5, 1]]],
+    ['Eco H20 + Rete Flex, 80×190', [['eco', '80x190', 20, 1], ['rete-flex', '80x190', null, 1]]],
+    ['3 letti Memory Duo 90×200 + Rete Flex', [['memory-duo', '90x200', 25, 3], ['rete-flex', '90x200', null, 3]]],
+    ['5 letti Pocket 1600 90×200 + Rete Flex', [['pocket-1600', '90x200', 25, 5], ['rete-flex', '90x200', null, 5]]],
+  ];
+  const exRows = EX.map(([label, lines]) => {
+    const vs = lines.map(([slug, size, h, qty]) => ({ v: V(slug, size, h), qty }));
+    if (vs.some((x) => !x.v)) return '';
+    const r = priceCart(idx, vs.map((x) => ({ variant_id: x.v.id, qty: x.qty })), cfg);
+    return `<tr><td>${esc(label)}</td><td style="text-align:right">${formatCents(r.subtotal_cents)}</td><td style="text-align:right;color:var(--lava-ink)">−${formatCents(r.discount_cents)}</td><td style="text-align:right"><strong>${formatCents(r.total_cents)}</strong></td><td style="text-align:right">${r.subtotal_cents ? ((100 * r.discount_cents) / r.subtotal_cents).toFixed(1).replace('.', ',') : 0} %</td></tr>`;
+  }).join('');
+  shell('admin-offerte', 'Offerte abbinate', `
+    <form id="adm-offers" class="form" novalidate>
+      <section class="adm-card"><h2 class="adm-h2">Interruttore</h2>
+        <label class="check"><input type="checkbox" name="offers_enabled" ${d.settings.offers_enabled === true ? 'checked' : ''}> Offerte attive sul sito (schede «Letti completi», sconti nel carrello e nel riepilogo)</label>
+        <p class="small muted">Spento: nessuno sconto, nessuna scheda offerta, prezzi come da listino. Il database applica la stessa scelta quando ricalcola il carrello.</p>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Letto completo</h2>
+        <p class="small muted">Materasso e rete della stessa misura. Percentuale sul totale dei due, arrotondata ai 5 €.</p>
+        <div class="adm-filters">${st('letto-completo')}${num('lc-foam', lc.pct?.foam, 'Schiuma (Eco, Memory)')}${num('lc-pocket', lc.pct?.pocket, 'Molle (Pocket)')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Più letti nello stesso ordine</h2>
+        <p class="small muted">Vale la percentuale più alta tra questa e quella del letto completo, su ogni letto dell'ordine.</p>
+        <div class="adm-filters">${st('letti-multipli')}${num('t1-min', t[0]?.min_sets, 'Da letti', 'letti')}${num('t1-pct', t[0]?.pct, 'Sconto')}${num('t2-min', t[1]?.min_sets, 'Da letti', 'letti')}${num('t2-pct', t[1]?.pct, 'Sconto')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Accessori</h2>
+        <p class="small muted">Il topper della stessa misura di un letto completo; i guanciali (fino a ${ac.guanciali_per_letto ?? 2} per letto) quando avranno un prezzo.</p>
+        <div class="adm-filters">${st('accessori')}${num('ac-topper', ac.pct?.topper, 'Topper')}${num('ac-guanciale', ac.pct?.guanciale, 'Guanciali')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Per due</h2>
+        <p class="small muted">Due materassi uguali nello stesso ordine, senza rete.</p>
+        <div class="adm-filters">${st('per-due')}${num('pd-foam', pd.pct?.foam, 'Schiuma')}${num('pd-pocket', pd.pct?.pocket, 'Molle')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Tetto di sicurezza</h2>
+        <p class="small muted">Nessun carrello va oltre questa percentuale di sconto complessivo, qualunque cosa si scriva sopra.</p>
+        <div class="adm-filters">${num('tt-pct', tt.pct, 'Tetto')}</div>
+      </section>
+      <section class="adm-card"><h2 class="adm-h2">Vetrine</h2>
+        <table class="size-table"><thead><tr><th>Offerta</th><th>Stato</th><th></th></tr></thead><tbody>${(d.bundles ?? [])
+          .slice()
+          .sort((a, b) => a.sort - b.sort)
+          .map((b) => `<tr><td><strong>${esc(b.name)}</strong><br><span class="small muted">${esc(b.tagline)}</span></td><td><select class="input" name="b-${esc(b.id)}" aria-label="Stato di ${esc(b.name)}">${['published', 'draft', 'archived'].map((k) => `<option value="${k}" ${b.status === k ? 'selected' : ''}>${STATUS_LABEL[k]}</option>`).join('')}</select></td><td><a class="small" href="${navHref('/offerte/' + b.slug + '/')}" target="_blank" rel="noopener">Apri</a></td></tr>`)
+          .join('')}</tbody></table>
+      </section>
+      <div class="adm-save"><button class="btn btn--primary">Salva le offerte</button></div>
+    </form>
+    <section class="adm-card" style="margin-top:20px"><h2 class="adm-h2">Esempi con le regole salvate</h2>
+      <p class="small muted">Prezzi reali del listino. Ogni punto percentuale sul Pocket 3000 con rete vale circa 8 €.</p>
+      <table class="size-table"><thead><tr><th>Carrello</th><th style="text-align:right">Listino</th><th style="text-align:right">Sconto</th><th style="text-align:right">Totale</th><th style="text-align:right">%</th></tr></thead><tbody>${exRows}</tbody></table>
+      <p class="small muted">Le percentuali sono una scelta prudente fatta senza conoscere i margini: da confermare con l'azienda.</p>
+    </section>`);
+}
+function readOfferForm(f) {
+  const fd = new FormData(f);
+  const errs = [];
+  const n = (k, label, { min = 0, max = MAX_RULE_PCT } = {}) => {
+    const raw = String(fd.get(k) ?? '').trim();
+    const v = Number(raw);
+    if (!/^\d+$/.test(raw) || v < min || v > max) {
+      errs.push(`${label}: un numero intero tra ${min} e ${max}`);
+      $('#o-' + k)?.setAttribute('aria-invalid', 'true');
+    }
+    return v;
+  };
+  $$('#adm-offers [aria-invalid]').forEach((x) => x.removeAttribute('aria-invalid'));
+  const out = {
+    'letto-completo': { pct: { foam: n('lc-foam', 'Letto completo, schiuma'), pocket: n('lc-pocket', 'Letto completo, molle') }, round_eur: 5 },
+    'letti-multipli': {
+      tiers: [
+        { min_sets: n('t1-min', 'Primo scaglione, letti', { min: 2, max: 50 }), pct: n('t1-pct', 'Primo scaglione, sconto') },
+        { min_sets: n('t2-min', 'Secondo scaglione, letti', { min: 2, max: 50 }), pct: n('t2-pct', 'Secondo scaglione, sconto') },
+      ],
+      quote_from_sets: 10,
+    },
+    accessori: { pct: { topper: n('ac-topper', 'Topper'), guanciale: n('ac-guanciale', 'Guanciali') }, guanciali_per_letto: 2, round_eur: 1 },
+    'per-due': { pct: { foam: n('pd-foam', 'Per due, schiuma'), pocket: n('pd-pocket', 'Per due, molle') }, round_eur: 5 },
+    tetto: { pct: n('tt-pct', 'Tetto') },
+  };
+  const [a, b] = out['letti-multipli'].tiers;
+  if (!errs.length && b.min_sets <= a.min_sets) errs.push('Il secondo scaglione deve partire da più letti del primo');
+  return { errs, params: out, fd };
+}
+const OFFER_FIELDS = { 'letto-completo': ['lc-foam', 'lc-pocket'], 'letti-multipli': ['t1-min', 't1-pct', 't2-min', 't2-pct'], accessori: ['ac-topper', 'ac-guanciale'], 'per-due': ['pd-foam', 'pd-pocket'], tetto: ['tt-pct'] };
 
 // ------------------------------------------------------------- impostazioni
 function viewSettings() {
@@ -508,7 +627,7 @@ function databaseCard() {
     ${u
       ? `<p class="small">Collegato come <strong>${esc(u.email)}</strong>. <span id="db-admin"></span></p>
          <div class="btn-row"><button class="btn btn--primary btn--sm" data-adm="db-push">Pubblica il catalogo sul database</button><button class="btn btn--ghost btn--sm" data-adm="db-signout">Esci</button></div>
-         <p class="small muted">«Pubblica» manda al database prodotti, varianti, foto e impostazioni come li vedi qui. Le foto caricate in questo browser non partono: non esiste ancora un file da collegare.</p>`
+         <p class="small muted">«Pubblica» manda al database prodotti, varianti, foto, offerte e impostazioni come li vedi qui. Le foto caricate in questo browser non partono: non esiste ancora un file da collegare.</p>`
       : `<div class="field"><label for="db-mail">Email</label><input class="input" id="db-mail" type="email" autocomplete="username"></div>
          <div class="field"><label for="db-pw">Password</label><input class="input" id="db-pw" type="password" autocomplete="current-password"></div>
          <p class="err-msg" id="db-err" role="alert"></p>
@@ -538,6 +657,7 @@ export async function render(app) {
   else if (r === 'admin-richieste') viewRequests();
   else if ((m = /^admin-richiesta-(.+)$/.exec(r))) viewRequest(m[1]);
   else if (r === 'admin-impostazioni') viewSettings();
+  else if (r === 'admin-offerte') viewOfferAdmin();
   else if (r === 'admin-storico') viewAudit();
   else viewOverview();
   document.title = 'Admin | Vesuvio Sleep (anteprima)';
@@ -620,6 +740,42 @@ function bind() {
       store.commit('requests');
       toast('Richiesta aggiornata');
       rerender();
+    }
+    if (f.id === 'adm-offers') {
+      const { errs, params, fd } = readOfferForm(f);
+      if (errs.length) {
+        toast(errs[0]);
+        return $('#adm-offers [aria-invalid="true"]')?.focus();
+      }
+      const d = db();
+      const changed = [];
+      for (const o of d.offers ?? []) {
+        const next = params[o.code];
+        const st = fd.get('st-' + o.code);
+        if (next && JSON.stringify(next) !== JSON.stringify(o.params)) {
+          changed.push(`${o.label}: ${JSON.stringify(o.params)} → ${JSON.stringify(next)}`);
+          o.params = next;
+        }
+        if (st && st !== o.status) {
+          changed.push(`${o.label}: ${RULE_STATUS[o.status]} → ${RULE_STATUS[st]}`);
+          o.status = st;
+        }
+      }
+      for (const b of d.bundles ?? []) {
+        const st = fd.get('b-' + b.id);
+        if (st && st !== b.status) {
+          changed.push(`${b.name}: ${STATUS_LABEL[b.status]} → ${STATUS_LABEL[st]}`);
+          b.status = st;
+        }
+      }
+      const on = fd.get('offers_enabled') === 'on';
+      if (on !== (d.settings.offers_enabled === true)) changed.push(on ? 'Offerte accese' : 'Offerte spente');
+      d.settings.offers_enabled = on;
+      changed.forEach((c) => store.audit('offerte', 'offerte', c));
+      store.commit('catalog');
+      toast(changed.length ? 'Offerte salvate' : 'Nessuna modifica');
+      rerender();
+      return;
     }
     if (f.id === 'adm-settings') {
       const fd = new FormData(f);
@@ -980,6 +1136,33 @@ function bind() {
         d.categories = d.categories.filter((c) => c.id !== t.dataset.id);
         store.commit('catalog');
         rerender();
+        break;
+      }
+      case 'refund-calc':
+      case 'refund-log': {
+        const ref = $('#adm-request')?.dataset.ref;
+        const r = db().requests.find((x) => x.ref === ref);
+        if (!r) break;
+        let total = 0;
+        const parts = [];
+        $$('[data-refund]').forEach((inp) => {
+          const it = r.items[Number(inp.dataset.refund)];
+          const q = Math.max(0, Math.min(it.qty, Math.trunc(Number(inp.value) || 0)));
+          inp.value = q;
+          if (!q) return;
+          const amt = refundForLine(it, q);
+          total += amt;
+          parts.push(`${q} × ${it.name}${it.size ? ' ' + formatSize(it.size) : ''}: ${formatCents(amt)}`);
+        });
+        $('#refund-out').textContent = `Rimborso: ${formatCents(total)}${parts.length ? ' (' + parts.join('; ') + ')' : ''}`;
+        if (act === 'refund-log') {
+          if (!parts.length) return toast('Indica almeno un pezzo restituito');
+          r.history.push({ at: new Date().toISOString(), status: r.status, by: 'admin', note: `Recesso parziale: rimborsati ${formatCents(total)} su ${formatCents(r.total_cents)} (${parts.join('; ')})` });
+          store.audit('richiesta', r.ref, `Recesso parziale: ${formatCents(total)}`);
+          store.commit('requests');
+          toast('Recesso registrato nello storico');
+          rerender();
+        }
         break;
       }
       case 'copy-reply': {

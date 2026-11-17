@@ -21,3 +21,8 @@ $P -f "$ROOT/supabase/catalog/catalogo_corrente.sql"
 $P -f "$ROOT/supabase/catalog/catalogo_corrente.sql"
 echo "aggiornamento catalogo eseguito due volte"
 $P -o /dev/null -f "$ROOT/tests/sql/10_tests.sql" 2>&1 | sed 's/^psql:.*NOTICE:  //'
+# parità tra core/offers.ts e la funzione SQL price_cart (atteso generato da Node)
+# i test precedenti cambiano di proposito un prezzo: si riallinea il catalogo prima del confronto
+$P -f "$ROOT/supabase/catalog/catalogo_corrente.sql" >/dev/null
+node "$ROOT/tests/sql/gen_parity.mjs" >/dev/null
+$P -o /dev/null -f "$ROOT/tests/sql/20_parity.sql" 2>&1 | sed 's/^psql:.*NOTICE:  //'

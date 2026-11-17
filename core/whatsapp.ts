@@ -1,4 +1,5 @@
 import { formatCents, formatSize } from './catalog.js';
+import type { AppliedOffer } from './offers.js';
 
 /** Oltre questa lunghezza di URL alcuni client troncano: si passa al messaggio breve. */
 export const WA_MAX_URL = 1900;
@@ -24,11 +25,17 @@ export interface SummaryLine {
   sku: string;
   qty: number;
   unit_cents: number;
+  /** quota di sconto della riga (offerte abbinate) */
+  discount_cents?: number;
 }
 export interface RequestSummary {
   ref: string;
   lines: SummaryLine[];
+  /** quanto si paga, sconto compreso */
   total_cents: number;
+  subtotal_cents?: number;
+  discount_cents?: number;
+  offers?: AppliedOffer[];
   shipping_note?: string | null;
   /** modalità di pagamento scelta dal cliente (contrassegno o bonifico) */
   payment?: string | null;
@@ -39,14 +46,25 @@ function lineText(l: SummaryLine, i: number): string {
   return `${i + 1}) ${l.name}${spec ? ' – ' + spec : ''}\n   SKU ${l.sku} · ${l.qty} × ${formatCents(l.unit_cents)} = ${formatCents(l.unit_cents * l.qty)}`;
 }
 
+/** "Vantaggio letto completo 160×190: −25,00 €" (× 3 se si applica più volte). */
+export function offerText(o: AppliedOffer): string {
+  const where = o.size ? ` ${formatSize(o.size)}` : '';
+  const times = o.count > 1 ? ` (× ${o.count})` : '';
+  return `${o.label}${where}${times}: −${formatCents(o.amount_cents)}`;
+}
+
 /** Riepilogo completo: è anche il testo del pulsante "Copia il riepilogo". Nessun dato personale. */
 export function buildFullMessage(s: RequestSummary): string {
+  const disc = s.discount_cents ?? 0;
   return [
     'Ciao Vesuvio Sleep, vorrei confermare questa richiesta dal sito.',
     `Riferimento: ${s.ref}`,
     '',
     ...s.lines.map(lineText),
     '',
+    ...(disc > 0
+      ? [`Subtotale: ${formatCents(s.subtotal_cents ?? s.total_cents + disc)}`, ...(s.offers ?? []).map(offerText)]
+      : []),
     `Totale: ${formatCents(s.total_cents)} (IVA inclusa)`,
     ...(s.shipping_note ? [`Spedizione: ${s.shipping_note}`] : []),
     ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
@@ -60,7 +78,7 @@ export function buildShortMessage(s: RequestSummary): string {
   return [
     'Ciao Vesuvio Sleep, vorrei confermare una richiesta dal sito.',
     `Riferimento: ${s.ref}`,
-    `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa).`,
+    `${n} articoli, totale ${formatCents(s.total_cents)} (IVA inclusa${(s.discount_cents ?? 0) > 0 ? `, vantaggio di ${formatCents(s.discount_cents as number)} già applicato` : ''}).`,
     ...(s.payment ? [`Pagamento: ${s.payment}`] : []),
     'Incollo qui sotto il riepilogo completo copiato dal sito.',
   ].join('\n');

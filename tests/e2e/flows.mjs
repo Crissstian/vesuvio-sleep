@@ -275,7 +275,8 @@ const cartCount = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('vs-ca
   await go(p, 'riepilogo', 100); await p.reload(); await p.waitForTimeout(800);
   const longHref = await p.locator('a[data-act="wa-open"]').getAttribute('href');
   ok(longHref.length <= 1900 && /riepilogo completo/.test(decodeURIComponent(longHref)), 'carrello lungo: link breve con riferimento');
-  ok((await p.locator('table.size-table tbody tr').count()) === 30, 'carrello lungo: tutti i 30 articoli nel riepilogo del sito');
+  // le righe del vantaggio (subtotale, offerte) si contano a parte
+  ok((await p.locator('table.size-table tbody tr:not(.tr-sub):not(.tr-save)').count()) === 30, 'carrello lungo: tutti i 30 articoli nel riepilogo del sito');
 
   // variazione di prezzo dopo l'aggiunta
   await p.evaluate(() => localStorage.setItem('vs-cart-v1', '[]'));

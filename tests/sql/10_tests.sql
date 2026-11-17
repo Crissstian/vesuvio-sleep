@@ -43,7 +43,7 @@ select pg_temp.check(not exists (select 1 from public.products where slug in ('m
 select pg_temp.check((select count(*) from public.categories) = 4, 'anon non vede la categoria in bozza');
 select pg_temp.check((select count(*) from public.media) = 24, 'anon vede solo le foto pubblicate di prodotti pubblicati (24)');
 select pg_temp.check((select count(*) from storage.objects) = 1, 'anon scarica solo file di foto pubblicate (non la vecchia foto 2400)');
-select pg_temp.check((select count(*) from public.settings) = 6, 'anon legge solo le impostazioni pubbliche (contatti, pagamenti, spedizione, claim)');
+select pg_temp.check((select count(*) from public.settings) = 7, 'anon legge solo le impostazioni pubbliche (contatti, pagamenti, spedizione, claim, interruttore offerte)');
 select pg_temp.check((select value #>> '{}' from public.settings where key = 'whatsapp_number') = '+39 366 121 8346', 'numero WhatsApp aziendale pubblico');
 select pg_temp.check((select value from public.settings where key = 'payment_methods') = '["contrassegno", "bonifico"]'::jsonb, 'pagamenti: contrassegno e bonifico');
 select pg_temp.check((select new_slug from public.slug_redirects where old_slug = 'pocket-2400-elite') = 'pocket-3000-elite', 'anon legge il redirect pocket-2400-elite -> pocket-3000-elite');
@@ -59,7 +59,11 @@ select pg_temp.check((public.validate_cart(jsonb_build_array(jsonb_build_object(
 select pg_temp.check((public.validate_cart(jsonb_build_array(
     jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-160190'), 'qty', 2, 'seen_price_cents', 28000),
     jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-FLEX-160190'), 'qty', 1)
-  )) ->> 'total_cents')::int = 74000, 'validate_cart: totale 2×280 + 180 = 740 €');
+  )) ->> 'subtotal_cents')::int = 74000, 'validate_cart: listino 2×280 + 180 = 740 €');
+select pg_temp.check((public.validate_cart(jsonb_build_array(
+    jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-160190'), 'qty', 2, 'seen_price_cents', 28000),
+    jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-FLEX-160190'), 'qty', 1)
+  )) ->> 'total_cents')::int = 71500, 'validate_cart: un letto completo (−25 €), il secondo materasso resta a listino: 715 €');
 select pg_temp.expect_error($q$select public.validate_cart('[{"variant_id":"00000000-0000-0000-0000-000000000000","qty":99}]')$q$, 'validate_cart: quantità fuori limite');
 select pg_temp.check((public.create_cart_request(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-BON-H25-160190'), 'qty', 1))) ->> 'ok')::boolean = false, 'create_cart_request rifiuta carrello non valido');
 select set_config('test.ref', public.create_cart_request(jsonb_build_array(jsonb_build_object('variant_id', (select id from public.variants where sku='VS-ESS-H25-160190'), 'qty', 1, 'seen_price_cents', 25000))) ->> 'ref', false);
@@ -123,4 +127,74 @@ reset role;
 select pg_temp.check((select hits from public.rate_limits where bucket = 'create_quote_request' and client = '*') = 5,
                      'contatore fermo sul limite: le chiamate respinte non lo gonfiano');
 select pg_temp.check((select count(*) from public.rate_limits where client <> '*') > 0, 'contatore anche per singolo chiamante');
+
+-- ---------------- offerte abbinate (17/11/2026)
+set role anon;
+set request.jwt.claim.sub = '';
+select pg_temp.check((select count(*) from public.bundles) = 5, 'anon vede le 5 vetrine pubblicate');
+select pg_temp.check((select count(*) from public.bundle_items) = 14, 'anon vede i 14 pezzi delle vetrine');
+select pg_temp.check((select count(*) from public.offers) = 5, 'anon legge le regole attive (le percentuali non sono segrete)');
+select pg_temp.check((select value from public.settings where key = 'offers_enabled') = 'true'::jsonb, 'interruttore offerte leggibile dal pubblico');
+select pg_temp.expect_error($q$insert into public.offers (code, label) values ('tetto', 'x')$q$, 'anon non crea regole');
+select pg_temp.expect_error($q$update public.offers set params = '{"pct":{"foam":30,"pocket":30}}' where code = 'letto-completo'$q$, 'anon non cambia le percentuali');
+select pg_temp.expect_error($q$update public.bundles set status = 'archived'$q$, 'anon non tocca le vetrine');
+select pg_temp.expect_error($q$select public.price_cart('[]', null)$q$, 'price_cart non esposta al pubblico');
+select pg_temp.expect_error($q$select public.offer_config()$q$, 'offer_config non esposta al pubblico');
+-- G3: Pocket 3000 H25 160x190 + Rete Strong 160x190 = 820 €, −8 % arrotondato = −65 €
+select set_config('test.g3', public.validate_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-STRONG-160190'), 'qty', 1)))::text, false);
+select pg_temp.check((current_setting('test.g3')::jsonb ->> 'subtotal_cents')::int = 82000, 'G3: listino 820 €');
+select pg_temp.check((current_setting('test.g3')::jsonb ->> 'discount_cents')::int = 6500, 'G3: vantaggio letto completo 65 € (8 % Pocket)');
+select pg_temp.check((current_setting('test.g3')::jsonb ->> 'total_cents')::int = 75500, 'G3: totale 755 €');
+select pg_temp.check((current_setting('test.g3')::jsonb -> 'lines' -> 0 ->> 'discount_cents')::int = 4915
+                     and (current_setting('test.g3')::jsonb -> 'lines' -> 1 ->> 'discount_cents')::int = 1585, 'G3: sconto ripartito per pezzo (49,15 + 15,85)');
+select pg_temp.check(current_setting('test.g3')::jsonb -> 'offers' -> 0 ->> 'code' = 'letto-completo', 'G3: offerta applicata registrata');
+-- G7: 3 letti completi Duo 90x200 → scaglione 10 %
+select pg_temp.check((public.validate_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-90200'), 'qty', 3),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-FLEX-90200'), 'qty', 3))) ->> 'discount_cents')::int = 9000,
+  'G7: tre letti completi, scaglione 10 % (90 €)');
+-- totale visto diverso: nessuna richiesta, si chiede conferma
+select pg_temp.check((public.create_cart_request(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-STRONG-160190'), 'qty', 1)), 82000) ->> 'reason') = 'offer_changed',
+  'create_cart_request: totale visto diverso → offer_changed, nessuna richiesta');
+select set_config('test.ref2', public.create_cart_request(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-STRONG-160190'), 'qty', 1)), 75500) ->> 'ref', false);
+reset role;
+select pg_temp.check((select discount_cents = 6500 and subtotal_cents = 82000 and total_cents = 75500 and offers -> 0 ->> 'code' = 'letto-completo'
+                        from public.requests where ref = current_setting('test.ref2')), 'richiesta salvata con subtotale, sconto e offerta');
+select pg_temp.check((select (items -> 0 ->> 'discount_cents')::int from public.requests where ref = current_setting('test.ref2')) = 4915,
+                     'quota di sconto per riga salvata (base del recesso parziale)');
+select pg_temp.check(not exists (select 1 from public.requests where total_cents is null and type = 'cart'), 'nessuna richiesta carrello senza totale');
+-- interruttore spento: nessuno sconto
+update public.settings set value = 'false'::jsonb where key = 'offers_enabled';
+select pg_temp.check((public.validate_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-P3000-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-STRONG-160190'), 'qty', 1))) ->> 'discount_cents')::int = 0,
+  'offerte spente: nessuno sconto');
+update public.settings set value = 'true'::jsonb where key = 'offers_enabled';
+-- regola in pausa: quel vantaggio sparisce
+update public.offers set status = 'paused' where code = 'letto-completo';
+select pg_temp.check((public.price_cart(jsonb_build_array(
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-MD-H25-160190'), 'qty', 1),
+  jsonb_build_object('variant_id', (select id from public.variants where sku='VS-RETE-FLEX-160190'), 'qty', 1)), public.offer_config()) ->> 'discount_cents')::int = 0,
+  'regola letto completo in pausa: nessuno sconto');
+update public.offers set status = 'active' where code = 'letto-completo';
+-- admin: cambia le percentuali, ma non oltre il 30 %
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000a001';
+update public.offers set params = '{"pct":{"foam":6,"pocket":9},"round_eur":5}' where code = 'letto-completo';
+select pg_temp.check((select params #>> '{pct,pocket}' from public.offers where code = 'letto-completo') = '9', 'admin cambia le percentuali');
+select pg_temp.expect_error($q$update public.offers set params = '{"pct":{"foam":50,"pocket":8},"round_eur":5}' where code = 'letto-completo'$q$, 'percentuale oltre il 30 % rifiutata');
+update public.offers set params = '{"pct":{"foam":5,"pocket":8},"round_eur":5}' where code = 'letto-completo';
+update public.bundles set status = 'draft' where slug = 'letto-trio';
+reset role;
+set role anon;
+select pg_temp.check((select count(*) from public.bundles) = 4, 'vetrina in bozza non più visibile al pubblico');
+reset role;
+update public.bundles set status = 'published' where slug = 'letto-trio';
+select pg_temp.expect_error($q$delete from public.products where slug = 'rete-flex'$q$, 'un prodotto usato in una vetrina non si elimina');
 \echo TUTTI I TEST SQL SUPERATI

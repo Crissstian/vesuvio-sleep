@@ -18,6 +18,14 @@ import {
   resolveRedirect,
   faqJsonLd,
   websiteJsonLd,
+  catalogOfferConfig,
+  priceCart,
+  offerHints,
+  publicBundles,
+  quoteBundle,
+  bundleSizes,
+  bundleMattress,
+  bundleItemsOf,
 } from './core/index.js';
 import { MODE, P, u, abs, absAsset, current, go, isAt, legacyToPath, setNavigator, interceptLinks, IS_PREVIEW } from './nav.js';
 import { PAGES, CATEGORY_SEO, VIEW_SEO, FAQ, faqForLd, CONTACT, waHref, PAYMENT_METHODS, applySettings } from './pages.js';
@@ -179,6 +187,7 @@ function renderChrome() {
   const on = (p) => (here === p || (p !== '/' && here.startsWith(p)) ? 'aria-current="page"' : '');
   const nav = [
     ...cats.map((c) => ({ path: catPath(c), label: c.name })),
+    ...(offersOn(idx) ? [{ path: P.offers, label: 'Letti completi' }] : []),
     { path: P.sleepMatch, label: 'Sleep Match' },
     { path: P.showroom, label: 'Showroom' },
   ];
@@ -187,6 +196,7 @@ function renderChrome() {
     CONTACT.waShort === CONTACT.phoneShort ? `WhatsApp e telefono ${CONTACT.phoneShort}` : `WhatsApp ${CONTACT.waShort}`,
     'Produciamo materassi a Casoria dal 1986',
     'Paghi alla consegna o con bonifico',
+    ...(offersOn(idx) ? ['Letto completo: materasso e rete insieme costano meno'] : []),
     'A Napoli consegna al piano gratuita',
     'Fuori misura e altezze personalizzate su richiesta',
   ];
@@ -254,6 +264,7 @@ async function dispatch(cur) {
     [P.cart]: viewCart,
     [P.review]: viewReview,
     [P.search]: () => viewSearch(query.q || ''),
+    [P.offers]: viewOffers,
   };
   if (fixed[path]) return fixed[path]();
   if (PAGES[path]) return viewPage(path, PAGES[path]);
@@ -262,6 +273,7 @@ async function dispatch(cur) {
     const c = pub().snap.categories.find((x) => x.slug === seg[0]);
     if (c && (c.status === 'published' || previewDrafts())) return viewCategory(c);
   }
+  if (seg.length === 2 && `/${seg[0]}/` === P.offers) return viewBundle(seg[1]);
   if (seg.length === 2) return viewProduct(seg[1], seg[0]);
   return viewNotFound();
 }
@@ -502,6 +514,8 @@ function viewHome() {
     </div>
   </section>
 
+  ${bundlesSectionHtml(idx, { title: 'Letti completi, a prezzo di fabbrica', lead: 'Materasso e rete della stessa misura, fatti nella stessa fabbrica: insieme costano meno che separati.', id: 'home-bundles-t' })}
+
   <section class="section factory" aria-labelledby="lab-title"><div class="wrap">${labHtml(idx)}</div></section>
 
   <section class="factory-band" aria-labelledby="fab-title">
@@ -665,7 +679,11 @@ function viewCategory(c) {
       return `<div class="empty"><h3>Nessun articolo acquistabile in questa categoria</h3><p>Stiamo completando prezzi e schede. Nel frattempo puoi chiederci informazioni.</p><a class="btn btn--ghost" href="${u(P.quote)}">Chiedi un preventivo</a></div>`;
     if (!list.length)
       return `<div class="empty"><h3>Nessun materasso con questi filtri</h3><p>Prova a togliere un filtro: la gamma è piccola e ogni modello ha caratteristiche diverse.</p><button class="btn btn--ghost" data-act="reset-filters">Azzera i filtri</button></div>`;
-    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length >= 4 && list.length % 3 !== 0 ? ' grid--feat' : ''}">${list.map((p) => productCard(idx, p, { compare: isM })).join('')}</div>`;
+    // una scheda speciale tra i prodotti: l'offerta più vicina al filtro scelto
+    const bundle = (isM || c.kind === 'rete') && offersOn(idx) ? bundleForTech(idx, isM ? f.tech : 'all') : null;
+    const cards = list.map((p) => productCard(idx, p, { compare: isM }));
+    if (bundle) cards.splice(Math.min(3, cards.length), 0, bundleCard(idx, bundle, { wide: true }));
+    return `<h2 class="sr-only">${esc(c.name)}: i modelli</h2><p class="small muted" aria-live="polite">${list.length} ${list.length === 1 ? 'modello' : 'modelli'}</p><div class="grid${list.length >= 4 && list.length % 3 !== 0 ? ' grid--feat' : ''}">${cards.join('')}</div>`;
   };
   const chip = (key, val, label) => `<button class="chip" data-act="filter" data-k="${key}" data-v="${val}" aria-pressed="${String(f[key]) === String(val)}">${label}</button>`;
   const artP = all[all.length - 1];
@@ -912,6 +930,7 @@ function renderBuy(idx, p) {
       <button class="btn btn--primary" id="add-btn" data-act="add" ${ok ? '' : 'disabled'}>Aggiungi al carrello</button>
     </div>
     <div class="buy__extra" id="add-feedback" aria-live="polite"></div>
+    ${ok && kind === 'materasso' ? bedPanelHtml(idx, p, v, sel.qty) : ''}
     <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
     <div class="buy__extra">
       <a href="${u(P.quote)}" data-act="quote-for" data-id="${esc(p.id)}">Ti serve un'altra misura o un'altra altezza?</a>
@@ -950,6 +969,21 @@ function renderPairings(idx, p, size) {
   if (!el) return;
   const kind = idx.kind(p);
   const groups = pairingsFor(idx, p, kind === 'guanciale' ? null : size);
+  // con le offerte attive si mostra quanto si risparmia aggiungendo il pezzo
+  const cfg = offerCfg(idx);
+  const sel = state.sel[p.id];
+  const mv = kind === 'materasso' && cfg ? idx.purchasableVariants(p).find((x) => x.size === size && x.height_cm === sel?.height) : null;
+  if (mv) {
+    const rete = idx.publicProducts('rete').map((r) => idx.cheapestAtSize(r, size)).filter(Boolean).sort((a, b) => a.price_cents - b.price_cents)[0];
+    const base = rete ? priceCart(idx, [{ variant_id: mv.id, qty: 1 }, { variant_id: rete.id, qty: 1 }], cfg).discount_cents : 0;
+    for (const g of groups)
+      for (const it of g.items) {
+        if (!it.variant) continue;
+        if (g.kind === 'rete') it.save_cents = priceCart(idx, [{ variant_id: mv.id, qty: 1 }, { variant_id: it.variant.id, qty: 1 }], cfg).discount_cents;
+        if (g.kind === 'topper' && rete)
+          it.save_cents = priceCart(idx, [{ variant_id: mv.id, qty: 1 }, { variant_id: rete.id, qty: 1 }, { variant_id: it.variant.id, qty: 1 }], cfg).discount_cents - base;
+      }
+  }
   if (!groups.length) {
     el.innerHTML = '';
     return;
@@ -964,6 +998,7 @@ function pairHtml(idx, it) {
   const spec = v ? [v.size ? formatSize(v.size) : '', v.height_cm && idx.kind(p) === 'materasso' ? `H${v.height_cm}` : ''].filter(Boolean).join(' · ') : '';
   return `<div class="pair"><div class="pair__img">${coverHtml(idx, p, { sizes: '(max-width: 700px) 40vw, 220px' })}</div>
     <div><h4><a href="${href.product(p)}">${esc(p.name)}</a></h4><div class="meta">${esc(spec || p.technical_name)}</div>
+      ${it.save_cents ? `<span class="pair__save">−${formatCents(it.save_cents)} ${idx.kind(p) === 'rete' ? 'con questo materasso' : 'con il letto completo'}</span>` : ''}
       <div class="row"><strong>${v ? '' : '<small class="muted">da </small>'}${formatCents(it.fromPrice)}</strong>
       ${v ? `<button class="btn btn--ghost btn--sm" data-act="add-variant" data-id="${esc(v.id)}">Aggiungi</button>` : `<a class="btn btn--ghost btn--sm" href="${href.product(p)}">Scegli</a>`}</div></div></div>`;
 }
@@ -1024,6 +1059,7 @@ function renderSM(animate = false) {
     if (!r) inner = `<div class="empty"><h3>Al momento non possiamo proporti un modello</h3><p>Non ci sono materassi acquistabili online. Scrivici e ti consigliamo noi.</p><a class="btn btn--ghost" href="${u(P.showroom)}">Contatti e showroom</a></div>`;
     else {
       state.sel[r.product.id] = { ...(state.sel[r.product.id] ?? {}), height: r.height };
+      state.smProduct = r.product.id;
       inner = `<p class="small muted">Il tuo risultato</p><div class="result">
         <div class="result__img">${coverHtml(idx, r.product, { sizes: '(max-width:860px) 92vw, 40vw', eager: true })}</div>
         <div><span class="buy__tech">${esc(r.product.technical_name)}</span><h2>${esc(r.product.name)}</h2>
@@ -1031,6 +1067,7 @@ function renderSM(animate = false) {
           ${r.heightReason ? `<p class="note">${esc(r.heightReason)}</p>` : ''}
           <p>${priceFrom(idx, r.product, r.height ?? null)} <span class="small muted">IVA inclusa${r.height ? `, H${r.height}` : ''}</span></p>
           <div class="btn-row"><a class="btn btn--primary" href="${href.product(r.product)}">Configura il tuo materasso</a><button class="btn btn--ghost" data-act="sm-restart">Ricomincia</button></div>
+          <div id="sm-bed">${smBedHtml(idx, r.product, r.height)}</div>
           <p class="small muted" style="margin-top:14px">È un'indicazione basata sulle tue risposte e sulle caratteristiche dei nostri modelli, non un parere medico. Le risposte non vengono salvate.</p></div></div>`;
     }
   }
@@ -1173,6 +1210,28 @@ function viewQuote(query = {}) {
   state.quoteFor = null;
 }
 
+/** Chiusura del Sleep Match: il materasso consigliato con la rete, nella misura scelta. */
+function smBedHtml(idx, p, height) {
+  const cfg = offerCfg(idx);
+  if (!cfg || !p.bundle_family) return '';
+  const sizes = idx.purchasableVariants(p).filter((v) => height == null || v.height_cm === height).map((v) => v.size);
+  const common = ['80x190', '90x200', '160x190', '180x200'].filter((z) => sizes.includes(z));
+  state.smSize = sizes.includes(state.smSize) ? state.smSize : sizes.includes('160x190') ? '160x190' : sizes[0];
+  const size = state.smSize;
+  const mv = idx.purchasableVariants(p).find((v) => v.size === size && (height == null || v.height_cm === height));
+  const rete = idx.publicProducts('rete').map((x) => ({ p: x, v: idx.cheapestAtSize(x, size) })).filter((x) => x.v).sort((a, b) => a.v.price_cents - b.v.price_cents)[0];
+  if (!mv || !rete) return '';
+  const pr = priceCart(idx, [{ variant_id: mv.id, qty: 1 }, { variant_id: rete.v.id, qty: 1 }], cfg);
+  const opts = common.includes(size) ? common : [size, ...common];
+  return `<div class="smbed">
+    <div class="smbed__head"><h3>Il tuo letto completo</h3>${saveTag(pr.discount_cents)}</div>
+    <p class="small">${esc(shortName(p))}${mv.height_cm ? ' H' + mv.height_cm : ''} con la ${esc(shortName(rete.p))}, nella stessa misura.</p>
+    <div class="chips" role="group" aria-label="Misura">${opts.map((z) => `<button type="button" class="chip" data-act="sm-size" data-v="${z}" aria-pressed="${z === size}">${formatSize(z)}</button>`).join('')}</div>
+    ${togetherHtml(pr, { size })}
+    <button class="btn btn--accent" data-act="add-bed" data-m="${esc(mv.id)}" data-r="${esc(rete.v.id)}" data-q="1">Aggiungi il letto completo</button>
+  </div>`;
+}
+
 function waBlock(plan, ref, kind) {
   const wa = whatsappStatus();
   return `<div class="form">
@@ -1184,6 +1243,355 @@ function waBlock(plan, ref, kind) {
     ${plan.short ? `<p class="small muted">Il carrello è lungo: su WhatsApp si apre un messaggio breve con il riferimento ${esc(ref)}. Incolla sotto il riepilogo completo che hai copiato.</p>` : ''}
     <p class="small muted">${kind === 'quote' ? 'Ti risponderemo con prezzo e tempi.' : 'Aprire WhatsApp non conferma l\'ordine: la conferma arriva da Vesuvio Sleep su WhatsApp, dopo aver verificato disponibilità e consegna.'} Puoi modificare il messaggio prima di inviarlo.</p>
   </div>`;
+}
+
+// ---------------------------------------------------------------- OFFERTE ABBINATE
+// Letto completo e vetrine (bundle). Il calcolo è in core/offers.ts, identico alla funzione
+// SQL price_cart: qui si mostra soltanto. Il prezzo vero lo ricalcola il database quando la
+// richiesta viene creata. Nessun prezzo barrato: il confronto è sempre con la somma dei
+// prezzi correnti dei singoli pezzi ("separati"), mai con un prezzo precedente.
+const offerCfg = (idx) => catalogOfferConfig(idx);
+const offersOn = (idx) => !!offerCfg(idx) && publicBundles(idx).length > 0;
+const bundlePath = (b) => `${P.offers}${b.slug}/`;
+const bundleBySlug = (idx, slug) => (idx.snap.bundles ?? []).find((b) => b.slug === slug && (b.status === 'published' || previewDrafts()));
+const shortName = (p) => p.name.replace(/^Vesuvio /, '');
+
+/** L'etichetta del risparmio: un'etichetta cucita, come quella sul bordo del materasso. */
+function saveTag(cents, { lg = false, label = 'Risparmi' } = {}) {
+  if (!cents) return '';
+  return `<span class="stitch-tag${lg ? ' stitch-tag--lg' : ''}"><small>${esc(label)}</small><b>${formatCents(cents)}</b></span>`;
+}
+/** Separati / insieme: il confronto con la somma dei prezzi correnti dei pezzi. */
+function togetherHtml(pr, { size = '', big = false } = {}) {
+  if (!pr || !pr.subtotal_cents) return '';
+  return `<div class="together${big ? ' together--big' : ''}">
+    ${pr.discount_cents ? `<span class="together__sep">Separati <span>${formatCents(pr.subtotal_cents)}</span></span>` : ''}
+    <span class="together__tot"><small>${pr.discount_cents ? 'Insieme' : 'Totale'}${size ? ', ' + formatSize(size) : ''}</small>${formatCents(pr.total_cents)}</span>
+  </div>`;
+}
+/** Il letto composto: la rete sotto, il materasso appoggiato sopra, il topper come etichetta. */
+function bedVisual(idx, lines, { sizes = '(max-width: 700px) 80vw, 30vw', eager = false } = {}) {
+  const pick = (k) => lines.find((l) => l.kind === k && l.included !== false)?.product;
+  const mat = pick('materasso');
+  const rete = pick('rete');
+  const top = pick('topper');
+  return `<div class="bedvis${rete ? '' : ' bedvis--solo'}" aria-hidden="true">
+    ${rete ? `<div class="bedvis__rete">${coverHtml(idx, rete, { sizes, eager })}</div>` : ''}
+    ${mat ? `<div class="bedvis__mat">${coverHtml(idx, mat, { sizes, eager })}</div>` : ''}
+    ${top ? `<span class="bedvis__plus">+ ${esc(shortName(top))}</span>` : ''}
+  </div>`;
+}
+function bundleQuoteFor(idx, b) {
+  const sizes = bundleSizes(idx, b);
+  const size = sizes.includes(b.default_size) ? b.default_size : sizes[0];
+  return size ? quoteBundle(idx, b, size, {}, offerCfg(idx)) : null;
+}
+/** Scheda speciale di un'offerta: si distingue dalle schede prodotto di proposito. */
+function bundleCard(idx, b, { wide = false, d = 0 } = {}) {
+  const q = bundleQuoteFor(idx, b);
+  if (!q) return '';
+  const inc = q.lines.filter((l) => l.included);
+  const opt = q.lines.filter((l) => !l.included);
+  const parts = inc.map((l) => `${shortName(l.product)}${l.kind === 'materasso' && l.variant?.height_cm ? ' H' + l.variant.height_cm : ''}`);
+  return `<article class="bcard bcard--${esc(b.theme)}${wide ? ' bcard--wide' : ''} rv" style="--d:${d}" data-bundle="${esc(b.slug)}">
+    <div class="bcard__vis">${bedVisual(idx, q.lines, { sizes: wide ? '(max-width: 860px) 92vw, 50vw' : '(max-width: 700px) 92vw, 30vw' })}${saveTag(q.price.discount_cents)}</div>
+    <div class="bcard__body">
+      ${b.badge ? `<span class="bcard__badge">${esc(b.badge)}</span>` : ''}
+      <h3><a href="${u(bundlePath(b))}">${esc(b.name)}</a></h3>
+      <p class="bcard__line">${esc(b.tagline)}</p>
+      <p class="bcard__parts">${parts.map(esc).join(' <i>+</i> ')}${opt.length ? ` <span>· ${opt.map((l) => esc(shortName(l.product))).join(', ')} a scelta</span>` : ''}</p>
+      <div class="bcard__foot">${togetherHtml(q.price, { size: q.size })}<span class="bcard__go">Componi ${icon('arrow', 18)}</span></div>
+    </div>
+  </article>`;
+}
+/** L'offerta più vicina a un filtro della categoria materassi (molle, memory, poliuretano). */
+function bundleForTech(idx, tech) {
+  const list = publicBundles(idx);
+  if (tech && tech !== 'all') {
+    const hit = list.find((b) => bundleMattress(idx, b)?.match?.tech === tech);
+    if (hit) return hit;
+  }
+  return list[0];
+}
+/** Le regole spiegate a parole, con i numeri veri della configurazione. */
+function rulesHtml(cfg) {
+  if (!cfg) return '';
+  const rows = [];
+  if (cfg.set)
+    rows.push(['Letto completo', `Materasso e rete della stessa misura nello stesso ordine: −${cfg.set.pct.foam} % con un materasso in schiuma (Eco, Memory), −${cfg.set.pct.pocket} % con un materasso a molle (Pocket), sul totale dei due. Arrotondato ai ${cfg.set.round_eur} €.`]);
+  if (cfg.tiers.length)
+    rows.push(['Più letti', cfg.tiers.map((t) => `da ${t.min_sets} letti completi −${t.pct} %`).join(', ') + ' su tutti i letti dell\'ordine. Dieci o più? Ti facciamo un preventivo.']);
+  if (cfg.addon) rows.push(['Accessori', `Il topper della stessa misura di un letto completo costa il ${cfg.addon.pct.topper} % in meno.`]);
+  if (cfg.pair) rows.push(['Per due', `Due materassi uguali nello stesso ordine, anche senza rete: −${cfg.pair.pct.foam} % (schiuma) o −${cfg.pair.pct.pocket} % (molle) sui due.`]);
+  rows.push(['Regole', `Su ogni articolo vale un solo vantaggio. Lo sconto complessivo di un carrello non supera il ${cfg.cap_pct} %. Il vantaggio si vede nel carrello e nel riepilogo, e viene ricontrollato quando invii la richiesta.`]);
+  rows.push(['Se restituisci una parte', 'Il vantaggio è diviso tra i pezzi in proporzione al prezzo. Se eserciti il recesso su un pezzo ti rimborsiamo quanto hai pagato per quel pezzo; sui pezzi che tieni il vantaggio resta tuo.']);
+  return `<dl class="rules">${rows.map(([k, v]) => `<div class="rv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
+}
+function bundlesSectionHtml(idx, { title = 'Letti completi', lead = '', id = 'bundles-t', limit = 0 } = {}) {
+  if (!offersOn(idx)) return '';
+  let list = publicBundles(idx);
+  if (limit) list = list.slice(0, limit);
+  return `<section class="section bundles" aria-labelledby="${id}"><div class="wrap">
+    <div class="sec-head rv"><div><h2 id="${id}">${esc(title)}</h2>${lead ? `<p>${esc(lead)}</p>` : ''}</div>
+      <a class="btn btn--ghost btn--sm" href="${u(P.offers)}">Tutte le offerte e Componi il tuo letto</a></div>
+    <div class="bgrid">${list.map((b, i) => bundleCard(idx, b, { wide: i === 0, d: i })).join('')}</div>
+  </div></section>`;
+}
+
+// ---------- pagina /offerte/: vetrine, Componi il tuo letto, regole
+function builderState(idx) {
+  const mats = idx.publicProducts('materasso').filter((p) => p.bundle_family);
+  const b = (state.builder ??= { size: '160x190', model: null, height: null, rete: null, topper: false, beds: 1 });
+  if (!mats.some((p) => p.id === b.model)) b.model = mats.find((p) => p.slug === 'memory-duo')?.id ?? mats[0]?.id ?? null;
+  const mat = b.model && idx.products.get(b.model);
+  if (mat) {
+    const sizes = idx.purchasableSizes(mat);
+    if (!sizes.includes(b.size)) b.size = sizes.includes('160x190') ? '160x190' : sizes[0];
+    const hs = idx.purchasableVariants(mat).filter((v) => v.size === b.size).map((v) => v.height_cm);
+    if (!hs.includes(b.height)) b.height = hs.includes(25) ? 25 : hs[0] ?? null;
+  }
+  const reti = idx.publicProducts('rete').map((p) => ({ p, v: idx.cheapestAtSize(p, b.size) })).filter((x) => x.v);
+  if (b.rete !== 'none' && !reti.some((r) => r.p.id === b.rete)) b.rete = reti[0]?.p.id ?? 'none';
+  b.beds = Math.max(1, Math.min(9, b.beds));
+  return { b, mats, mat, reti };
+}
+function builderLines(idx) {
+  const { b, mat, reti } = builderState(idx);
+  const lines = [];
+  const mv = mat && idx.purchasableVariants(mat).find((v) => v.size === b.size && v.height_cm === b.height);
+  if (mv) lines.push({ kind: 'materasso', product: mat, variant: mv, qty: b.beds });
+  const r = reti.find((x) => x.p.id === b.rete);
+  if (r) lines.push({ kind: 'rete', product: r.p, variant: r.v, qty: b.beds });
+  if (b.topper) {
+    const tp = idx.publicProducts('topper')[0];
+    const tv = tp && idx.cheapestAtSize(tp, b.size);
+    if (tv) lines.push({ kind: 'topper', product: tp, variant: tv, qty: b.beds });
+  }
+  return lines;
+}
+function builderHtml(idx) {
+  const { b, mats, mat, reti } = builderState(idx);
+  if (!mat) return '';
+  const sizes = idx.purchasableSizes(mat);
+  const heights = idx.purchasableVariants(mat).filter((v) => v.size === b.size).map((v) => v.height_cm).sort((x, y) => x - y);
+  const lines = builderLines(idx);
+  const pr = priceCart(idx, lines.map((l) => ({ variant_id: l.variant.id, qty: l.qty })), offerCfg(idx));
+  const tp = idx.publicProducts('topper')[0];
+  const tv = tp && idx.cheapestAtSize(tp, b.size);
+  const quoteFrom = offerCfg(idx)?.tiers.length ? 10 : 0;
+  return `<div class="builder__grid">
+    <div class="builder__steps">
+      <fieldset class="opt"><legend><span class="builder__n">1</span> Misura</legend><div class="seg">${sizes
+        .map((s) => `<input type="radio" name="bd-size" id="bd-s${s}" value="${s}" data-act="bd" data-k="size" ${b.size === s ? 'checked' : ''}><label for="bd-s${s}">${formatSize(s)}</label>`)
+        .join('')}</div></fieldset>
+      <fieldset class="opt"><legend><span class="builder__n">2</span> Materasso</legend><div class="bd-models">${mats
+        .map((p) => {
+          const v = idx.purchasableVariants(p).filter((x) => x.size === b.size).sort((x, y) => x.price_cents - y.price_cents)[0];
+          return `<div><input type="radio" name="bd-model" id="bd-m${p.id}" value="${p.id}" data-act="bd" data-k="model" ${b.model === p.id ? 'checked' : ''} ${v ? '' : 'disabled'}><label for="bd-m${p.id}"><strong>${esc(shortName(p))}</strong><span>${esc(p.technical_name)}</span><em>${v ? `da ${formatCents(v.price_cents)}` : 'non in questa misura'}</em></label></div>`;
+        })
+        .join('')}</div>
+        ${heights.length > 1 ? `<div class="seg seg--h" role="group" aria-label="Altezza">${heights.map((h) => `<input type="radio" name="bd-h" id="bd-h${h}" value="${h}" data-act="bd" data-k="height" ${b.height === h ? 'checked' : ''}><label for="bd-h${h}">H${h}</label>`).join('')}</div>` : ''}
+      </fieldset>
+      <fieldset class="opt"><legend><span class="builder__n">3</span> Rete</legend><div class="bd-models bd-models--row">
+        ${reti.map((r) => `<div><input type="radio" name="bd-rete" id="bd-r${r.p.id}" value="${r.p.id}" data-act="bd" data-k="rete" ${b.rete === r.p.id ? 'checked' : ''}><label for="bd-r${r.p.id}"><strong>${esc(shortName(r.p))}</strong><em>${formatCents(r.v.price_cents)}</em></label></div>`).join('')}
+        <div><input type="radio" name="bd-rete" id="bd-rnone" value="none" data-act="bd" data-k="rete" ${b.rete === 'none' ? 'checked' : ''}><label for="bd-rnone"><strong>Ho già la rete</strong><em>solo materasso</em></label></div>
+      </div></fieldset>
+      <fieldset class="opt"><legend><span class="builder__n">4</span> Completa</legend>
+        ${tv ? `<label class="check-row"><input type="checkbox" data-act="bd" data-k="topper" ${b.topper ? 'checked' : ''}> <span><strong>${esc(tp.name)}</strong> ${formatSize(b.size)}, ${formatCents(tv.price_cents)}${offerCfg(idx)?.addon ? ` <small>· −${offerCfg(idx).addon.pct.topper} % con il letto completo</small>` : ''}</span></label>` : ''}
+        <div class="bd-beds"><span>Quanti letti?</span><div class="qty" role="group" aria-label="Numero di letti"><button type="button" data-act="bd-beds" data-d="-1" aria-label="Un letto in meno">${icon('minus', 18)}</button><output aria-live="polite">${b.beds}</output><button type="button" data-act="bd-beds" data-d="1" aria-label="Un letto in più" ${b.beds >= 9 ? 'disabled' : ''}>${icon('plus', 18)}</button></div>
+        ${quoteFrom ? `<small>Da ${quoteFrom} letti in su: <a href="${u(P.quote)}">preventivo per strutture</a></small>` : ''}</div>
+      </fieldset>
+    </div>
+    <aside class="builder__sum" aria-live="polite">
+      ${bedVisual(idx, lines)}
+      <ul class="builder__lines">${lines.map((l) => `<li><span>${l.qty > 1 ? l.qty + ' × ' : ''}${esc(shortName(l.product))}${l.kind === 'materasso' ? ' H' + l.variant.height_cm : ''}</span><span>${formatCents(l.variant.price_cents * l.qty)}</span></li>`).join('')}
+        ${pr.offers.map((o) => `<li class="is-save"><span>${esc(o.label)}${o.count > 1 ? ` × ${o.count}` : ''} (${o.pct} %)</span><span>−${formatCents(o.amount_cents)}</span></li>`).join('')}</ul>
+      ${togetherHtml(pr, { size: b.size, big: true })}
+      ${saveTag(pr.discount_cents, { lg: true })}
+      ${!pr.discount_cents && b.rete === 'none' ? '<p class="small muted">Aggiungi la rete della stessa misura per il vantaggio del letto completo.</p>' : ''}
+      <button class="btn btn--primary" style="width:100%" data-act="bd-add" ${lines.length ? '' : 'disabled'}>Aggiungi ${b.beds > 1 ? `i ${b.beds} letti` : lines.length > 1 ? 'il letto completo' : 'il materasso'} al carrello</button>
+      <p class="small muted">Prezzi IVA inclusa. Il vantaggio viene ricontrollato quando invii la richiesta su WhatsApp.</p>
+    </aside>
+  </div>`;
+}
+function viewOffers() {
+  const idx = pub();
+  if (!offersOn(idx)) return viewNotFound();
+  const tr = trail([{ name: 'Home', path: P.home }, { name: 'Letti completi', path: P.offers }]);
+  setMeta(VIEW_SEO[P.offers].metaTitle, VIEW_SEO[P.offers].description, [tr.ld], { path: P.offers });
+  const list = publicBundles(idx);
+  app.innerHTML = `${pageHero(tr.ui, 'Letti completi', 'Materasso e rete della stessa misura, prodotti nella stessa fabbrica: insieme costano meno. Scegli un letto già composto o componi il tuo.')}
+  <section class="section"><div class="wrap">
+    <div class="bgrid">${list.map((b, i) => bundleCard(idx, b, { wide: i === 0, d: i })).join('')}</div>
+  </div></section>
+  <section class="section builder" id="componi" aria-labelledby="bd-t"><div class="wrap">
+    <div class="sec-head rv"><div><h2 id="bd-t">Componi il tuo letto</h2><p>Scegli la misura una volta sola: materasso, rete e topper si adeguano, e il vantaggio si calcola mentre scegli.</p></div></div>
+    <div id="builder">${builderHtml(idx)}</div>
+  </div></section>
+  <section class="section--tight"><div class="wrap narrow">
+    <h2 class="rv">Come funzionano i vantaggi</h2>
+    ${rulesHtml(offerCfg(idx))}
+    <p class="small muted">Condizioni complete nelle <a href="${u(P.terms)}">condizioni di vendita</a>. Per hotel, B&amp;B e case vacanza: <a href="${u(P.b2b)}">forniture per strutture</a>.</p>
+  </div></section>`;
+}
+
+// ---------- pagina di una vetrina /offerte/<slug>/
+function bundleSel(idx, b) {
+  const s = (state.bsel ??= {})[b.id] ?? (state.bsel[b.id] = { size: null, height: null, optional: new Set() });
+  const sizes = bundleSizes(idx, b);
+  if (!sizes.includes(s.size)) s.size = sizes.includes(b.default_size) ? b.default_size : sizes[0];
+  return s;
+}
+function viewBundle(slug) {
+  const idx = pub();
+  const b = bundleBySlug(idx, slug);
+  if (!b || !offerCfg(idx) || !bundleSizes(idx, b).length) return viewNotFound();
+  const mat = bundleMattress(idx, b);
+  const tr = trail([{ name: 'Home', path: P.home }, { name: 'Letti completi', path: P.offers }, { name: b.name, path: bundlePath(b) }]);
+  const q = bundleQuoteFor(idx, b);
+  const parts = q.lines.filter((l) => l.included).map((l) => shortName(l.product)).join(' + ');
+  // descrizione entro i 160 caratteri: i pezzi, il vantaggio, la fabbrica
+  setMeta(b.seo_title || `${b.name}: ${parts}`, b.seo_description || `${parts} nella stessa misura: insieme costano meno che separati. Prodotti a Casoria, spedizione gratuita, paghi alla consegna.`, [tr.ld], {
+    image: (() => {
+      const m = mat && coverFor(idx, mat);
+      return m ? media.resolve(m) : undefined;
+    })(),
+    path: bundlePath(b),
+  });
+  const others = publicBundles(idx).filter((x) => x.id !== b.id);
+  app.innerHTML = `${crumbs(tr.ui)}
+  <div class="wrap bpage bpage--${esc(b.theme)}">
+    <div class="bpage__vis" id="bvis"></div>
+    <div class="bpage__buy" id="bbuy"></div>
+  </div>
+  <section class="section--tight"><div class="wrap">
+    <h2 class="pdp-h2 rv">Che cosa c'è nel ${esc(b.name)}</h2>
+    <div class="bparts">${bundleItemsOf(idx, b).map((it, i) => {
+      const p = idx.products.get(it.product_id);
+      if (!p) return '';
+      return `<article class="bpart rv" style="--d:${i}"><div class="bpart__img">${coverHtml(idx, p, { sizes: '(max-width: 700px) 40vw, 260px' })}</div><div><span class="card__tech">${esc(p.technical_name)}</span><h3><a href="${href.product(p)}">${esc(p.name)}</a>${it.optional ? ' <small>a scelta</small>' : ''}</h3><p class="small">${esc(p.short)}</p></div></article>`;
+    }).join('')}</div>
+  </div></section>
+  <section class="section--tight"><div class="wrap narrow"><h2 class="rv">Come funziona il vantaggio</h2>${rulesHtml(offerCfg(idx))}</div></section>
+  ${others.length ? `<section class="section bundles" aria-labelledby="oth-t"><div class="wrap"><div class="sec-head rv"><div><h2 id="oth-t">Altri letti completi</h2></div><a class="btn btn--ghost btn--sm" href="${u(P.offers + '#componi')}">Componi il tuo letto</a></div><div class="bgrid bgrid--row">${others.map((x, i) => bundleCard(idx, x, { d: i })).join('')}</div></div></section>` : ''}`;
+  renderBundleBuy(idx, b);
+}
+function renderBundleBuy(idx, b) {
+  const s = bundleSel(idx, b);
+  const mat = bundleMattress(idx, b);
+  const heights = mat ? idx.purchasableVariants(mat).filter((v) => v.size === s.size).map((v) => v.height_cm).sort((x, y) => x - y) : [];
+  const q = quoteBundle(idx, b, s.size, { height: s.height, optional: s.optional }, offerCfg(idx));
+  if (!q.available && s.height != null) {
+    s.height = null;
+    return renderBundleBuy(idx, b);
+  }
+  const vis = $('#bvis');
+  if (vis) vis.innerHTML = `${bedVisual(idx, q.lines, { sizes: '(max-width: 900px) 92vw, 52vw', eager: true })}${saveTag(q.price.discount_cents, { lg: true })}`;
+  $('#bbuy').innerHTML = `
+    ${b.badge ? `<span class="bcard__badge">${esc(b.badge)}</span>` : ''}
+    <h1>${esc(b.name)}</h1>
+    <p class="bpage__lead">${esc(b.tagline)}</p>
+    <fieldset class="opt"><legend>Misura${SIZE_NAMES[s.size] ? ` <span class="opt__hint">${esc(SIZE_NAMES[s.size])}</span>` : ''}</legend><div class="seg">${bundleSizes(idx, b)
+      .map((z) => `<input type="radio" name="b-size" id="b-s${z}" value="${z}" data-act="b-size" ${s.size === z ? 'checked' : ''}><label for="b-s${z}">${formatSize(z)}</label>`)
+      .join('')}</div></fieldset>
+    ${heights.length > 1 ? `<fieldset class="opt"><legend>Altezza del materasso</legend><div class="seg seg--h">${heights
+      .map((h) => `<input type="radio" name="b-h" id="b-h${h}" value="${h}" data-act="b-height" ${q.height === h ? 'checked' : ''}><label for="b-h${h}">H${h}</label>`)
+      .join('')}</div></fieldset>` : ''}
+    <ul class="bline-list">${q.lines
+      .map((l) => {
+        const spec = [l.variant?.size ? formatSize(l.variant.size) : '', l.kind === 'materasso' && l.variant?.height_cm ? 'H' + l.variant.height_cm : ''].filter(Boolean).join(' · ');
+        const price = l.variant ? formatCents(l.variant.price_cents * l.item.qty) : 'non disponibile';
+        return l.item.optional
+          ? `<li class="is-opt"><label><input type="checkbox" data-act="b-opt" value="${esc(l.product.id)}" ${l.included ? 'checked' : ''} ${l.variant ? '' : 'disabled'}><span><strong>${esc(l.product.name)}</strong><small>${esc(spec)} · a scelta</small></span></label><span>${price}</span></li>`
+          : `<li><span><strong>${esc(l.product.name)}</strong><small>${esc(spec)}</small></span><span>${price}</span></li>`;
+      })
+      .join('')}
+      ${q.price.offers.map((o) => `<li class="is-save"><span>${esc(o.label)} (${o.pct} %)</span><span>−${formatCents(o.amount_cents)}</span></li>`).join('')}</ul>
+    ${togetherHtml(q.price, { size: q.size, big: true })}
+    <div class="buy__actions"><button class="btn btn--primary" id="b-add" data-act="add-bundle" data-id="${esc(b.id)}" ${q.available ? '' : 'disabled'}>Aggiungi il ${esc(b.name)} al carrello</button></div>
+    <div class="buy__extra" id="b-feedback" aria-live="polite"></div>
+    <ul class="buy__trust"><li>${icon('truck', 18)} Spedizione gratuita in Italia</li><li>${icon('check', 18)} Paghi alla consegna o con bonifico</li><li>${icon('clock', 18)} Produzione in circa 2 giorni</li></ul>
+    <p class="small muted">Prezzi IVA inclusa. ${esc(b.description)}</p>`;
+}
+
+// ---------- scheda materasso: "Completa il letto"
+function bedPanelHtml(idx, p, v, qty) {
+  const cfg = offerCfg(idx);
+  if (!cfg || !p.bundle_family || !v?.size) return '';
+  const reti = idx.publicProducts('rete').map((r) => ({ p: r, v: idx.cheapestAtSize(r, v.size) })).filter((x) => x.v);
+  if (!reti.length) return '';
+  const opts = reti.map((r) => ({ ...r, pr: priceCart(idx, [{ variant_id: v.id, qty }, { variant_id: r.v.id, qty }], cfg) }));
+  const pick = (state.bedRete ??= {})[p.id];
+  const cur = opts.find((o) => o.p.id === pick) ?? opts[0];
+  const bundle = publicBundles(idx).find((b) => bundleMattress(idx, b)?.id === p.id);
+  return `<section class="bedpanel" aria-labelledby="bed-t">
+    <div class="bedpanel__head"><h2 id="bed-t">Completa il letto</h2>${saveTag(cur.pr.discount_cents)}</div>
+    <p class="small">Con la rete ${formatSize(v.size)} il materasso e la rete costano meno insieme che separati.</p>
+    <div class="bedpanel__opts" role="radiogroup" aria-label="Rete">${opts
+      .map((o) => `<label class="bedopt"><input type="radio" name="bed-rete" value="${esc(o.p.id)}" data-act="bed-rete" ${o === cur ? 'checked' : ''}><span class="bedopt__img">${coverHtml(idx, o.p, { sizes: '72px' })}</span><span class="bedopt__txt"><strong>${esc(shortName(o.p))}</strong><small>${formatCents(o.v.price_cents)}</small></span>${o.pr.discount_cents ? `<span class="bedopt__save">−${formatCents(o.pr.discount_cents)}</span>` : ''}</label>`)
+      .join('')}</div>
+    ${togetherHtml(cur.pr, { size: v.size })}
+    <button class="btn btn--accent" style="width:100%" data-act="add-bed" data-m="${esc(v.id)}" data-r="${esc(cur.v.id)}" data-q="${qty}">Aggiungi materasso e rete${qty > 1 ? ` (${qty} letti)` : ''}</button>
+    ${bundle ? `<a class="small" href="${u(bundlePath(bundle))}">Vedi il ${esc(bundle.name)}, anche con il topper</a>` : `<a class="small" href="${u(P.offers + '#componi')}">Componi il letto con il topper</a>`}
+  </section>`;
+}
+
+// ---------- carrello e riepilogo: vantaggi, "Aggiungi" e "Sali di gamma"
+/** Il materasso appena sopra nella stessa misura: quanto costa in più, al netto dei vantaggi. */
+function upgradeHint(idx, okLines, cfg) {
+  const base = okLines.map((l) => ({ variant_id: l.item.variant_id, qty: l.item.qty }));
+  const now = priceCart(idx, base, cfg).total_cents;
+  for (const l of okLines) {
+    if (!l.product || idx.kind(l.product) !== 'materasso' || !l.product.bundle_family) continue;
+    const cands = idx
+      .publicProducts('materasso')
+      .filter((p) => p.id !== l.product.id && p.bundle_family)
+      .map((p) => {
+        const vs = idx.purchasableVariants(p).filter((x) => x.size === l.variant.size);
+        const nv = vs.find((x) => x.height_cm === l.variant.height_cm) ?? vs.sort((a, b2) => a.price_cents - b2.price_cents)[0];
+        return nv && { p, nv };
+      })
+      .filter((x) => x && x.nv.price_cents > l.variant.price_cents)
+      .sort((a, b2) => a.nv.price_cents - b2.nv.price_cents);
+    const up = cands[0];
+    if (!up) continue;
+    const swapped = base.map((x) => (x.variant_id === l.item.variant_id ? { ...x, variant_id: up.nv.id } : x));
+    const diff = priceCart(idx, swapped, cfg).total_cents - now;
+    if (diff > 0) return { from: l, p: up.p, v: up.nv, diff };
+  }
+  return null;
+}
+function cartOffersHtml(idx, v, { where = 'cart' } = {}) {
+  const cfg = offerCfg(idx);
+  if (!cfg) return '';
+  const ok = v.lines.filter((l) => l.status === 'ok');
+  const hints = offerHints(idx, ok.map((l) => ({ variant_id: l.item.variant_id, qty: l.item.qty })), cfg);
+  const up = where === 'cart' ? upgradeHint(idx, ok, cfg) : null;
+  if (!hints.length && !up) return '';
+  return `<section class="hints" aria-labelledby="hints-t-${where}">
+    <h2 id="hints-t-${where}">${where === 'review' ? 'Prima di inviare' : 'Completa e risparmia'}</h2>
+    ${hints
+      .map((h) => `<div class="hint">
+        <div class="hint__img">${coverHtml(idx, h.product, { sizes: '72px' })}</div>
+        <div class="hint__txt"><strong>${h.type === 'add_rete' ? `Aggiungi la ${esc(shortName(h.product))} ${formatSize(h.size)}` : `Aggiungi il ${esc(shortName(h.product))} ${formatSize(h.size)}`}</strong>
+          <small>${formatCents(h.variant.price_cents)} · ${h.type === 'add_rete' ? 'stessa misura del materasso: insieme diventano un letto completo' : 'stessa misura del tuo letto completo'}</small></div>
+        ${saveTag(h.save_cents)}
+        <button class="btn btn--accent btn--sm" data-act="add-variant" data-id="${esc(h.variant.id)}">Aggiungi</button>
+      </div>`)
+      .join('')}
+    ${up ? `<div class="hint hint--up">
+        <div class="hint__img">${coverHtml(idx, up.p, { sizes: '72px' })}</div>
+        <div class="hint__txt"><strong>Sali al ${esc(shortName(up.p))}</strong><small>Con ${formatCents(up.diff)} in più${up.v.height_cm ? ` (H${up.v.height_cm})` : ''}, vantaggi compresi. ${esc(up.p.short)}</small></div>
+        <button class="btn btn--ghost btn--sm" data-act="swap-variant" data-from="${esc(up.from.item.variant_id)}" data-to="${esc(up.v.id)}">Scambia</button>
+      </div>` : ''}
+  </section>`;
+}
+function totalsHtml(v) {
+  const rows = [
+    ...(v.discount_cents ? [['Subtotale', formatCents(v.subtotal_cents), '']] : []),
+    ...(v.offers ?? []).map((o) => [`${o.label}${o.size ? ' ' + formatSize(o.size) : ''}${o.count > 1 ? ` × ${o.count}` : ''}`, '−' + formatCents(o.amount_cents), 'is-save']),
+  ];
+  return rows.map(([k, val, cls]) => `<dt class="${cls}">${esc(k)}</dt><dd class="${cls}">${val}</dd>`).join('');
 }
 
 // ---------------------------------------------------------------- CARRELLO
@@ -1210,10 +1618,11 @@ async function viewCart() {
   <div class="wrap cart">
     <div>
       ${v.lines.map((l) => cartLine(idx, l)).join('')}
-      ${reteSugg.length ? `<section class="section--tight"><h2 style="font-size:1.3rem">Una rete della stessa misura</h2><p class="small muted">Hai un materasso ${formatSize(missing[0])}: queste reti sono nella stessa misura.</p><div class="pair-row">${reteSugg.map(({ p, v: rv }) => pairHtml(idx, { product: p, variant: rv, fromPrice: rv.price_cents })).join('')}</div></section>` : ''}
+      ${offerCfg(idx) ? cartOffersHtml(idx, v) : reteSugg.length ? `<section class="section--tight"><h2 style="font-size:1.3rem">Una rete della stessa misura</h2><p class="small muted">Hai un materasso ${formatSize(missing[0])}: queste reti sono nella stessa misura.</p><div class="pair-row">${reteSugg.map(({ p, v: rv }) => pairHtml(idx, { product: p, variant: rv, fromPrice: rv.price_cents })).join('')}</div></section>` : ''}
     </div>
     <aside class="summary" aria-label="Totale">
-      <dl><dt>Articoli</dt><dd>${cart.count()}</dd><dt>Spedizione</dt><dd>Gratuita in Italia</dd><div class="tot" style="display:contents"><dt>Totale</dt><dd>${formatCents(v.total_cents)}</dd></div></dl>
+      <dl><dt>Articoli</dt><dd>${cart.count()}</dd><dt>Spedizione</dt><dd>Gratuita in Italia</dd>${totalsHtml(v)}<div class="tot" style="display:contents"><dt>Totale</dt><dd>${formatCents(v.total_cents)}</dd></div></dl>
+      ${v.discount_cents ? saveTag(v.discount_cents, { label: 'Risparmi in tutto' }) : ''}
       <p class="small muted">IVA inclusa. Paghi alla consegna in contrassegno oppure con bonifico: nessun pagamento online. <a href="${u(P.payments)}">Come funziona</a></p>
       ${v.issues ? `<p class="note note--warn">${v.issues === 1 ? 'Un articolo va controllato' : v.issues + ' articoli vanno controllati'} prima di continuare.</p>` : ''}
       <a class="btn btn--primary" style="width:100%" href="${u(P.review)}" ${v.issues ? 'aria-disabled="true" data-act="blocked"' : ''}>Verifica il riepilogo</a>
@@ -1233,7 +1642,7 @@ function cartLine(idx, l) {
       ${l.message ? `<p class="note ${l.status === 'price_changed' ? 'note--warn' : 'note--err'}" style="margin:8px 0 0">${esc(l.message)}${l.status === 'price_changed' ? ` Nuovo prezzo: <strong>${formatCents(l.unit_cents)}</strong> <button class="link-btn" data-act="accept-price" data-id="${esc(l.item.variant_id)}">Accetta il nuovo prezzo</button>` : ''}</p>` : ''}
       <div class="line__row">
         <div class="qty" role="group" aria-label="Quantità di ${esc(name)}"><button data-act="cart-qty" data-id="${esc(l.item.variant_id)}" data-d="-1" aria-label="Diminuisci">${icon('minus', 18)}</button><output>${l.item.qty}</output><button data-act="cart-qty" data-id="${esc(l.item.variant_id)}" data-d="1" aria-label="Aumenta" ${l.item.qty >= MAX_QTY || l.status !== 'ok' ? 'disabled' : ''}>${icon('plus', 18)}</button></div>
-        <strong>${l.status === 'ok' ? formatCents(l.unit_cents * l.item.qty) : ''}</strong>
+        <span class="line__price"><strong>${l.status === 'ok' ? formatCents(l.unit_cents * l.item.qty) : ''}</strong>${l.status === 'ok' && l.discount_cents ? `<small class="line__save">−${formatCents(l.discount_cents)} di vantaggio</small>` : ''}</span>
         <button class="link-btn small" data-act="cart-remove" data-id="${esc(l.item.variant_id)}">Rimuovi</button>
       </div></div></div>`;
 }
@@ -1268,21 +1677,30 @@ async function viewReview() {
   }
   const req = ref ? store.db.requests.find((r) => r.ref === ref) : await api.createCartRequest(v);
   if (!current()) return;
+  if (req?.offerChanged) {
+    // un'offerta è cambiata tra il carrello e il riepilogo: il database non ha creato nulla
+    const nv = req.validation;
+    app.innerHTML = `${head}<div class="wrap"><div class="note note--warn" role="alert"><strong>Il totale è cambiato mentre controllavi.</strong> Ora è ${formatCents(nv.total_cents)} (prima ${formatCents(v.total_cents)}): un'offerta è stata aggiornata. Controlla e conferma.</div>
+      <p style="margin-top:16px"><button class="btn btn--primary" data-act="review-refresh">Aggiorna il riepilogo</button> <a class="btn btn--ghost" href="${u(P.cart)}">Torna al carrello</a></p></div>`;
+    return;
+  }
   try {
     sessionStorage.setItem('vs-review', JSON.stringify({ sig, ref: req.ref }));
   } catch {
     /* ignora */
   }
   const pay = PAYMENT_METHODS.find((m) => m.id === state.pay) ?? PAYMENT_METHODS[0];
-  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, shipping_note: store.db.settings.shipping_note, payment: pay.msg };
+  const summary = { ref: req.ref, lines: toSummaryLines(v), total_cents: v.total_cents, subtotal_cents: v.subtotal_cents, discount_cents: v.discount_cents, offers: v.offers, shipping_note: store.db.settings.shipping_note, payment: pay.msg };
   const plan = planWhatsApp(whatsappStatus().raw, summary);
   state.lastSummary = plan.fullText;
   app.innerHTML = `${head}<div class="wrap cart">
     <div>
       <table class="size-table" aria-label="Articoli"><thead><tr><th>Articolo</th><th>Q.tà</th><th style="text-align:right">Prezzo</th></tr></thead><tbody>
       ${summary.lines.map((l) => `<tr><td><strong>${esc(l.name)}</strong><br><span class="small muted">${[l.size ? formatSize(l.size) : '', l.height_cm && l.size ? 'H' + l.height_cm : ''].filter(Boolean).join(' · ')}${l.size ? ' · ' : ''}SKU ${esc(l.sku)}</span></td><td>${l.qty}</td><td style="text-align:right">${formatCents(l.unit_cents * l.qty)}</td></tr>`).join('')}
+      ${v.discount_cents ? `<tr class="tr-sub"><td colspan="2">Subtotale</td><td style="text-align:right">${formatCents(v.subtotal_cents)}</td></tr>${v.offers.map((o) => `<tr class="tr-save"><td colspan="2">${esc(o.label)}${o.size ? ' ' + formatSize(o.size) : ''}${o.count > 1 ? ` × ${o.count}` : ''}</td><td style="text-align:right">−${formatCents(o.amount_cents)}</td></tr>`).join('')}` : ''}
       </tbody></table>
-      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Pagamento</dt><dd>${esc(pay.label)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
+      ${cartOffersHtml(catalog(), v, { where: 'review' })}
+      <dl class="facts-list" style="margin-top:16px"><dt>Totale</dt><dd><strong>${formatCents(v.total_cents)}</strong> IVA inclusa${v.discount_cents ? ` · risparmi ${formatCents(v.discount_cents)}` : ''}</dd><dt>Spedizione</dt><dd>${esc(store.db.settings.shipping_note)}</dd><dt>Pagamento</dt><dd>${esc(pay.label)}</dd><dt>Riferimento</dt><dd>${esc(req.ref)}</dd></dl>
       <h2 style="font-size:1.2rem;margin-top:28px">Il messaggio che invierai</h2>
       <pre class="msg-preview" aria-label="Testo del messaggio">${esc(plan.text)}</pre>
       <p class="small muted">Il messaggio contiene solo articoli, prezzi e riferimento: nessun dato personale.</p>
@@ -1393,6 +1811,22 @@ function addVariant(v, qty = 1) {
   cart.set(addToCart(cart.items, v, qty));
   bump($('#cart-link'));
   toast('Aggiunto al carrello');
+}
+/** Più pezzi insieme (letto completo): un solo aggiornamento del carrello. */
+function addMany(list) {
+  let items = cart.items;
+  for (const { v, qty } of list) items = addToCart(items, v, qty);
+  cart.set(items);
+  bump($('#cart-link'));
+}
+function swapBuilder(idx, focusAct, focusVal) {
+  const el = $('#builder');
+  if (!el) return;
+  const y = window.scrollY;
+  el.innerHTML = builderHtml(idx);
+  window.scrollTo(0, y);
+  const f = focusVal != null ? $(`#builder [data-act="${focusAct}"][value="${CSS.escape(String(focusVal))}"]`) : $(`#builder [data-act="${focusAct}"]`);
+  f?.focus({ preventScroll: true });
 }
 
 document.addEventListener('click', async (e) => {
@@ -1569,6 +2003,74 @@ document.addEventListener('click', async (e) => {
       if (!v || !p || !idx.purchasableVariants(p).includes(v)) return toast('Articolo non disponibile');
       addVariant(v, 1);
       if (isAt(P.cart)) viewCart();
+      if (isAt(P.review)) viewReview();
+      break;
+    }
+    // ---- offerte abbinate
+    case 'add-bed': {
+      // materasso e rete insieme (scheda prodotto, Sleep Match)
+      const idx = catalog();
+      const q = Math.max(1, Math.min(MAX_QTY, Number(t.dataset.q) || 1));
+      const vs = [t.dataset.m, t.dataset.r].map((id) => idx.variants.get(id));
+      if (vs.some((v) => !v || !idx.purchasableVariants(idx.products.get(v.product_id)).includes(v))) return toast('Configurazione non disponibile');
+      addMany(vs.map((v) => ({ v, qty: q })));
+      toast('Letto completo nel carrello');
+      const fb = $('#add-feedback');
+      if (fb) fb.innerHTML = `<p class="note note--ok" style="margin:0">Letto completo nel carrello. <a href="${u(P.cart)}">Vai al carrello</a></p>`;
+      break;
+    }
+    case 'add-bundle': {
+      const idx = pub();
+      const b = (idx.snap.bundles ?? []).find((x) => x.id === t.dataset.id);
+      if (!b) return;
+      const s = bundleSel(idx, b);
+      const qb = quoteBundle(idx, b, s.size, { height: s.height, optional: s.optional }, offerCfg(idx));
+      if (!qb.available) return toast('Questa configurazione non è acquistabile online');
+      addMany(qb.lines.filter((l) => l.included).map((l) => ({ v: l.variant, qty: l.item.qty })));
+      toast(`${b.name} nel carrello`);
+      $('#b-feedback').innerHTML = `<p class="note note--ok" style="margin:0">${esc(b.name)} nel carrello${qb.price.discount_cents ? `: risparmi ${formatCents(qb.price.discount_cents)}` : ''}. <a href="${u(P.cart)}">Vai al carrello</a></p>`;
+      break;
+    }
+    case 'bd-beds': {
+      const idx = pub();
+      builderState(idx).b.beds += Number(t.dataset.d);
+      swapBuilder(idx, 'bd-beds');
+      break;
+    }
+    case 'bd-add': {
+      const idx = pub();
+      const lines = builderLines(idx);
+      if (!lines.length) return;
+      addMany(lines.map((l) => ({ v: l.variant, qty: l.qty })));
+      toast(lines.length > 1 ? 'Letto completo nel carrello' : 'Materasso nel carrello');
+      break;
+    }
+    case 'swap-variant': {
+      // "Sali di gamma": il materasso si sostituisce con quello sopra, stessa quantità
+      const idx = catalog();
+      const to = idx.variants.get(t.dataset.to);
+      if (!to || !idx.purchasableVariants(idx.products.get(to.product_id)).includes(to)) return toast('Articolo non disponibile');
+      const from = cart.items.find((i) => i.variant_id === t.dataset.from);
+      if (!from) return;
+      cart.set([...cart.items.filter((i) => i !== from), { variant_id: to.id, qty: from.qty, seen_price_cents: to.price_cents }]);
+      toast('Materasso cambiato');
+      viewCart();
+      break;
+    }
+    case 'review-refresh':
+      try {
+        sessionStorage.removeItem('vs-review');
+      } catch {
+        /* ignora */
+      }
+      viewReview();
+      break;
+    case 'sm-size': {
+      state.smSize = t.dataset.v;
+      const idx = pub();
+      const p = state.smProduct && idx.products.get(state.smProduct);
+      if (p && $('#sm-bed')) $('#sm-bed').innerHTML = smBedHtml(idx, p, state.sel[p.id]?.height ?? null);
+      $(`#sm-bed [data-v="${CSS.escape(t.dataset.v)}"]`)?.focus();
       break;
     }
     case 'sm-next':
@@ -1640,6 +2142,33 @@ document.addEventListener('change', (e) => {
     }
     renderBuy(cp.idx, cp.p);
     $(`#${act === 'pick-s' ? 's' : 'h'}${CSS.escape(t.value)}`)?.focus();
+  }
+  if (act === 'bed-rete') {
+    const cp = currentProduct();
+    (state.bedRete ??= {})[cp.p.id] = t.value;
+    renderBuy(cp.idx, cp.p);
+    $(`input[name="bed-rete"][value="${CSS.escape(t.value)}"]`)?.focus();
+  }
+  if (act === 'b-size' || act === 'b-height' || act === 'b-opt') {
+    const idx = pub();
+    const slug = current().path.split('/').filter(Boolean)[1];
+    const b = bundleBySlug(idx, slug);
+    if (!b) return;
+    const s = bundleSel(idx, b);
+    if (act === 'b-size') s.size = t.value;
+    if (act === 'b-height') s.height = Number(t.value);
+    if (act === 'b-opt') t.checked ? s.optional.add(t.value) : s.optional.delete(t.value);
+    renderBundleBuy(idx, b);
+    $(`[data-act="${act}"][value="${CSS.escape(t.value)}"]`)?.focus();
+  }
+  if (act === 'bd') {
+    const idx = pub();
+    const { b } = builderState(idx);
+    const k = t.dataset.k;
+    if (k === 'topper') b.topper = t.checked;
+    else if (k === 'height') b.height = Number(t.value);
+    else b[k] = t.value;
+    swapBuilder(idx, 'bd', k === 'topper' ? null : t.value);
   }
   if (act === 'sort') {
     state.filters.sort = t.value;
@@ -1749,8 +2278,20 @@ window.__vs = {
       ...idx.commercialCategories().map((c) => ({ path: catPath(c) })),
       ...idx.publicProducts().map((p) => ({ path: prodPath(p), images: imgs(p) })),
       ...[P.sleepMatch, P.compare, P.sizes, P.quote, P.showroom].map((path) => ({ path })),
+      ...(offersOn(idx) ? [{ path: P.offers }, ...publicBundles(idx).map((b) => ({ path: bundlePath(b), images: imgs(bundleMattress(idx, b)).slice(0, 1) }))] : []),
       ...Object.keys(PAGES).map((path) => ({ path })),
     ];
+  },
+  /** Offerte: prezzo di un carrello [[slug, size, height, qty]] con le regole in pagina (test). */
+  offer(lines) {
+    const idx = catalog();
+    const vs = lines.map(([slug, size, h, qty = 1]) => {
+      const p = idx.publicProducts().find((x) => x.slug === slug);
+      const v = p && idx.purchasableVariants(p).find((x) => x.size === size && (h == null || x.height_cm === h));
+      return { variant_id: v?.id, qty };
+    });
+    const r = priceCart(idx, vs.filter((x) => x.variant_id), offerCfg(idx));
+    return { subtotal: r.subtotal_cents / 100, discount: r.discount_cents / 100, total: r.total_cents / 100 };
   },
   price(slug, height, size) {
     const idx = catalog();

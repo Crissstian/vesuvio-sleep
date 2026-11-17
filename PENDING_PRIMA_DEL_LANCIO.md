@@ -17,6 +17,22 @@ Stato al 16/11/2026, sera (secondo audit in `AUDIT_2026-11-16.md`) (gamma di 6 m
 | Repository GitHub pubblico | **Da chiudere subito** | `Crissstian/vesuvio-sleep` è pubblico e contiene il listino prezzi e i documenti aziendali. Va reso privato dalle impostazioni del repo. |
 | Dominio, hosting e DNS | **Mancante** | Il sito pubblico è pronto in `dist/`, con la configurazione per **tutti e tre** gli hosting: `_redirects` e `_headers` per Netlify e Cloudflare Pages, `vercel.json` per Vercel. Serve collegare `vesuviosleep.it`, poi inviare la sitemap a Search Console e creare la scheda Google Business. |
 
+## Offerte abbinate (bundle) — da chiudere prima di accenderle sul sito pubblico
+
+Le offerte sono costruite (17/11/2026, `docs/OFFERTE.md`) e attive in **beta**. Le percentuali sono una scelta prudente fatta senza conoscere i margini. Prima del lancio pubblico vanno chiuse queste voci, che restano aperte di proposito:
+
+| Voce | Stato | Cosa serve |
+| --- | --- | --- |
+| Listino incoerente, amplificato dalle offerte | **Aperto** | Pocket 1600 e Pocket 3000 costano uguale a 90×200 H30 (310 €) e a 120×190 (390 €); due singoli Memory Duo 90×200 (340 €) costano meno del matrimoniale 180×200 (350 €). L'azienda decide se correggere. |
+| Quanti materassi si vendono oggi con la rete | **Da chiedere** | È il riferimento per misurare se le offerte funzionano. |
+| Ritiro usato, montaggio rete, consegna al piano | **Da chiedere** | Gratuiti o a pagamento, a Napoli e fuori? La voce «servizi inclusi» resta spenta finché non si sa. |
+| Percentuali (5 % schiuma, 8 % Pocket, 10/12 % più letti, 10 % accessori, tetto 15 %) | **Da confermare con i costi** | Si cambiano da Admin › Offerte senza toccare il codice. |
+| Strutture oltre 10 letti solo su preventivo | **Da confermare** | |
+| Offerte già attive sul sito attuale | **Da chiedere** | Devono convivere? |
+| Prezzi dei guanciali | **Mancanti** | Sbloccano la regola accessori sui guanciali, già pronta. |
+| Clausola sul recesso parziale e presentazione «separati / insieme» | **Da far rivedere all'avvocato** | Bozza nel progetto, §4.3. Direttiva Omnibus sulle riduzioni di prezzo. |
+| Interruttore sul sito pubblico | **Da decidere al lancio** | Oggi `offers_enabled` è acceso nel database perché il sito non è ancora pubblico e la preview deve mostrare le offerte. |
+
 ## Catalogo
 
 | Voce | Stato |

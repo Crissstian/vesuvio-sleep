@@ -1,0 +1,857 @@
+/* Offerte abbinate (letto completo).
+   Il segno è lo stesso del resto del sito, la cucitura: le schede delle offerte hanno un
+   bordo cucito, e il risparmio sta su un'etichetta cucita come quella sul fianco del
+   materasso. Una sola cosa che si nota; il resto resta quieto. */
+
+/* ------------------------------------------------------------ etichetta del risparmio */
+.stitch-tag {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 9px 14px 10px;
+  background: #fbeee8;
+  color: var(--lava-ink);
+  border-radius: 7px;
+  outline: 1.5px dashed var(--lava);
+  outline-offset: -5px;
+  box-shadow: 0 6px 14px -8px rgba(154, 79, 51, 0.55);
+  transform: rotate(-3deg);
+  line-height: 1;
+  white-space: nowrap;
+}
+.stitch-tag small {
+  font: 600 0.72rem/1.1 var(--f-body);
+}
+.stitch-tag b {
+  font: 800 1.15rem/1 var(--f-display);
+  letter-spacing: -0.01em;
+}
+.stitch-tag b::before {
+  content: '−';
+  margin-right: 1px;
+}
+.stitch-tag--lg {
+  padding: 12px 18px 13px;
+}
+.stitch-tag--lg b {
+  font-size: 1.6rem;
+}
+
+/* ------------------------------------------------------------ separati / insieme */
+.together {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.together__sep {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+.together__sep span {
+  font-weight: 600;
+}
+.together__tot {
+  font: 800 1.45rem/1.1 var(--f-display);
+  color: var(--deep);
+}
+.together__tot small {
+  display: block;
+  font: 500 0.78rem var(--f-body);
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.together--big .together__tot {
+  font-size: clamp(1.8rem, 3.6vw, 2.4rem);
+}
+
+/* ------------------------------------------------------------ il letto composto
+   I render dei materassi hanno il bianco reso trasparente (scripts/build_product_images.py):
+   stanno bene solo su un fondo chiaro. Per questo il materasso resta sul fondo del riquadro
+   e la rete, che è una foto con il suo sfondo, entra come una seconda foto incorniciata. */
+.bedvis {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 30% 35%, #f8fbfc 0%, var(--ice) 70%);
+}
+.bedvis__mat {
+  position: absolute;
+  left: 3%;
+  top: 4%;
+  width: 74%;
+  height: 74%;
+}
+.bedvis--solo .bedvis__mat {
+  inset: 8%;
+  width: auto;
+  height: auto;
+}
+.bedvis__mat img,
+.bedvis__mat img.blend {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0;
+  mix-blend-mode: normal;
+}
+.bedvis__rete {
+  position: absolute;
+  right: 5%;
+  bottom: 7%;
+  width: 42%;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+  overflow: visible;
+  box-shadow: 0 14px 26px -14px rgba(14, 52, 68, 0.55);
+  border: 4px solid var(--paper);
+  background: var(--paper);
+}
+.bedvis__rete img,
+.bedvis__rete .fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  padding: 0;
+  border-radius: 8px;
+}
+/* il "+" tra materasso e rete, cucito */
+.bedvis__rete::before {
+  content: '+';
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lava-ink);
+  color: #fff;
+  font: 800 1.2rem/1 var(--f-display);
+  outline: 1.5px dashed rgba(255, 255, 255, 0.7);
+  outline-offset: -5px;
+  z-index: 1;
+}
+.bedvis__plus {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  font: 700 0.78rem var(--f-display);
+  background: var(--paper);
+  color: var(--deep);
+  border-radius: 999px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------ scheda offerta */
+.bgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 22px;
+}
+.bgrid--row {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+.bcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  isolation: isolate;
+}
+/* il bordo cucito */
+.bcard::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1.5px dashed rgba(200, 120, 91, 0.6);
+  border-radius: calc(var(--r-lg) - 5px);
+  pointer-events: none;
+  z-index: 3;
+}
+.bcard__vis {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--ice);
+  overflow: hidden;
+}
+.bcard__vis .stitch-tag {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 2;
+}
+.bcard__body {
+  padding: 18px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+}
+.bcard__badge {
+  align-self: flex-start;
+  font: 700 0.78rem var(--f-display);
+  color: var(--lava-ink);
+  background: #fbeee8;
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+.bcard h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.bcard h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.bcard h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+.bcard h3 a:focus-visible {
+  outline: none;
+}
+.bcard:has(h3 a:focus-visible) {
+  outline: 3px solid var(--vesuvio);
+  outline-offset: 3px;
+}
+.bcard__line {
+  margin: 0;
+  color: var(--muted);
+}
+.bcard__parts {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--deep);
+}
+.bcard__parts i {
+  font-style: normal;
+  color: var(--lava);
+  margin: 0 2px;
+}
+.bcard__parts span {
+  font-weight: 400;
+  color: var(--muted);
+}
+.bcard__foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-strong);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bcard__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 0.92rem var(--f-display);
+  color: var(--vesuvio);
+  white-space: nowrap;
+}
+@media (hover: hover) {
+  .bcard .bedvis__mat {
+    transition: transform 0.6s var(--ease);
+  }
+  .bcard:hover .bedvis__mat {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+  .bcard:hover .bcard__go {
+    text-decoration: underline;
+  }
+}
+
+/* Elite: blu profondo, è la scheda che deve fermare lo sguardo */
+.bcard--elite {
+  background: var(--deep);
+  border-color: var(--deep);
+  color: var(--ivory);
+}
+.bcard--elite::after {
+  border-color: rgba(232, 168, 140, 0.7);
+}
+.bcard--elite .bcard__line,
+.bcard--elite .bcard__parts span,
+.bcard--elite .together__sep,
+.bcard--elite .together__tot small {
+  color: rgba(247, 241, 232, 0.72);
+}
+.bcard--elite h3,
+.bcard--elite .bcard__parts,
+.bcard--elite .together__tot {
+  color: #fff;
+}
+.bcard--elite .bcard__go {
+  color: #f0c3ae;
+}
+.bcard--elite .bcard__foot {
+  border-top-color: rgba(247, 241, 232, 0.25);
+}
+
+
+/* scheda larga: in vetrina e tra i prodotti della categoria */
+.bcard--wide {
+  grid-column: 1 / -1;
+}
+@media (min-width: 760px) {
+  .bcard--wide {
+    flex-direction: row;
+  }
+  .bcard--wide .bcard__vis {
+    flex: 1.15;
+    aspect-ratio: auto;
+    min-height: 320px;
+  }
+  .bcard--wide .bcard__body {
+    flex: 1;
+    padding: 34px 38px;
+    justify-content: center;
+    gap: 10px;
+  }
+  .bcard--wide h3 {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+  }
+  .bcard--wide .bcard__foot {
+    margin-top: 12px;
+  }
+}
+
+/* ------------------------------------------------------------ pagina offerta */
+.bpage {
+  display: grid;
+  gap: 32px;
+  padding-top: 12px;
+  padding-bottom: 32px;
+}
+@media (min-width: 900px) {
+  .bpage {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: start;
+    gap: 48px;
+  }
+  .bpage__vis {
+    position: sticky;
+    top: calc(var(--header-h) + 18px);
+  }
+}
+.bpage__vis {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--ice);
+}
+.bpage__vis::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border: 1.5px dashed rgba(200, 120, 91, 0.6);
+  border-radius: calc(var(--r-lg) - 6px);
+  pointer-events: none;
+}
+.bpage__vis .stitch-tag {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+}
+.bpage__buy h1 {
+  margin: 10px 0 6px;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+}
+.bpage__lead {
+  font-size: 1.08rem;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+.bline-list {
+  list-style: none;
+  margin: 18px 0 16px;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.bline-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.bline-list li > span:last-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bline-list strong {
+  display: block;
+}
+.bline-list small {
+  color: var(--muted);
+}
+.bline-list label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.bline-list input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--deep);
+}
+.bline-list .is-save,
+.builder__lines .is-save {
+  color: var(--lava-ink);
+  font-weight: 600;
+}
+.bparts {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.bpart {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px;
+}
+.bpart__img {
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--ice);
+}
+.bpart__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bpart__img img.is-cover {
+  object-fit: cover;
+}
+.bpart h3 {
+  margin: 2px 0 4px;
+  font-size: 1.05rem;
+}
+.bpart h3 small {
+  font: 500 0.78rem var(--f-body);
+  color: var(--muted);
+}
+.bpart p {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ regole */
+.rules {
+  margin: 14px 0 18px;
+  display: grid;
+  gap: 0;
+}
+.rules > div {
+  display: grid;
+  gap: 4px 24px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--line-strong);
+}
+@media (min-width: 700px) {
+  .rules > div {
+    grid-template-columns: 190px 1fr;
+  }
+}
+.rules dt {
+  font: 700 1rem var(--f-display);
+  color: var(--deep);
+}
+.rules dd {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ Componi il tuo letto */
+.builder {
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.builder__grid {
+  display: grid;
+  gap: 28px;
+}
+@media (min-width: 960px) {
+  .builder__grid {
+    grid-template-columns: 1.35fr 1fr;
+    align-items: start;
+  }
+  .builder__sum {
+    position: sticky;
+    top: calc(var(--header-h) + 18px);
+  }
+}
+.builder__n {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--deep);
+  color: #fff;
+  font: 700 0.82rem var(--f-display);
+  margin-right: 6px;
+}
+.builder__steps .opt {
+  margin-bottom: 22px;
+}
+.builder__steps .opt legend {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.05rem;
+}
+.bd-models {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  margin-bottom: 12px;
+}
+.bd-models--row {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+}
+.bd-models input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.bd-models label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.bd-models label span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.bd-models label em {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--deep);
+  margin-top: auto;
+}
+.bd-models input:checked + label {
+  border-color: var(--deep);
+  background: var(--ice);
+  box-shadow: inset 0 0 0 1px var(--deep);
+}
+.bd-models input:focus-visible + label {
+  outline: 3px solid var(--vesuvio);
+  outline-offset: 2px;
+}
+.bd-models input:disabled + label {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.check-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+.check-row input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--deep);
+}
+.check-row small {
+  color: var(--lava-ink);
+  font-weight: 600;
+}
+.bd-beds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.bd-beds > span {
+  font-weight: 600;
+}
+.bd-beds small {
+  color: var(--muted);
+  flex-basis: 100%;
+}
+.builder__sum {
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.builder__sum .bedvis {
+  position: relative;
+  inset: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--ice);
+}
+.builder__sum .stitch-tag {
+  align-self: flex-start;
+}
+.builder__lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.94rem;
+}
+.builder__lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+/* ------------------------------------------------------------ scheda materasso */
+.bedpanel {
+  margin: 18px 0 6px;
+  padding: 16px 16px 14px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  position: relative;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bedpanel::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1.5px dashed rgba(200, 120, 91, 0.55);
+  border-radius: calc(var(--r-md) - 3px);
+  pointer-events: none;
+}
+.bedpanel > * {
+  position: relative;
+  z-index: 1;
+}
+.bedpanel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.bedpanel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.bedpanel p {
+  margin: 0;
+}
+.bedpanel__opts {
+  display: grid;
+  gap: 8px;
+}
+.bedopt {
+  display: grid;
+  grid-template-columns: auto 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  background: var(--paper);
+}
+.bedopt:has(input:checked) {
+  border-color: var(--deep);
+  background: var(--ice);
+}
+.bedopt input {
+  accent-color: var(--deep);
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.bedopt__img {
+  width: 52px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--ice);
+}
+.bedopt__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bedopt__txt strong {
+  display: block;
+  font-size: 0.95rem;
+}
+.bedopt__txt small {
+  color: var(--muted);
+}
+.bedopt__save,
+.pair__save,
+.line__save {
+  font: 700 0.84rem var(--f-display);
+  color: var(--lava-ink);
+}
+.pair__save {
+  display: block;
+  margin: 2px 0 4px;
+}
+
+/* bottone d'azione delle offerte: il colore della cucitura */
+.btn--accent {
+  background: var(--lava-ink);
+  color: #fff;
+  border-color: var(--lava-ink);
+}
+.btn--accent:hover {
+  background: #84412a;
+  border-color: #84412a;
+}
+
+/* ------------------------------------------------------------ carrello e riepilogo */
+.line__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.summary dt.is-save,
+.summary dd.is-save {
+  color: var(--lava-ink);
+  font-weight: 600;
+}
+.summary .stitch-tag {
+  margin: 4px 0 14px;
+}
+.tr-sub td {
+  color: var(--muted);
+}
+.tr-save td {
+  color: var(--lava-ink);
+  font-weight: 600;
+}
+.hints {
+  margin-top: 26px;
+  display: grid;
+  gap: 10px;
+}
+.hints h2 {
+  font-size: 1.25rem;
+  margin: 0 0 4px;
+}
+.hint {
+  display: grid;
+  grid-template-columns: 64px 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.hint__img {
+  width: 64px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ice);
+}
+.hint__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hint__txt strong {
+  display: block;
+}
+.hint__txt small {
+  color: var(--muted);
+}
+.hint .stitch-tag {
+  transform: rotate(-2deg) scale(0.9);
+}
+.hint--up {
+  grid-template-columns: 64px 1fr auto;
+  border-style: dashed;
+}
+@media (max-width: 560px) {
+  .hint {
+    grid-template-columns: 52px 1fr;
+  }
+  .hint__img {
+    width: 52px;
+    height: 44px;
+  }
+  .hint .stitch-tag,
+  .hint .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .hint--up {
+    grid-template-columns: 52px 1fr;
+  }
+}
+
+/* ------------------------------------------------------------ Sleep Match */
+.smbed {
+  margin-top: 22px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--ivory);
+  border: 1.5px dashed rgba(200, 120, 91, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.smbed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+.smbed h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.smbed p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bcard:hover .bedvis__mat {
+    transform: none;
+  }
+}
+
+.wrap.narrow {
+  max-width: 900px;
+}

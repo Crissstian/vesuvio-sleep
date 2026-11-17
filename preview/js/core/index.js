@@ -6,3 +6,4 @@ export * from './whatsapp.js';
 export * from './cart.js';
 export * from './seo.js';
 export * from './payments.js';
+export * from './offers.js';

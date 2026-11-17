@@ -133,7 +133,19 @@ export async function loadCatalog() {
     return { ...m, src, srcset: srcsetOf(src, m.width), width: m.width ?? null, height: m.height ?? null };
   });
   const settings = Object.fromEntries(settingsRows.map((r) => [r.key, r.value]));
-  return { categories, products, variants, media, settings, redirects, source: 'supabase' };
+  // offerte abbinate: tabelle della migrazione 000009. Se mancano (database non ancora
+  // aggiornato) il catalogo si legge lo stesso e le offerte restano quelle compilate.
+  let offers, bundles, bundle_items;
+  try {
+    [offers, bundles, bundle_items] = await Promise.all([
+      rest('offers?select=*&order=sort'),
+      rest('bundles?select=*&order=sort'),
+      rest('bundle_items?select=*&order=sort'),
+    ]);
+  } catch {
+    offers = bundles = bundle_items = undefined;
+  }
+  return { categories, products, variants, media, settings, redirects, offers, bundles, bundle_items, source: 'supabase' };
 }
 
 /**
@@ -143,7 +155,8 @@ export async function loadCatalog() {
 export async function pushCatalog(db) {
   const keep = (o, ks) => Object.fromEntries(ks.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
   const P = ['id', 'slug', 'category_id', 'name', 'technical_name', 'short', 'description', 'composition', 'highlights',
-    'claims', 'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match'];
+    'claims', 'removable_cover', 'reversible', 'summer_winter', 'hybrid', 'firmness_display', 'line_code', 'status', 'sort', 'lead_time', 'match',
+    'bundle_family'];
   const V = ['id', 'product_id', 'sku', 'size', 'height_cm', 'price_cents', 'availability', 'active', 'sort'];
   const C = ['id', 'slug', 'kind', 'name', 'description', 'sort', 'status'];
   const up = (t, rows) => (rows.length ? rest(`${t}?on_conflict=id`, { method: 'POST', body: rows, prefer: 'resolution=merge-duplicates,return=minimal' }) : null);
@@ -158,6 +171,13 @@ export async function pushCatalog(db) {
       storage_path: m.storage_path ?? (String(m.src).startsWith('http') ? m.src : `seed/${m.src}`),
     }));
   await up('media', media);
+  // offerte abbinate: regole, vetrine e pezzi (le vetrine prima dei pezzi, per le chiavi esterne)
+  const O = ['id', 'code', 'label', 'description', 'params', 'status', 'starts_at', 'ends_at', 'sort'];
+  const B = ['id', 'slug', 'name', 'tagline', 'description', 'badge', 'theme', 'sizes', 'default_size', 'status', 'sort', 'seo_title', 'seo_description'];
+  const I = ['id', 'bundle_id', 'product_id', 'height_cm', 'qty', 'optional', 'sort'];
+  await up('offers', (db.offers ?? []).map((o) => keep(o, O)));
+  await up('bundles', (db.bundles ?? []).map((b) => keep(b, B)));
+  await up('bundle_items', (db.bundle_items ?? []).map((i) => keep(i, I)));
   const settings = Object.entries(db.settings ?? {}).map(([key, value]) => ({ key, value }));
   if (settings.length) await rest('settings?on_conflict=key', { method: 'POST', body: settings, prefer: 'resolution=merge-duplicates,return=minimal' });
   return { prodotti: db.products.length, varianti: db.variants.length, foto: media.length };
