@@ -1,0 +1,184 @@
+/* Catalogo Vesuvio Sleep — palette e segno grafico del sito: carta avorio, blu profondo,
+   la cucitura color lava che disegna il Vesuvio. */
+@page { size: A4; margin: 0; }
+:root {
+  --deep: #0e3444; --vesuvio: #206786; --ice: #eaf3f6; --ivory: #f7f1e8; --paper: #fffcf7;
+  --ink: #172b35; --muted: #4b6170; --lava: #c8785b; --lava-ink: #9a4f33;
+  --line: rgba(14, 52, 68, .14); --line2: rgba(14, 52, 68, .28);
+  --display: 'Inter Display', 'Inter', sans-serif; --body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font: 400 8.6pt/1.5 var(--body); color: var(--ink); background: #888; font-feature-settings: 'tnum' 0; }
+img { display: block; max-width: 100%; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+h1, h2, h3, h4 { font-family: var(--display); color: var(--deep); letter-spacing: -.01em; line-height: 1.08; }
+h2 { font-size: 25pt; font-weight: 800; letter-spacing: -.02em; }
+h3 { font-size: 11pt; font-weight: 700; }
+h4 { font-size: 10pt; font-weight: 700; }
+b { font-weight: 600; }
+
+.page { width: 210mm; height: 297mm; position: relative; overflow: hidden; background: var(--ivory);
+  padding: 16mm 15mm 20mm; page-break-after: always; break-after: page; }
+.page:last-child { page-break-after: auto; }
+
+/* piede di pagina */
+.pf { position: absolute; left: 15mm; right: 15mm; bottom: 8mm; display: flex; align-items: center; gap: 3mm;
+  font-size: 7pt; color: var(--muted); border-top: .3mm solid var(--line); padding-top: 2.6mm; }
+.pf img { height: 4mm; width: auto; }
+.pf .pn { margin-left: auto; font-family: var(--display); font-weight: 700; color: var(--deep); font-size: 8pt; }
+
+/* la cucitura */
+.seam { display: block; overflow: visible; }
+.seam path { fill: none; stroke-linecap: round; }
+.seam__line { stroke: var(--lava); stroke-width: 2.4; stroke-dasharray: 7 5; }
+.seam__shadow { stroke: rgba(0,0,0,.18); stroke-width: 2.4; stroke-dasharray: 7 5; transform: translate(0, 1.6px); }
+
+/* ---------------- copertina */
+.cover { background: var(--deep); color: #fff; padding: 0; }
+.cover__photo { position: absolute; left: 0; right: 0; top: 0; height: 178mm; background: 30% 70% / cover no-repeat; }
+.seam--cover { position: absolute; left: 82mm; width: 116mm; top: 186mm; height: auto; z-index: 2; }
+.seam--cover .seam__line { stroke-width: 1.8; stroke-dasharray: 6 4.5; }
+.seam--cover .seam__shadow { display: none; }
+.cover__panel { position: absolute; left: 0; right: 0; top: 178mm; bottom: 0; padding: 14mm 15mm 16mm; }
+.cover__logo { width: 27mm; }
+.cover__text { position: absolute; left: 15mm; right: 15mm; bottom: 16mm; }
+.cover h1 { color: #fff; font-size: 46pt; font-weight: 800; letter-spacing: -.035em; line-height: .98; max-width: 150mm; }
+.cover__text p { font-size: 10.5pt; line-height: 1.45; color: rgba(255,255,255,.82); margin-top: 4mm; max-width: 125mm; }
+.cover__text .cover__ed { font-size: 8.5pt; color: var(--lava); margin-top: 5mm; font-weight: 500; }
+
+/* ---------------- la fabbrica */
+.p-intro { padding-top: 0; }
+.hero-photo { margin: 0 -15mm; height: 98mm; background: center 60% / cover no-repeat; }
+.intro { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10mm; margin-top: 10mm; }
+.intro h2 { font-size: 21pt; margin-bottom: 4mm; }
+.intro p { font-size: 9.4pt; color: var(--ink); margin-top: 3mm; line-height: 1.55; }
+.numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 5mm; align-content: start; padding-top: 1mm; }
+.numbers dt { font-family: var(--display); font-weight: 800; font-size: 20pt; color: var(--vesuvio); letter-spacing: -.02em; line-height: 1; }
+.numbers dd { font-size: 8pt; color: var(--muted); margin-top: 1.5mm; line-height: 1.35; }
+.contents { position: absolute; left: 15mm; right: 15mm; bottom: 22mm; background: var(--paper);
+  border-radius: 4mm; padding: 6mm 7mm; border: .3mm solid var(--line); }
+.contents h3 { margin-bottom: 3mm; }
+.contents ol { list-style: none; columns: 1; }
+.contents li { display: flex; align-items: baseline; gap: 3mm; padding: 1.6mm 0; border-bottom: .25mm dotted var(--line2); font-size: 9pt; }
+.contents li:last-child { border-bottom: 0; }
+.contents li b { margin-left: auto; font-family: var(--display); color: var(--vesuvio); }
+
+/* ---------------- intestazioni di sezione */
+.ph { margin-bottom: 8mm; }
+.ph p { font-size: 9.6pt; color: var(--muted); margin-top: 3mm; max-width: 150mm; line-height: 1.5; }
+
+/* ---------------- gamma */
+.grid6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+.gcard { background: var(--paper); border-radius: 4mm; padding: 4mm 4.5mm 4.5mm; border: .3mm solid var(--line); }
+.gcard img { height: 33mm; width: 100%; object-fit: contain; margin-bottom: 3mm; }
+.gcard p { font-size: 7.6pt; color: var(--muted); margin-top: 1.5mm; line-height: 1.4; }
+.compare { width: 100%; border-collapse: collapse; margin-top: 9mm; font-size: 8.2pt; }
+.compare th, .compare td { text-align: left; padding: 2.4mm 2mm; border-bottom: .3mm solid var(--line); }
+.compare thead th { font-size: 7.2pt; font-weight: 600; color: var(--muted); border-bottom: .5mm solid var(--deep); }
+.compare tbody th { font-family: var(--display); font-weight: 700; color: var(--deep); }
+.compare .num { text-align: right; font-weight: 600; color: var(--deep); }
+.fine { font-size: 7pt; color: var(--muted); margin-top: 3mm; }
+
+/* ---------------- pagina materasso */
+.mh__tech { font-size: 8pt; color: var(--lava-ink); font-weight: 600; margin-bottom: 1.5mm; }
+.mh h2 { font-size: 30pt; }
+.mh__short { font-size: 10.5pt; color: var(--muted); margin-top: 2mm; max-width: 150mm; }
+.mtop { display: grid; grid-template-columns: 1.55fr 1fr; gap: 6mm; margin-top: 4mm; }
+.mtop__img { display: flex; align-items: center; justify-content: center; height: 94mm; }
+.mtop__img img { max-height: 94mm; width: 100%; object-fit: contain; }
+.facts { display: grid; gap: 0; }
+.facts div { display: flex; justify-content: space-between; gap: 3mm; padding: 1.7mm 0; border-bottom: .25mm solid var(--line); font-size: 8.2pt; }
+.facts dt { color: var(--muted); }
+.facts dd { font-weight: 600; color: var(--deep); text-align: right; }
+.claims { list-style: none; display: flex; flex-wrap: wrap; gap: 1.5mm; margin-top: 3mm; }
+.claims li { font-size: 7pt; color: var(--vesuvio); background: var(--ice); border-radius: 10mm; padding: .8mm 2.6mm; font-weight: 500; }
+.detail { margin-top: 3.5mm; border-radius: 3mm; overflow: hidden; height: 38mm; }
+.detail img { width: 100%; height: 100%; object-fit: cover; }
+.mdesc { font-size: 9pt; line-height: 1.55; margin-top: 4mm; max-width: 175mm; color: var(--ink); }
+.mbottom { display: grid; grid-template-columns: 1fr 1.08fr; gap: 7mm; margin-top: 5mm; }
+.mbottom h3, .ptable h3 { margin-bottom: 2.5mm; }
+.layers { background: var(--paper); border-radius: 4mm; padding: 4.5mm 5mm; border: .3mm solid var(--line); }
+.layers img { height: 40mm; width: 100%; object-fit: contain; margin: 0 auto 3mm; }
+.layers ol { list-style: none; counter-reset: l; }
+.layers li { counter-increment: l; display: grid; grid-template-columns: 5mm 1fr; column-gap: 2mm; padding: 1.3mm 0; border-top: .25mm solid var(--line); font-size: 7.8pt; line-height: 1.35; }
+.layers li::before { content: counter(l); grid-row: span 2; font-family: var(--display); font-weight: 800; color: var(--lava); font-size: 9pt; }
+.layers li b { color: var(--deep); }
+.layers li span { color: var(--muted); }
+
+/* tabelle prezzi */
+.prices { width: 100%; border-collapse: collapse; font-size: 7.9pt; }
+.prices th { font-size: 7pt; font-weight: 600; color: #fff; background: var(--vesuvio); padding: 1.6mm 2mm; text-align: left; }
+.prices th:first-child { border-radius: 2mm 0 0 0; }
+.prices th:last-child { border-radius: 0 2mm 0 0; }
+.prices th.num { text-align: right; }
+.prices td { padding: 1.25mm 2mm; border-bottom: .25mm solid var(--line); background: var(--paper); }
+.prices tr:nth-child(even) td { background: #fbf8f2; }
+.prices tr.grp td { border-bottom: .45mm solid var(--line2); }
+.prices .sz { font-weight: 600; color: var(--deep); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prices .nm { color: var(--muted); font-size: 7pt; }
+.prices td.num { font-weight: 600; color: var(--deep); }
+.prices.mini td { padding: 1.1mm 2mm; }
+
+/* ---------------- reti */
+.reti { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.rcard { background: var(--paper); border-radius: 4mm; padding: 4mm 5mm 5mm; border: .3mm solid var(--line); }
+.rcard__img { height: 46mm; display: flex; align-items: center; justify-content: center; margin-bottom: 3mm; }
+.rcard__img img { max-height: 46mm; object-fit: contain; }
+.rcard p { font-size: 8.2pt; color: var(--muted); margin-top: 2mm; line-height: 1.45; }
+.tags { list-style: none; display: flex; flex-wrap: wrap; gap: 1.5mm; margin-top: 3mm; }
+.tags li { font-size: 7pt; color: var(--vesuvio); background: var(--ice); border-radius: 10mm; padding: .8mm 2.6mm; font-weight: 500; }
+.reti__bottom { display: grid; grid-template-columns: 1fr 1.2fr; gap: 7mm; margin-top: 7mm; }
+.reti__detail img { border-radius: 4mm; height: 62mm; width: 100%; object-fit: cover; }
+.reti__detail p { font-size: 7.4pt; color: var(--muted); margin-top: 2mm; }
+
+/* ---------------- topper e guanciali */
+.topper { display: grid; grid-template-columns: 1fr 1.1fr; gap: 7mm; align-items: center; }
+.topper__img img { width: 100%; height: 50mm; object-fit: contain; }
+.topper__txt p { font-size: 8.4pt; color: var(--muted); margin: 2mm 0 3.5mm; line-height: 1.45; }
+.topper__tables { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; align-items: start; }
+.sub { font-size: 14pt; font-weight: 800; margin: 9mm 0 4mm; }
+.pillows { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.pcard { background: var(--paper); border-radius: 4mm; padding: 4mm 5mm 4.5mm; border: .3mm solid var(--line); }
+.pcard__img { height: 40mm; display: flex; align-items: center; justify-content: center; margin-bottom: 2.5mm; background: #fff; border-radius: 3mm; overflow: hidden; }
+.pcard__img img { height: 40mm; width: 100%; object-fit: cover; }
+.pcard__t { display: flex; justify-content: space-between; align-items: baseline; gap: 3mm; }
+.pcard__t b { font-family: var(--display); font-size: 11pt; font-weight: 800; color: var(--deep); }
+.pcard p { font-size: 7.8pt; color: var(--muted); margin-top: 1.3mm; line-height: 1.4; }
+.pcard__m { font-size: 7pt !important; color: var(--vesuvio) !important; }
+
+/* ---------------- misure e ordini */
+.howto { display: grid; grid-template-columns: 1fr 1fr; gap: 9mm; }
+.howto h3 { font-size: 12pt; margin-bottom: 2.5mm; }
+.sizes > p { font-size: 8.4pt; color: var(--muted); line-height: 1.5; }
+.sizes__wrap { display: grid; grid-template-columns: 1.15fr 1fr; gap: 4mm; margin-top: 4mm; align-items: start; }
+.sizes__svg { width: 100%; }
+.sizes__svg rect { fill: rgba(32,103,134,.06); stroke: var(--vesuvio); stroke-width: .7; }
+.sizes__t td { font-size: 7.6pt; }
+.note { font-size: 8pt; margin-top: 5mm; background: var(--paper); border-left: 1mm solid var(--lava); padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; line-height: 1.45; }
+.steps { list-style: none; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 9mm 1fr; column-gap: 2mm; padding: 3mm 0; border-bottom: .25mm solid var(--line); }
+.steps li::before { content: counter(s); grid-row: span 2; width: 7mm; height: 7mm; border-radius: 50%; background: var(--deep); color: #fff;
+  font-family: var(--display); font-weight: 800; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+.steps b { font-family: var(--display); color: var(--deep); font-size: 9.6pt; }
+.steps span { font-size: 8.2pt; color: var(--muted); line-height: 1.45; }
+.services { margin-top: 6mm; display: grid; gap: 3mm; }
+.services p { font-size: 8.2pt; background: var(--ice); border-radius: 3mm; padding: 3mm 4mm; line-height: 1.45; }
+.services b { color: var(--deep); }
+
+/* ---------------- retro */
+.back { background: var(--deep); color: #fff; padding: 0; }
+.back__photo { height: 118mm; background: center / cover no-repeat; }
+.back__body { padding: 14mm 15mm; }
+.back__logo { width: 30mm; }
+.back__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 10mm; }
+.back h3 { color: #fff; font-size: 11pt; margin-bottom: 3mm; }
+.back__cols p { font-size: 9.4pt; color: rgba(255,255,255,.82); line-height: 1.55; margin-bottom: 3mm; }
+.back__cols b { color: #fff; font-family: var(--display); font-size: 15pt; font-weight: 800; }
+.seam--back { width: 110mm; margin-top: 8mm; }
+.seam--back .seam__shadow { display: none; }
+.back__legal { position: absolute; left: 15mm; right: 15mm; bottom: 10mm; font-size: 6.6pt; color: rgba(255,255,255,.55); line-height: 1.5; }
+
+.delivery { position: absolute; left: 15mm; right: 15mm; bottom: 22mm; }
+.delivery div { height: 72mm; border-radius: 4mm; background: center 55% / cover no-repeat; }
+.delivery figcaption { font-size: 7.6pt; color: var(--muted); margin-top: 2mm; }
